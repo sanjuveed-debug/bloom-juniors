@@ -1,0 +1,26 @@
+.vercel
+.netlify/
+.wrangler/
+.claude/
+.env
+.env.local
+.env.*.local
+
+.env*.local
+
+node_modules/
+dist/
+test-results/
+tmp-video-check/
+smoke-shots/
+Video/
+Bloom Juniors - Google Play package/
+
+*.log
+/*.png
+*.zip
+
+eDUaPP*_SUPA.txt
+eDUaPP*.txt
+smoke-test.cjs
+scripts/live-commercial-audit.cjs

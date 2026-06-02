@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.bloomjuniors.twa",
+        "sha256_cert_fingerprints": ["4D:80:C2:D3:2A:89:A0:2F:B6:E8:C5:93:98:04:7A:D1:A1:E2:05:8A:6A:6F:A5:CB:E4:04:09:3E:65:05:F9:D6"]
+      }
+    }]

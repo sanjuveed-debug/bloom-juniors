@@ -1,0 +1,482 @@
+@import '@fontsource/nunito/400.css';
+@import '@fontsource/nunito/600.css';
+@import '@fontsource/nunito/700.css';
+@import '@fontsource/nunito/800.css';
+@import '@fontsource/nunito/900.css';
+
+/* Inline font-face instead of the package import — the package's 400.css
+   references fredoka-one-all-400-normal.woff which doesn't exist in the
+   package, causing an unresolvable build warning. The correct filename is
+   fredoka-one-latin-400-normal.woff. */
+@font-face {
+  font-family: 'Fredoka One';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url('@fontsource/fredoka-one/files/fredoka-one-latin-400-normal.woff2') format('woff2'),
+       url('@fontsource/fredoka-one/files/fredoka-one-latin-400-normal.woff') format('woff');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── CSS Variables (theme engine) ─────────────────────────── */
+:root {
+  --theme-primary:   #9333EA;
+  --theme-secondary: #C084FC;
+  --theme-accent:    #F59E0B;
+  --theme-bg:        #FAF5FF;
+  --theme-card:      #F3E8FF;
+  --theme-text:      #4C1D95;
+  --theme-glow:      rgba(147,51,234,0.6);
+  --radius-card:     28px;
+  --shadow-card:     0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10);
+  --shadow-sm:       0 4px 16px rgba(0,0,0,0.12);
+  --shadow-glow:     0 0 40px var(--theme-glow);
+}
+
+/* ─── Base ──────────────────────────────────────────────────── */
+html { font-size: 16px; -webkit-text-size-adjust: 100% }
+
+*, *::before, *::after {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background-color: var(--theme-bg);
+  transition: background-color 0.5s ease;
+  overscroll-behavior: none;
+  overflow-x: hidden;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Fonts ─────────────────────────────────────────────────── */
+.font-bubble { font-family: 'Fredoka One', cursive; letter-spacing: 0 }
+.font-round  { font-family: 'Nunito', sans-serif }
+
+/* ─── iOS Safe Area ─────────────────────────────────────────── */
+.pt-safe    { padding-top: max(2.75rem, calc(env(safe-area-inset-top, 0px) + 0.75rem)) }
+.pt-safe-sm { padding-top: max(2.25rem, calc(env(safe-area-inset-top, 0px) + 0.25rem)) }
+.pb-safe    { padding-bottom: max(1.5rem,  calc(env(safe-area-inset-bottom, 0px) + 0.5rem)) }
+
+/* ─── iOS Scroll ────────────────────────────────────────────── */
+.scroll-ios {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* Hide scrollbar but keep scroll */
+.scrollbar-hide { scrollbar-width: none }
+.scrollbar-hide::-webkit-scrollbar { display: none }
+
+/* ─── Touch targets ─────────────────────────────────────────── */
+button, [role="button"], a {
+  min-height: 44px;
+  min-width:  44px;
+}
+
+/* ─── Enterprise Design System ──────────────────────────────── */
+
+/* Glass Card */
+.glass {
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Stat pill */
+.stat-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  padding: 8px 4px;
+  gap: 2px;
+  background: rgba(255,255,255,0.15);
+  border: 1.5px solid rgba(255,255,255,0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform 0.15s ease;
+}
+.stat-pill:active { transform: scale(0.93) }
+
+/* Module card */
+.module-card {
+  position: relative;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  aspect-ratio: 3/4;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease;
+  cursor: pointer;
+  border: none;
+  -webkit-appearance: none;
+}
+.module-card:active { transform: scale(0.93) }
+
+/* Story-style quick start feed */
+.for-you-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 12px;
+}
+.for-you-stack {
+  display: grid;
+  gap: 12px;
+}
+.for-you-card {
+  position: relative;
+  min-height: 112px;
+  overflow: hidden;
+  border-radius: 24px;
+  border: 1.5px solid rgba(255,255,255,0.24);
+  box-shadow: 0 14px 32px rgba(15,23,42,0.18);
+  text-align: left;
+  isolation: isolate;
+}
+.for-you-card-featured {
+  min-height: 360px;
+}
+.for-you-sheen {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 72% 18%, rgba(255,255,255,0.26), transparent 32%),
+    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(0,0,0,0.48));
+}
+.for-you-progress {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 10px;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+.for-you-progress span {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.28);
+}
+.for-you-progress span.is-filled {
+  background: rgba(255,255,255,0.9);
+}
+.for-you-emoji {
+  position: absolute;
+  right: 12px;
+  top: 24px;
+  z-index: 1;
+  font-size: 44px;
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,0.35));
+}
+.for-you-card-featured .for-you-emoji {
+  top: 58px;
+  right: 20px;
+  font-size: 82px;
+}
+.for-you-copy {
+  position: absolute;
+  left: 14px;
+  right: 48px;
+  bottom: 14px;
+  z-index: 2;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.38);
+}
+.for-you-card-featured .for-you-copy {
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+}
+.for-you-cta {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 3;
+  display: inline-flex;
+  min-width: 42px;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.9);
+  color: #111827;
+  font-size: 12px;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.16);
+}
+.for-you-card-featured .for-you-cta {
+  min-width: 54px;
+  min-height: 42px;
+  font-size: 14px;
+}
+.quick-metric {
+  display: flex;
+  min-height: 58px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.62);
+  border: 1px solid rgba(255,255,255,0.72);
+  box-shadow: 0 8px 20px rgba(15,23,42,0.08);
+}
+.quick-metric span {
+  font-family: 'Fredoka One', cursive;
+  color: var(--theme-text);
+  font-size: 17px;
+  line-height: 1;
+}
+.quick-metric p {
+  margin-top: 3px;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--theme-text);
+  opacity: 0.55;
+}
+
+@media (max-width: 640px) {
+  .for-you-grid {
+    display: flex;
+    gap: 12px;
+    margin-right: -16px;
+    overflow-x: auto;
+    padding-right: 16px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .for-you-grid::-webkit-scrollbar { display: none }
+  .for-you-stack {
+    display: contents;
+  }
+  .for-you-card,
+  .for-you-card-featured {
+    flex: 0 0 min(76vw, 300px);
+    min-height: 390px;
+    scroll-snap-align: start;
+  }
+  .for-you-emoji,
+  .for-you-card-featured .for-you-emoji {
+    top: 56px;
+    right: 18px;
+    font-size: 78px;
+  }
+  .for-you-copy,
+  .for-you-card-featured .for-you-copy {
+    left: 18px;
+    right: 18px;
+    bottom: 18px;
+  }
+}
+
+/* Section header */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  margin-bottom: 12px;
+  margin-top: 20px;
+}
+.section-header-line {
+  flex: 1;
+  height: 1.5px;
+  background: linear-gradient(to right, var(--theme-primary), transparent);
+  opacity: 0.3;
+  border-radius: 1px;
+}
+
+/* ─── Bubble Button ─────────────────────────────────────────── */
+.bubble-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-family: 'Fredoka One', cursive;
+  color: white;
+  cursor: pointer;
+  border: none;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.20), 0 2px 12px rgba(0,0,0,0.15);
+}
+.bubble-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 3px 0 rgba(0,0,0,0.20), 0 1px 6px rgba(0,0,0,0.15);
+}
+.bubble-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.25) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* ─── Progress Bar ──────────────────────────────────────────── */
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.25);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6));
+  box-shadow: 0 0 8px rgba(255,255,255,0.6);
+}
+
+/* ─── Bottom Nav ─────────────────────────────────────────────── */
+.bottom-nav {
+  position: fixed;
+  left: 50%;
+  bottom: 10px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: min(620px, calc(100% - 20px));
+  transform: translateX(-50%);
+  padding: 10px 10px max(14px, env(safe-area-inset-bottom, 10px));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-radius: 28px;
+}
+
+@media (min-width: 768px) {
+  .bottom-nav {
+    width: min(560px, calc(100% - 40px));
+    bottom: 18px;
+    padding: 12px 12px max(16px, env(safe-area-inset-bottom, 12px));
+    border-radius: 30px;
+  }
+}
+
+/* ─── Keyframes ─────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -300% center }
+  100% { background-position:  300% center }
+}
+@keyframes rainbowCycle {
+  0%   { filter: hue-rotate(0deg)   }
+  100% { filter: hue-rotate(360deg) }
+}
+@keyframes rainbowBg {
+  0%,100% { background-position: 0%   50% }
+  50%     { background-position: 100% 50% }
+}
+@keyframes floatUp {
+  0%   { transform: translateY(105vh) rotate(0deg);   opacity: 0.6 }
+  10%  { opacity: 0.6 }
+  90%  { opacity: 0.6 }
+  100% { transform: translateY(-10vh) rotate(720deg); opacity: 0 }
+}
+@keyframes pulse-ring {
+  0%   { transform: scale(0.95); opacity: 1 }
+  70%  { transform: scale(1.1);  opacity: 0 }
+  100% { transform: scale(0.95); opacity: 0 }
+}
+@keyframes bounceIn {
+  0%   { transform: scale(0) rotate(-8deg);   opacity: 0 }
+  55%  { transform: scale(1.25) rotate(4deg); opacity: 1 }
+  75%  { transform: scale(0.92) rotate(-2deg) }
+  100% { transform: scale(1) rotate(0deg) }
+}
+@keyframes wiggleFun {
+  0%,100% { transform: rotate(0deg)   }
+  15%     { transform: rotate(-10deg) }
+  30%     { transform: rotate(10deg)  }
+  45%     { transform: rotate(-8deg)  }
+  60%     { transform: rotate(8deg)   }
+  75%     { transform: rotate(-5deg)  }
+}
+@keyframes gradientShift {
+  0%,100% { background-position: 0%   50% }
+  50%     { background-position: 100% 50% }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg) }
+  to   { transform: rotate(360deg) }
+}
+
+/* ─── Utility classes ───────────────────────────────────────── */
+.shimmer-text {
+  background: linear-gradient(90deg, #FF6B9D, #FFD93D, #6BCB77, #4D96FF, #C77DFF, #FF6B9D);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 4s linear infinite;
+}
+.rainbow-text {
+  background: linear-gradient(90deg, #FF1D8E, #FF9A3C, #FFD93D, #6BCB77, #4D96FF, #C77DFF);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 5s linear infinite;
+}
+.gradient-shift {
+  background-size: 200% 200%;
+  animation: gradientShift 6s ease infinite;
+}
+.wiggle { animation: wiggleFun 0.6s ease-in-out }
+.bounce-in { animation: bounceIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275) forwards }
+.pulse-ring { animation: pulse-ring 1.8s ease-out infinite }
+.spin-slow  { animation: spin-slow 12s linear infinite }
+
+/* ─── Mobile robustness ─────────────────────────────────────── */
+
+/* Long child names on narrow screens */
+.dashboard-name {
+  max-width: min(58vw, 26rem);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.05;
+}
+
+/* Module cards — prevent label / badge overflow on 320px phones */
+.module-card {
+  min-height: 150px;
+}
+.module-card p,
+.module-card span {
+  overflow-wrap: anywhere;
+}
+.module-card .badge-label {
+  max-width: calc(100% - 0.75rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* SkillHint modal — scrollable on small / landscape viewports */
+.skill-hint-panel {
+  max-height: min(75vh, 560px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 1rem));
+}

@@ -1,0 +1,79 @@
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
+
+export default defineConfig({
+  build: {
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) return 'react-vendor'
+          if (id.includes('node_modules/framer-motion/')) return 'motion'
+          if (id.includes('node_modules/@supabase/')) return 'supabase'
+        },
+      },
+    },
+  },
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'bm-apple-touch-icon.png', 'masked-icon.svg', 'offline.html'],
+      workbox: {
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: { cacheName: 'google-fonts', expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 } }
+          },
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|webp|gif|ico)$/i,
+            handler: 'CacheFirst',
+            options: { cacheName: 'images', expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 } }
+          }
+        ]
+      },
+      manifest: {
+        name: 'Bloom Juniors',
+        short_name: 'Bloom Juniors',
+        description: 'British curriculum learning app for ages 3-9. Phonics, maths, stories, science and more.',
+        theme_color: '#7c3aed',
+        background_color: '#1a1550',
+        display: 'standalone',
+        display_override: ['window-controls-overlay', 'standalone', 'browser'],
+        orientation: 'portrait',
+        scope: '/',
+        start_url: '/?source=pwa',
+        id: '/',
+        lang: 'en',
+        categories: ['education', 'kids'],
+        icons: [
+          { src: 'bm-icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'bm-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'bm-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+        ],
+        screenshots: [
+          {
+            src: 'og-preview.png',
+            sizes: '1200x630',
+            type: 'image/png',
+            form_factor: 'wide',
+            label: 'Bloom Juniors — Turn Screen Time into Learning Time'
+          }
+        ],
+        shortcuts: [
+          {
+            name: 'Start Learning',
+            short_name: 'Learn',
+            description: 'Jump straight into learning',
+            url: '/?shortcut=learn',
+            icons: [{ src: 'bm-icon-192.png', sizes: '192x192' }]
+          }
+        ]
+      }
+    })
+  ]
+})

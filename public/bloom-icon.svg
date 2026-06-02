@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#4C1D95"/>
+    </radialGradient>
+    <radialGradient id="petalGrad" cx="50%" cy="0%" r="100%">
+      <stop offset="0%" stop-color="#F9A8D4"/>
+      <stop offset="60%" stop-color="#C084FC"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </radialGradient>
+    <radialGradient id="petalGrad2" cx="50%" cy="0%" r="100%">
+      <stop offset="0%" stop-color="#E9D5FF"/>
+      <stop offset="60%" stop-color="#A855F7"/>
+      <stop offset="100%" stop-color="#6D28D9"/>
+    </radialGradient>
+    <radialGradient id="centreGrad" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#FDE68A"/>
+      <stop offset="50%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="petal-shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#4C1D95" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="512" height="512" rx="120" fill="url(#bg)"/>
+
+  <!-- Subtle inner glow ring -->
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
+
+  <!-- Outer petals (8 petals, rotated every 45deg) -->
+  <g transform="translate(256,256)" filter="url(#petal-shadow)">
+    <!-- Petal 1 - top -->
+    <ellipse cx="0" cy="-115" rx="38" ry="75" fill="url(#petalGrad)" transform="rotate(0)" opacity="0.95"/>
+    <!-- Petal 2 - top-right -->
+    <ellipse cx="0" cy="-115" rx="38" ry="75" fill="url(#petalGrad2)" transform="rotate(45)" opacity="0.90"/>
+    <!-- Petal 3 - right -->
+    <ellipse cx="0" cy="-115" rx="38" ry="75" fill="url(#petalGrad)" transform="rotate(90)" opacity="0.95"/>
+    <!-- Petal 4 - bottom-right -->
+    <ellipse cx="0" cy="-115" rx="38" ry="75" fill="url(#petalGrad2)" transform="rotate(135)" opacity="0.90"/>
+    <!-- Petal 5 - bottom -->
+    <ellipse cx="0" cy="-115" rx="38" ry="75" fill="url(#petalGrad)" transform="rotate(180)" opacity="0.95"/>
+    <!-- Petal 6 - bottom-left -->
+    <ellipse cx="0" cy="-115" rx="38" ry="75" fill="url(#petalGrad2)" transform="rotate(225)" opacity="0.90"/>
+    <!-- Petal 7 - left -->
+    <ellipse cx="0" cy="-115" rx="38" ry="75" fill="url(#petalGrad)" transform="rotate(270)" opacity="0.95"/>
+    <!-- Petal 8 - top-left -->
+    <ellipse cx="0" cy="-115" rx="38" ry="75" fill="url(#petalGrad2)" transform="rotate(315)" opacity="0.90"/>
+  </g>
+
+  <!-- Inner petals (smaller, offset by 22.5deg) -->
+  <g transform="translate(256,256)">
+    <ellipse cx="0" cy="-80" rx="24" ry="50" fill="#DDD6FE" transform="rotate(22.5)" opacity="0.75"/>
+    <ellipse cx="0" cy="-80" rx="24" ry="50" fill="#C4B5FD" transform="rotate(67.5)" opacity="0.75"/>
+    <ellipse cx="0" cy="-80" rx="24" ry="50" fill="#DDD6FE" transform="rotate(112.5)" opacity="0.75"/>
+    <ellipse cx="0" cy="-80" rx="24" ry="50" fill="#C4B5FD" transform="rotate(157.5)" opacity="0.75"/>
+    <ellipse cx="0" cy="-80" rx="24" ry="50" fill="#DDD6FE" transform="rotate(202.5)" opacity="0.75"/>
+    <ellipse cx="0" cy="-80" rx="24" ry="50" fill="#C4B5FD" transform="rotate(247.5)" opacity="0.75"/>
+    <ellipse cx="0" cy="-80" rx="24" ry="50" fill="#DDD6FE" transform="rotate(292.5)" opacity="0.75"/>
+    <ellipse cx="0" cy="-80" rx="24" ry="50" fill="#C4B5FD" transform="rotate(337.5)" opacity="0.75"/>
+  </g>
+
+  <!-- Centre circle -->
+  <circle cx="256" cy="256" r="62" fill="url(#centreGrad)" filter="url(#glow)"/>
+  <!-- Centre highlight -->
+  <circle cx="242" cy="242" r="18" fill="rgba(255,255,255,0.35)"/>
+  <!-- Centre dot pattern -->
+  <circle cx="256" cy="256" r="10" fill="#92400E" opacity="0.6"/>
+  <circle cx="270" cy="248" r="6" fill="rgba(255,255,255,0.3)"/>
+
+  <!-- Small sparkles -->
+  <path d="M390 105 l5 12 12 5 -12 5 -5 12 -5 -12 -12 -5 12 -5z" fill="#FDE68A" opacity="0.9"/>
+  <path d="M128 400 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z" fill="#E9D5FF" opacity="0.7"/>
+  <path d="M420 370 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z" fill="#FDE68A" opacity="0.6"/>
+</svg>
