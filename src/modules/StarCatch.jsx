@@ -262,7 +262,7 @@ export default function StarCatch({ avatar, progress, onAddStars, onBack, profil
             initial={{ opacity: 0, y: 30, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30 }}
-            className={`fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl shadow-xl z-50 ${
+            className={`fixed bottom-safe-toast left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl shadow-xl z-50 ${
               feedback.type === 'correct' ? 'bg-green-400' : 'bg-orange-400'
             }`}
             style={{ maxWidth: 'calc(100vw - 32px)' }}

@@ -80,7 +80,7 @@ export async function loadCloudGuardian() {
 
   const { data, error } = await supabase
     .from('guardian_profiles')
-    .select('guardian_name, relationship, email, phone, parent_pin, consent_accepted, registered_at')
+    .select('guardian_name, relationship, email, phone, parent_pin, consent_accepted, registered_at, school_id, teacher_role, class_name')
     .eq('user_id', userId)
     .maybeSingle()
 
@@ -88,13 +88,16 @@ export async function loadCloudGuardian() {
   if (!data) return null
 
   return {
-    guardianName: data.guardian_name,
-    relationship: data.relationship,
-    email: data.email,
-    phone: data.phone || '',
-    pin: data.parent_pin,
+    guardianName:  data.guardian_name,
+    relationship:  data.relationship,
+    email:         data.email,
+    phone:         data.phone || '',
+    pin:           data.parent_pin,
     consentAccepted: data.consent_accepted,
-    registeredAt: data.registered_at,
+    registeredAt:  data.registered_at,
+    schoolId:      data.school_id   || null,
+    teacherRole:   data.teacher_role || '',
+    className:     data.class_name   || '',
   }
 }
 
@@ -103,15 +106,18 @@ export async function saveCloudGuardian(guardian) {
   if (!userId) return null
 
   const row = {
-    user_id: userId,
-    guardian_name: guardian.guardianName,
-    relationship: guardian.relationship,
-    email: guardian.email,
-    phone: guardian.phone || '',
-    parent_pin: guardian.pin,
+    user_id:         userId,
+    guardian_name:   guardian.guardianName,
+    relationship:    guardian.relationship,
+    email:           guardian.email,
+    phone:           guardian.phone || '',
+    parent_pin:      guardian.pin,
     consent_accepted: guardian.consentAccepted,
-    registered_at: guardian.registeredAt,
-    updated_at: new Date().toISOString(),
+    registered_at:   guardian.registeredAt,
+    updated_at:      new Date().toISOString(),
+    school_id:       guardian.schoolId   || null,
+    teacher_role:    guardian.teacherRole || null,
+    class_name:      guardian.className  || null,
   }
 
   const { error } = await supabase

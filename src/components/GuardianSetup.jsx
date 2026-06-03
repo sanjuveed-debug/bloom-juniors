@@ -17,7 +17,7 @@ const CHILD_AGE_GROUPS = [
   { id: 'junior', label: 'Super Kids', range: '7-9', emoji: '🚀', helper: 'Maths, reading, science, games' },
 ]
 
-export default function GuardianSetup({ onComplete, authError, onLogin }) {
+export default function GuardianSetup({ onComplete, authError, onLogin, onTeacherSetup }) {
   const [done, setDone] = useState(false)
   const [form, setForm] = useState({
     guardianName: '',
@@ -164,8 +164,8 @@ export default function GuardianSetup({ onComplete, authError, onLogin }) {
               Before a child starts playing, a parent or guardian must register.
               This keeps child progress private and lets support contact the household if needed.
             </p>
-            {onLogin && (
-              <div className="mt-4 flex justify-center">
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {onLogin && (
                 <button
                   type="button"
                   onClick={onLogin}
@@ -177,8 +177,21 @@ export default function GuardianSetup({ onComplete, authError, onLogin }) {
                 >
                   Already registered? Log in
                 </button>
-              </div>
-            )}
+              )}
+              {onTeacherSetup && (
+                <button
+                  type="button"
+                  onClick={onTeacherSetup}
+                  className="rounded-2xl px-5 py-3 font-bubble text-sm text-white shadow-lg transition-transform hover:scale-[1.02]"
+                  style={{
+                    background: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
+                    boxShadow: '0 8px 20px rgba(79,70,229,0.3)',
+                  }}
+                >
+                  🏫 I'm a teacher
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="mt-6 grid gap-4">

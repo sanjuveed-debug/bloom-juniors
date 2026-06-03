@@ -255,7 +255,17 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
             </div>
           )}
 
-          <div className="flex items-center gap-4 self-center">
+          <div className="flex flex-wrap items-center gap-3 self-center justify-center">
+            {classroomMode && onUpdateGuardian && (
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => onUpdateGuardian({ classroomMode: true })}
+                className="rounded-full px-5 py-2 font-bubble text-sm text-white shadow-lg"
+                style={{ background: 'linear-gradient(135deg, #4F46E5, #7C3AED)' }}
+              >
+                🏫 Classroom View
+              </motion.button>
+            )}
             <a
               href="/schools"
               className="rounded-full bg-white/10 px-4 py-2 font-round text-xs font-bold text-white/60 transition-colors hover:bg-white/15 hover:text-white"

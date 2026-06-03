@@ -65,6 +65,9 @@ body {
 .pt-safe    { padding-top: max(2.75rem, calc(env(safe-area-inset-top, 0px) + 0.75rem)) }
 .pt-safe-sm { padding-top: max(2.25rem, calc(env(safe-area-inset-top, 0px) + 0.25rem)) }
 .pb-safe    { padding-bottom: max(1.5rem,  calc(env(safe-area-inset-bottom, 0px) + 0.5rem)) }
+/* Fixed-position elements that must clear the iPhone home indicator */
+.bottom-safe-buddy { bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem) }
+.bottom-safe-toast { bottom: max(2rem,  calc(env(safe-area-inset-bottom, 0px) + 1.5rem)) }
 
 /* ─── iOS Scroll ────────────────────────────────────────────── */
 .scroll-ios {

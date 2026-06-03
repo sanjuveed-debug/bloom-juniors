@@ -832,7 +832,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
             initial={{ opacity: 0, y: 40, scale: 0.85 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl shadow-2xl z-50"
+            className="fixed bottom-safe-toast left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl shadow-2xl z-50"
             style={{
               background: feedback.type === 'correct' ? '#22C55E' : '#F97316',
               maxWidth: 'calc(100vw - 32px)',
@@ -844,7 +844,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
       </AnimatePresence>
 
       {/* ── Avatar buddy ── */}
-      <div className="fixed bottom-2 left-2 z-30 pointer-events-none">
+      <div className="fixed bottom-safe-buddy left-2 z-30 pointer-events-none">
         <BuddyCompanion
           avatar={avatar}
           mood={buddy.mood}

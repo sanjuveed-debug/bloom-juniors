@@ -116,6 +116,111 @@ export function useGuardian() {
     return next
   }, [])
 
+  // Teacher registration — creates/joins a school, sets classroomMode: true.
+  // payload: { guardianName, email, accountPassword, pin, className, schoolName?, schoolId?, inviteToken? }
+  // schoolName  → create a new school (caller becomes admin)
+  // schoolId    → join an existing school via invite
+  // inviteToken → the invite token to mark as accepted after registration
+  const registerTeacher = useCallback(async (data) => {
+    setAuthError('')
+    if (!isSupabaseConfigured) {
+      setAuthError('Cloud sync is required for teacher accounts.')
+      throw new Error('Supabase not configured')
+    }
+
+    // 1. Create Supabase auth account
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: data.email.trim().toLowerCase(),
+      password: data.accountPassword,
+      options: { data: { guardian_name: data.guardianName, relationship: 'Teacher / Carer' } },
+    })
+    if (authError) {
+      setAuthError(authError.message)
+      throw authError
+    }
+
+    // Wait briefly for JWT to propagate before hitting the API
+    await new Promise(r => setTimeout(r, 600))
+
+    const session = (await supabase.auth.getSession()).data?.session
+    const jwt = session?.access_token
+
+    let schoolId   = data.schoolId   || null
+    let schoolName = data.schoolName || ''
+    let teacherRole = data.schoolName ? 'admin' : 'teacher'
+
+    // 2. Create school if this is the founding teacher
+    if ((data.schoolName || data.inviteToken) && !jwt) {
+      const message = 'Teacher setup needs an active login session. Please confirm email-login settings and try again.'
+      setAuthError(message)
+      throw new Error(message)
+    }
+
+    if (data.schoolName && jwt) {
+      const resp = await fetch('/api/teacher-create-school', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}` },
+        body: JSON.stringify({ schoolName: data.schoolName }),
+      })
+      const result = await resp.json().catch(() => ({}))
+      if (!resp.ok || !result.schoolId) {
+        const message = result.error || 'Could not create school. Please try again.'
+        setAuthError(message)
+        throw new Error(message)
+      }
+      schoolId   = result.schoolId
+      schoolName = result.schoolName
+    }
+
+    if (!schoolId) {
+      const message = 'Teacher setup could not attach a school. Please try again from the invite link.'
+      setAuthError(message)
+      throw new Error(message)
+    }
+
+    // 3. Save guardian profile with classroom + school data
+    const next = normalizeGuardianData({
+      guardianName:    data.guardianName,
+      relationship:    'Teacher / Carer',
+      email:           data.email,
+      pin:             data.pin,
+      consentAccepted: true,
+      registeredAt:    new Date().toISOString(),
+      classroomMode:   true,
+      schoolId,
+      schoolName,
+      teacherRole,
+      className: data.className || '',
+    })
+
+    try {
+      await saveCloudGuardian(next)
+    } catch {
+      const message = 'Could not save teacher profile to the cloud. Please check your connection and try again.'
+      setAuthError(message)
+      throw new Error(message)
+    }
+
+    // 4. Accept invite (marks it used so it cannot be reused)
+    if (data.inviteToken && jwt) {
+      const acceptResp = await fetch('/api/teacher-invite-accept', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}` },
+        body: JSON.stringify({ token: data.inviteToken }),
+      })
+      const acceptResult = await acceptResp.json().catch(() => ({}))
+      if (!acceptResp.ok) {
+        const message = acceptResult.error || 'Could not accept teacher invite.'
+        setAuthError(message)
+        throw new Error(message)
+      }
+    }
+
+    saveGuardian(next)
+    setGuardian(next)
+    return next
+  }, [])
+
   const login = useCallback(async (email, pin, accountPassword) => {
     setAuthError('')
     const localGuardian = loadGuardian()
@@ -283,6 +388,7 @@ export function useGuardian() {
     initializing,
     authError,
     registerGuardian,
+    registerTeacher,
     login,
     logout,
     startNewRegistration,

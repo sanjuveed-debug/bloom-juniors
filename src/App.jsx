@@ -18,6 +18,7 @@ import LandingPage from './pages/LandingPage'
 import AgeGroupLanding from './components/AgeGroupLanding'
 import GuardianSetup   from './components/GuardianSetup'
 import GuardianLogin   from './components/GuardianLogin'
+import TeacherSetup    from './components/TeacherSetup'
 import SplashScreen    from './components/SplashScreen'
 import AvatarSelector  from './components/AvatarSelector'
 import Dashboard       from './components/Dashboard'
@@ -954,6 +955,7 @@ export default function App() {
     initializing,
     authError,
     registerGuardian,
+    registerTeacher,
     login,
     logout,
     startNewRegistration,
@@ -965,7 +967,7 @@ export default function App() {
   const { profiles, activeId, activeProfile, createProfile, switchProfile, deleteProfile, updateProfile, resetProfiles } = useProfiles()
   const [ageGroup, setAgeGroup] = useState(null)
   const [showProfiles, setShowProfiles] = useState(false)
-  const [authEntryMode, setAuthEntryMode] = useState('setup')
+  const [authEntryMode, setAuthEntryMode] = useState('setup')   // 'setup' | 'login' | 'teacher'
   const [showLanding, setShowLanding] = useState(() => {
     // Show landing only to first-time visitors — skip if they have account data or forced via URL
     const forceApp = window.location.search.includes('app=1') || window.location.hash.includes('app')
@@ -1085,6 +1087,32 @@ export default function App() {
     return <CurriculumMap />
   }
 
+  // Teacher invite link — /teacher-invite?token=xxx
+  const teacherInviteToken =
+    window.location.pathname === '/teacher-invite'
+      ? new URLSearchParams(window.location.search).get('token') || ''
+      : ''
+  if (teacherInviteToken && !guardian) {
+    const handleTeacherInviteComplete = async (payload) => {
+      const schoolName = payload.schoolName2 || ''
+      await registerTeacher({ ...payload, schoolName })
+      if (payload.childAgeGroup === undefined) {
+        const id = createProfile(payload.className || 'Class', 0, payload.classAgeGroup || 'early', '🏫', 30)
+        if (id) updateProfile(id, { emoji: '🏫' })
+      }
+    }
+    return (
+      <>
+        <SyncStatusBanner />
+        <TeacherSetup
+          inviteToken={teacherInviteToken}
+          onComplete={handleTeacherInviteComplete}
+          onBack={() => window.location.href = '/'}
+        />
+      </>
+    )
+  }
+
   if (isRecoveryLink) {
     return <PasswordReset onUpdatePassword={updateAccountPassword} resetLinkError={resetLinkError} />
   }
@@ -1162,6 +1190,25 @@ export default function App() {
       )
     }
 
+    if (authEntryMode === 'teacher') {
+      const handleTeacherComplete = async (payload) => {
+        const schoolName = payload.schoolName || payload.schoolName2 || ''
+        await registerTeacher({ ...payload, schoolName })
+        // Create the first class as a child profile so ClassroomDashboard has something to show
+        const id = createProfile(payload.className || 'Class', 0, payload.classAgeGroup || 'early', '🏫', 30)
+        if (id) updateProfile(id, { emoji: '🏫' })
+      }
+      return (
+        <>
+          <SyncStatusBanner />
+          <TeacherSetup
+            onComplete={handleTeacherComplete}
+            onBack={() => setAuthEntryMode('setup')}
+          />
+        </>
+      )
+    }
+
     return (
       <>
         <SyncStatusBanner />
@@ -1169,6 +1216,7 @@ export default function App() {
           onComplete={handleGuardianComplete}
           authError={authError}
           onLogin={() => setAuthEntryMode('login')}
+          onTeacherSetup={() => setAuthEntryMode('teacher')}
         />
       </>
     )

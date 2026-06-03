@@ -1040,7 +1040,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
                 {timeGreeting()}
               </p>
               <motion.h1
-                className="font-bubble text-[2.6rem] md:text-5xl text-white leading-tight"
+                className="dashboard-name font-bubble text-[2.6rem] md:text-5xl text-white leading-tight"
                 style={{ textShadow: '0 2px 20px rgba(0,0,0,0.4)' }}
                 animate={{ scale: [1,1.02,1] }}
                 transition={{ duration: 3.5, repeat: Infinity, ease:'easeInOut' }}

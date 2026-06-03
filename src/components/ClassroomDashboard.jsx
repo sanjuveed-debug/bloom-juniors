@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { hydrateProgressData } from '../hooks/useProgress'
 import { formatLocalDate } from '../utils/date'
+import SchoolInviteModal from './SchoolInviteModal'
 
 function loadProfileProgress(profileId) {
   try {
@@ -62,10 +63,16 @@ const StudentCard = React.memo(function StudentCard({ student, onSelect, index }
 })
 
 export default function ClassroomDashboard({ profiles, guardian, onSelectStudent, onAddStudent, onBack, onLogout }) {
-  const [filter, setFilter] = useState('all')
-  const [search, setSearch] = useState('')
+  const [filter,      setFilter]      = useState('all')
+  const [search,      setSearch]      = useState('')
+  const [showInvite,  setShowInvite]  = useState(false)
 
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+
+  const schoolId   = guardian?.schoolId   || null
+  const schoolName = guardian?.schoolName || ''
+  const isAdmin    = guardian?.teacherRole === 'admin'
+  const className  = guardian?.className  || ''
 
   const studentsWithStatus = useMemo(() => {
     return profiles.map(profile => {
@@ -98,14 +105,25 @@ export default function ClassroomDashboard({ profiles, guardian, onSelectStudent
       <div className="px-5 pt-safe pt-5 pb-4 sticky top-0 z-10" style={{ background: 'rgba(15,23,42,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         <div className="flex items-start justify-between mb-1">
           <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-lg">🏫</span>
-              <p className="font-round text-white/40 text-xs uppercase tracking-wider">Classroom Mode</p>
-            </div>
+            {schoolName && (
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-sm">🏫</span>
+                <p className="font-round text-indigo-300/80 text-xs font-bold truncate max-w-[180px]">{schoolName}</p>
+              </div>
+            )}
+            {!schoolName && (
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-lg">🏫</span>
+                <p className="font-round text-white/40 text-xs uppercase tracking-wider">Classroom Mode</p>
+              </div>
+            )}
             <h1 className="font-bubble text-white text-xl">
               Good morning{guardian?.guardianName ? `, ${guardian.guardianName.split(' ')[0]}` : ''}! 👋
             </h1>
-            <p className="font-round text-white/30 text-xs mt-0.5">{today}</p>
+            {className && (
+              <p className="font-round text-white/45 text-xs mt-0.5">📚 {className}</p>
+            )}
+            <p className="font-round text-white/25 text-xs mt-0.5">{today}</p>
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-3">
@@ -118,9 +136,19 @@ export default function ClassroomDashboard({ profiles, guardian, onSelectStudent
                 Sign out
               </button>
             </div>
-            <a href="/curriculum-map" target="_blank" className="font-round text-blue-400/60 text-xs hover:text-blue-400 transition-colors">
-              📄 Curriculum Map
-            </a>
+            <div className="flex items-center gap-2">
+              {isAdmin && schoolId && (
+                <button
+                  onClick={() => setShowInvite(true)}
+                  className="font-round text-indigo-300/70 text-xs hover:text-indigo-300 transition-colors flex items-center gap-1"
+                >
+                  ✉️ Invite colleague
+                </button>
+              )}
+              <a href="/curriculum-map" target="_blank" className="font-round text-blue-400/60 text-xs hover:text-blue-400 transition-colors">
+                📄 Curriculum Map
+              </a>
+            </div>
           </div>
         </div>
 
@@ -180,12 +208,13 @@ export default function ClassroomDashboard({ profiles, guardian, onSelectStudent
         {profiles.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-5xl mb-4">🎒</p>
-            <p className="font-bubble text-white text-xl mb-2">No students yet</p>
-            <p className="font-round text-white/40 text-sm mb-6">Add your class to get started</p>
+            <p className="font-bubble text-white text-xl mb-2">No pupils yet</p>
+            <p className="font-round text-white/40 text-sm mb-1">Add each pupil by name.</p>
+            <p className="font-round text-white/30 text-xs mb-6">They'll each get their own learning profile on this device.</p>
             <motion.button whileTap={{ scale: 0.95 }} onClick={onAddStudent}
               className="px-6 py-3 rounded-2xl font-bubble text-white"
               style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}>
-              + Add First Student
+              + Add First Pupil
             </motion.button>
           </div>
         ) : (
@@ -209,10 +238,20 @@ export default function ClassroomDashboard({ profiles, guardian, onSelectStudent
             className="w-full mt-4 py-4 rounded-2xl font-bubble text-white/50 text-base flex items-center justify-center gap-2"
             style={{ background: 'rgba(255,255,255,0.03)', border: '1.5px dashed rgba(255,255,255,0.12)' }}
           >
-            <span className="text-lg">+</span> Add Student
+            <span className="text-lg">+</span> Add Pupil
           </motion.button>
         )}
       </div>
+
+      <AnimatePresence>
+        {showInvite && schoolId && (
+          <SchoolInviteModal
+            schoolId={schoolId}
+            schoolName={schoolName || 'your school'}
+            onClose={() => setShowInvite(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

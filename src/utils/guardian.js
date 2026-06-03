@@ -33,6 +33,10 @@ export function normalizeGuardianData(source = {}) {
     consentAccepted: Boolean(source.consentAccepted),
     registeredAt:    String(source.registeredAt || new Date().toISOString()),
     classroomMode:   Boolean(source.classroomMode),
+    schoolId:        source.schoolId   ? String(source.schoolId).trim()   : null,
+    schoolName:      source.schoolName ? cleanText(source.schoolName, 120) : '',
+    teacherRole:     source.teacherRole ? cleanText(source.teacherRole, 20) : '',
+    className:       source.className   ? cleanText(source.className, 60)   : '',
   }
 }
 
