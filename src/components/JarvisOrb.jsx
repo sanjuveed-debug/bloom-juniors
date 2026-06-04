@@ -522,57 +522,46 @@ export default function JarvisOrb({ avatar, profileName, progress, assistantOver
       </AnimatePresence>
 
       <div
-        className="fixed z-[100]"
+        className="fixed z-[100] flex flex-col items-end gap-2"
         style={{
-          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 92px)',
-          right: 12,
-          width: 'min(190px, calc(100vw - 24px))',
+          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)',
+          right: 14,
           pointerEvents: 'none',
         }}
       >
-        <motion.button
-          type="button"
-          onClick={handleTap}
-          className="flex w-full items-center gap-2 rounded-[24px] border border-white/60 bg-white/88 px-2.5 py-2 text-left shadow-xl backdrop-blur-xl"
-          style={{
-            boxShadow: speaking
-              ? `0 16px 36px ${theme.primary}30`
-              : '0 16px 36px rgba(15, 23, 42, 0.14)',
-            pointerEvents: 'auto',
-          }}
-          animate={speaking ? { y: [0, -2, 0] } : { y: [0, -1, 0] }}
-          transition={{ duration: speaking ? 0.8 : 2.8, repeat: Infinity, ease: 'easeInOut' }}
-          whileTap={{ scale: 0.97 }}
-          aria-label={`${assistant.name} learning guide`}
-        >
-          <AssistantPortrait assistant={assistant} theme={theme} speaking={speaking} />
-
-          <div className="min-w-0 flex-1">
-            <p className="font-bubble text-sm leading-none" style={{ color: theme.text }}>
-              {assistant.name}
-            </p>
-            <p className="font-round mt-1 truncate text-[11px] font-semibold text-slate-500">
-              {speaking ? 'Speaking now' : assistant.title}
-            </p>
-          </div>
-
-          <div
-            className={`${hasTour ? 'block' : 'hidden'} rounded-full px-2 py-1 font-round text-[11px] font-bold uppercase tracking-[0.14em]`}
-            onPointerDown={(event) => {
-              event.stopPropagation()
-              replayTour()
-            }}
-            onClick={(event) => {
-              event.stopPropagation()
-              replayTour()
-            }}
+        {hasTour && (
+          <button
+            type="button"
+            onPointerDown={(e) => { e.stopPropagation(); replayTour() }}
+            onClick={(e) => { e.stopPropagation(); replayTour() }}
+            className="rounded-full px-3 py-1 font-round text-[11px] font-bold uppercase tracking-[0.12em] shadow"
             style={{
-              background: `${theme.primary}14`,
+              background: `${theme.primary}18`,
               color: theme.primary,
+              border: `1px solid ${theme.primary}44`,
+              pointerEvents: 'auto',
             }}
           >
             Tour
-          </div>
+          </button>
+        )}
+
+        <motion.button
+          type="button"
+          onClick={handleTap}
+          className="rounded-full border border-white/60 bg-white/88 p-1.5 shadow-xl backdrop-blur-xl"
+          style={{
+            boxShadow: speaking
+              ? `0 12px 28px ${theme.primary}40`
+              : '0 8px 20px rgba(15,23,42,0.18)',
+            pointerEvents: 'auto',
+          }}
+          animate={speaking ? { y: [0, -3, 0] } : { y: [0, -1, 0] }}
+          transition={{ duration: speaking ? 0.8 : 2.8, repeat: Infinity, ease: 'easeInOut' }}
+          whileTap={{ scale: 0.93 }}
+          aria-label={`${assistant.name} learning guide`}
+        >
+          <AssistantPortrait assistant={assistant} theme={theme} speaking={speaking} />
         </motion.button>
       </div>
     </>
