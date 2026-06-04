@@ -7,6 +7,7 @@ import { STUDY_MODULES, getArcadeUnlockStatus, getTodayStudySessions, getTodayAd
 import RetentionPanel from './RetentionWidgets'
 import { useSpeech } from '../hooks/useSpeech'
 import PhonicsMap from './PhonicsMap'
+import BloomGarden from './BloomGarden'
 import ParentHandoff from './ParentHandoff'
 
 // ── Module registry ───────────────────────────────────────────────────────────
@@ -1238,6 +1239,12 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
 
       <PhonicsMap
         phonicsProgress={progress.phonics}
+        theme={theme}
+        onNavigate={handleGatedNavigate}
+      />
+
+      <BloomGarden
+        progress={progress}
         theme={theme}
         onNavigate={handleGatedNavigate}
       />

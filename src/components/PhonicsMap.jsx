@@ -117,7 +117,8 @@ function SoundTile({ sound, lit, idx, onTap }) {
   )
 }
 
-function AreaTile({ area, unlocked, onNavigate }) {
+function AreaTile({ area, unlocked, onNavigate, theme }) {
+  const lockedText = theme?.text || '#1E1B4B'
   return (
     <motion.button
       initial={{ opacity: 0, y: 16 }}
@@ -127,10 +128,11 @@ function AreaTile({ area, unlocked, onNavigate }) {
       onClick={() => unlocked && onNavigate('phonics')}
       className="relative w-full overflow-hidden rounded-[22px] p-4 text-left"
       style={{
-        background: unlocked ? area.bg : 'rgba(255,255,255,0.06)',
-        border: `2px solid ${unlocked ? area.color + '88' : 'rgba(255,255,255,0.1)'}`,
-        boxShadow: unlocked ? `0 8px 24px ${area.color}30` : 'none',
-        opacity: unlocked ? 1 : 0.55,
+        background: unlocked
+          ? area.bg
+          : `linear-gradient(135deg, ${area.color}18, ${area.color}0C)`,
+        border: `2px solid ${unlocked ? area.color + '88' : area.color + '40'}`,
+        boxShadow: unlocked ? `0 8px 24px ${area.color}30` : `0 2px 8px ${area.color}18`,
       }}
     >
       {unlocked && (
@@ -142,15 +144,18 @@ function AreaTile({ area, unlocked, onNavigate }) {
       <div className="relative z-10 flex items-center gap-3">
         <div
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] text-2xl"
-          style={{ background: unlocked ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.06)' }}
+          style={{
+            background: unlocked ? 'rgba(255,255,255,0.2)' : `${area.color}22`,
+            border: `1.5px solid ${area.color}44`,
+          }}
         >
           {unlocked ? area.emoji : '🔒'}
         </div>
         <div className="min-w-0">
-          <p className="font-bubble text-base leading-tight" style={{ color: unlocked ? '#fff' : 'rgba(255,255,255,0.4)' }}>
+          <p className="font-bubble text-base leading-tight" style={{ color: unlocked ? '#fff' : lockedText }}>
             {area.name}
           </p>
-          <p className="font-round text-xs font-bold mt-0.5" style={{ color: unlocked ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.3)' }}>
+          <p className="font-round text-xs font-bold mt-0.5" style={{ color: unlocked ? 'rgba(255,255,255,0.75)' : `${lockedText}99` }}>
             {unlocked ? area.sounds : `Unlocks after ${area.unlockAt} Sound Pop sessions`}
           </p>
           {unlocked && (
@@ -266,9 +271,9 @@ export default function PhonicsMap({ phonicsProgress, theme, onNavigate }) {
 
       {/* Area tiles */}
       <div className="mt-3 flex flex-col gap-2">
-        <AreaTile area={SET1_AREA} unlocked={played >= SET1_AREA.unlockAt} onNavigate={onNavigate} />
-        <AreaTile area={SET2_AREA} unlocked={played >= SET2_AREA.unlockAt} onNavigate={onNavigate} />
-        <AreaTile area={SET3_AREA} unlocked={played >= SET3_AREA.unlockAt} onNavigate={onNavigate} />
+        <AreaTile area={SET1_AREA} unlocked={played >= SET1_AREA.unlockAt} onNavigate={onNavigate} theme={theme} />
+        <AreaTile area={SET2_AREA} unlocked={played >= SET2_AREA.unlockAt} onNavigate={onNavigate} theme={theme} />
+        <AreaTile area={SET3_AREA} unlocked={played >= SET3_AREA.unlockAt} onNavigate={onNavigate} theme={theme} />
       </div>
 
       {played < SET1_AREA.unlockAt && (
