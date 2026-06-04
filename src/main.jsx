@@ -5,6 +5,19 @@ import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import './index.css'
 
+// Auto-reload when a new service worker takes over.
+// hadController = false means first install (no old SW) — skip reload to avoid a flash.
+// hadController = true means an update — reload silently so the user gets new code.
+if ('serviceWorker' in navigator) {
+  const hadController = Boolean(navigator.serviceWorker.controller)
+  let reloading = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloading) return
+    reloading = true
+    window.location.reload()
+  })
+}
+
 registerSW({
   immediate: true,
   onRegisterError(error) {
