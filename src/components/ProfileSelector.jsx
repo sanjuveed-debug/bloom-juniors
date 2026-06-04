@@ -20,10 +20,13 @@ export default function ProfileSelector({
   onDelete,
   onBack,
   onLogout,
+  autoCreate = false,
+  maxProfiles = 2,
+  classroomMode = false,
 }) {
   void allProfilesCount
-  const canAddProfile = profiles.length < 2
-  const [creating, setCreating] = useState(profiles.length === 0 && canAddProfile)
+  const canAddProfile = profiles.length < maxProfiles
+  const [creating, setCreating] = useState(autoCreate || (profiles.length === 0 && canAddProfile))
   const [name, setName] = useState('')
   const [colorIdx, setColorIdx] = useState(0)
   const [emojiIdx, setEmojiIdx] = useState(0)
@@ -53,7 +56,7 @@ export default function ProfileSelector({
 
   const handleCreate = () => {
     if (!canAddProfile) {
-      setNameError('You can add up to 2 players only. Delete a player first.')
+      setNameError(`You can add up to ${maxProfiles} players only. Delete a player first.`)
       return
     }
 
@@ -63,7 +66,7 @@ export default function ProfileSelector({
 
     const newId = onCreateNew(trimmed, colorIdx, EMOJI_OPTIONS[emojiIdx], ageGroup)
     if (!newId) {
-      setNameError('You can add up to 2 players only. Delete a player first.')
+      setNameError(`You can add up to ${maxProfiles} players only. Delete a player first.`)
       return
     }
 
@@ -75,7 +78,14 @@ export default function ProfileSelector({
       origin: { x: 0.5, y: 0.4 },
       colors: [PROFILE_COLORS[colorIdx].color, '#FFD700', '#FF6B9D'],
     })
-    timerRef.current = setTimeout(() => onSelect(newId), 600)
+    timerRef.current = setTimeout(() => {
+      if (classroomMode) {
+        selectingRef.current = false
+        onBack?.()
+      } else {
+        onSelect(newId)
+      }
+    }, 600)
   }
 
   const handleDeleteConfirm = () => {
@@ -236,7 +246,7 @@ export default function ProfileSelector({
                     border: '2px solid rgba(255,255,255,0.18)',
                   }}
                 >
-                  <p className="font-bubble text-white text-lg">2 player limit reached</p>
+                  <p className="font-bubble text-white text-lg">{maxProfiles} player limit reached</p>
                   <p className="font-round text-white/70 text-sm mt-1">
                     Delete a player before adding another.
                   </p>
@@ -342,9 +352,9 @@ export default function ProfileSelector({
                 border: '2px solid rgba(255,255,255,0.2)',
               }}
             >
-              <p className="font-bubble text-white text-2xl">2 player limit reached</p>
+              <p className="font-bubble text-white text-2xl">{maxProfiles} player limit reached</p>
               <p className="font-round text-white/75 text-sm mt-2">
-                You can keep up to 2 players. Delete a player first, then Add New Player will appear.
+                You can keep up to {maxProfiles} players. Delete a player first, then Add New Player will appear.
               </p>
               <div className="mt-4 flex gap-3">
                 <motion.button

@@ -8,6 +8,7 @@ import BuddyCompanion, { useBuddyMood } from '../components/BuddyCompanion'
 import { buildSoundPopCompletion } from '../utils/moduleScoring'
 
 // ── RWI-aligned phonics sound bank ────────────────────────────────────────────
+// Set 0 Letter Sounds   : m  a  s  d  t  i  n  p  g  o  c  k  u  b  f  e  l  h  r  j  v  y  w  z  x
 // Set 1 Special Friends : sh  th  ch  qu  ng  nk
 // Set 2 Vowel Sounds    : ay  ee  igh ow  oo  ar  or  air ir  ou  oy
 // Set 3 Vowel Sounds    : ea  oi  ai  oa  aw  ur  er
@@ -15,6 +16,183 @@ import { buildSoundPopCompletion } from '../utils/moduleScoring'
 // `similar` lists graphemes that make the SAME phoneme — never used as distractors
 // for each other so kids aren't penalised for near-correct answers.
 const SOUND_BANK = {
+
+  // ── Set 0 · RWI Single-Letter Sounds (taught in Reception first) ───────
+  m: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🐭',
+    description: 'as in MAT',
+    similar: [],
+    words: ['mat', 'map', 'mop', 'mud', 'men', 'man', 'met', 'mob', 'mug', 'mix', 'mad', 'meg', 'miss', 'much', 'mend'],
+  },
+  a: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🐜',
+    description: 'as in CAT (short a)',
+    similar: [],
+    words: ['cat', 'bat', 'hat', 'mat', 'sat', 'man', 'pan', 'ran', 'can', 'bag', 'lap', 'cap', 'fan', 'tap', 'rat', 'van', 'jam', 'ham', 'dab', 'wax'],
+  },
+  s: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🐍',
+    description: 'as in SUN',
+    similar: [],
+    words: ['sun', 'sat', 'sip', 'sob', 'set', 'six', 'sum', 'sad', 'sit', 'sap', 'sub', 'sod', 'sag', 'sot', 'sup'],
+  },
+  d: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🐕',
+    description: 'as in DOG',
+    similar: [],
+    words: ['dog', 'dig', 'dip', 'dot', 'dug', 'den', 'dim', 'dam', 'did', 'dad', 'dab', 'dug', 'dun', 'dob', 'dip'],
+  },
+  t: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🌳',
+    description: 'as in TAP',
+    similar: [],
+    words: ['tap', 'tip', 'tin', 'top', 'tug', 'ten', 'tan', 'tab', 'tub', 'tot', 'tad', 'tog', 'tun', 'Ted', 'tom'],
+  },
+  i: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🦔',
+    description: 'as in SIT (short i)',
+    similar: [],
+    words: ['sit', 'bit', 'hit', 'lip', 'tip', 'win', 'pin', 'dim', 'fin', 'big', 'pig', 'wig', 'did', 'kit', 'bin', 'fig', 'fit', 'gig', 'hid', 'kin'],
+  },
+  n: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🌙',
+    description: 'as in NET',
+    similar: [],
+    words: ['net', 'nap', 'nod', 'nut', 'nip', 'nag', 'nun', 'nab', 'nit', 'nob', 'nub', 'nag', 'nan', 'nil', 'nip'],
+  },
+  p: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🐷',
+    description: 'as in PIG',
+    similar: [],
+    words: ['pig', 'pan', 'pin', 'pit', 'pop', 'pug', 'pet', 'peg', 'pad', 'pun', 'pod', 'pot', 'pub', 'pap', 'pep'],
+  },
+  g: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🐊',
+    description: 'as in GOT',
+    similar: [],
+    words: ['got', 'gap', 'gum', 'gas', 'gut', 'get', 'gob', 'gig', 'gem', 'gag', 'god', 'gal', 'gab', 'gig', 'gun'],
+  },
+  o: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🍊',
+    description: 'as in DOG (short o)',
+    similar: [],
+    words: ['dog', 'hop', 'log', 'mop', 'pot', 'top', 'cot', 'dot', 'got', 'fog', 'sob', 'nod', 'rod', 'bob', 'cod', 'mob', 'rob', 'cob', 'hob', 'pod'],
+  },
+  c: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🐱',
+    description: 'as in CAT',
+    similar: ['k'],
+    words: ['cat', 'cup', 'cod', 'cab', 'cob', 'cut', 'cap', 'cot', 'can', 'cog', 'cop', 'cud', 'cub', 'cam', 'cur'],
+  },
+  k: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🪁',
+    description: 'as in KIT',
+    similar: ['c'],
+    words: ['kit', 'kid', 'kin', 'kept', 'ken', 'keg', 'kob', 'kip', 'kudos', 'kelp', 'kit', 'king', 'kiss', 'knit', 'keen'],
+  },
+  u: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '☔',
+    description: 'as in CUP (short u)',
+    similar: [],
+    words: ['cup', 'bun', 'mud', 'hug', 'run', 'fun', 'sun', 'cut', 'but', 'gut', 'pug', 'dug', 'jug', 'rug', 'tug', 'bus', 'bug', 'mug', 'sub', 'rub'],
+  },
+  b: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🐻',
+    description: 'as in BAG',
+    similar: [],
+    words: ['bag', 'bat', 'bed', 'big', 'bit', 'bob', 'bog', 'bud', 'bug', 'bun', 'bus', 'but', 'beg', 'bid', 'bin', 'bib', 'bot', 'bop', 'bad', 'ban'],
+  },
+  f: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🦊',
+    description: 'as in FAN',
+    similar: [],
+    words: ['fan', 'fat', 'fit', 'fog', 'fun', 'fed', 'fig', 'fin', 'fad', 'fib', 'fop', 'fur', 'fox', 'fug', 'fab'],
+  },
+  e: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🥚',
+    description: 'as in BED (short e)',
+    similar: [],
+    words: ['bed', 'hen', 'leg', 'net', 'pet', 'red', 'set', 'ten', 'web', 'wet', 'beg', 'den', 'fed', 'get', 'jet', 'let', 'men', 'peg', 'pen', 'yes'],
+  },
+  l: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🦁',
+    description: 'as in LEG',
+    similar: [],
+    words: ['leg', 'lid', 'lip', 'log', 'lot', 'lap', 'led', 'let', 'lob', 'lug', 'lab', 'lad', 'lag', 'lam', 'lit'],
+  },
+  h: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🏠',
+    description: 'as in HAT',
+    similar: [],
+    words: ['hat', 'hen', 'him', 'hip', 'hit', 'hob', 'hog', 'hop', 'hot', 'hub', 'hug', 'hum', 'hut', 'had', 'has', 'hem', 'hid', 'hob', 'hod', 'hep'],
+  },
+  r: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🐀',
+    description: 'as in RAT',
+    similar: [],
+    words: ['rat', 'red', 'rib', 'rid', 'rim', 'rip', 'rob', 'rod', 'rot', 'rub', 'rug', 'run', 'rut', 'rap', 'ram', 'rag', 'ref', 'rep', 'rig', 'rim'],
+  },
+  j: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🃏',
+    description: 'as in JAB',
+    similar: [],
+    words: ['jab', 'jam', 'jar', 'jet', 'jig', 'job', 'jog', 'jot', 'jug', 'jut', 'jab', 'jad', 'jap', 'jib', 'jun'],
+  },
+  v: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🎻',
+    description: 'as in VAN',
+    similar: [],
+    words: ['van', 'vet', 'vat', 'vim', 'vex', 'vug', 'vob', 'vow', 'via', 'vac', 'vast', 'vend', 'vest', 'vent', 'vat'],
+  },
+  y: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🪀',
+    description: 'as in YES',
+    similar: [],
+    words: ['yes', 'yet', 'yam', 'yap', 'yob', 'yep', 'yum', 'yak', 'yip', 'yod', 'yuck', 'yell', 'yard', 'yawn', 'year'],
+  },
+  w: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🌊',
+    description: 'as in WIG',
+    similar: [],
+    words: ['wig', 'wag', 'web', 'wed', 'wet', 'win', 'wit', 'wok', 'wad', 'wax', 'wab', 'wop', 'wot', 'wan', 'was'],
+  },
+  z: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '⚡',
+    description: 'as in ZIP',
+    similar: [],
+    words: ['zip', 'zap', 'zit', 'zig', 'zag', 'zed', 'zen', 'zob', 'zap', 'zoo', 'zest', 'zero', 'zinc', 'zone', 'zoom'],
+  },
+  x: {
+    set: 0, setLabel: 'Letter Sound',
+    emoji: '🦊',
+    description: 'as in FOX (x says ks)',
+    similar: [],
+    words: ['fox', 'box', 'mix', 'fix', 'six', 'wax', 'tax', 'hex', 'pox', 'axe', 'ox', 'vex', 'lux', 'sex', 'max'],
+  },
 
   // ── Set 1 Special Friends ──────────────────────────────────────────────
   sh: {
@@ -442,18 +620,47 @@ const SOUND_BANK = {
 const SOUND_KEYS = Object.keys(SOUND_BANK)
 
 function getActiveSoundKeys(sessionsPlayed) {
-  if (sessionsPlayed >= 6) return SOUND_KEYS
-  if (sessionsPlayed >= 2) return SOUND_KEYS.filter(k => SOUND_BANK[k].set <= 2)
-  return SOUND_KEYS.filter(k => SOUND_BANK[k].set === 1)
+  if (sessionsPlayed >= 8) return SOUND_KEYS
+  if (sessionsPlayed >= 5) return SOUND_KEYS.filter(k => SOUND_BANK[k].set <= 2)
+  if (sessionsPlayed >= 3) return SOUND_KEYS.filter(k => SOUND_BANK[k].set <= 1)
+  return SOUND_KEYS.filter(k => SOUND_BANK[k].set === 0)
 }
 
 function getSoundSetLevel(sessionsPlayed) {
-  if (sessionsPlayed >= 6) return 3
-  if (sessionsPlayed >= 3) return 2
-  return 1
+  if (sessionsPlayed >= 8) return 3
+  if (sessionsPlayed >= 5) return 2
+  if (sessionsPlayed >= 3) return 1
+  return 0
 }
 
 const SOUND_SPEECH_CUES = {
+  // Set 0 — single letters (pure sounds, no schwa)
+  m:   { prompt: 'mmm, as in mat' },
+  a:   { prompt: 'a, as in cat' },
+  s:   { prompt: 'sss, as in sun' },
+  d:   { prompt: 'd, as in dog' },
+  t:   { prompt: 't, as in tap' },
+  i:   { prompt: 'i, as in sit' },
+  n:   { prompt: 'n, as in net' },
+  p:   { prompt: 'p, as in pig' },
+  g:   { prompt: 'g, as in got' },
+  o:   { prompt: 'o, as in dog' },
+  c:   { prompt: 'c, as in cat' },
+  k:   { prompt: 'k, as in kit' },
+  u:   { prompt: 'u, as in cup' },
+  b:   { prompt: 'b, as in bag' },
+  f:   { prompt: 'fff, as in fan' },
+  e:   { prompt: 'e, as in bed' },
+  l:   { prompt: 'lll, as in leg' },
+  h:   { prompt: 'h, as in hat' },
+  r:   { prompt: 'rrr, as in rat' },
+  j:   { prompt: 'j, as in jab' },
+  v:   { prompt: 'vvv, as in van' },
+  y:   { prompt: 'y, as in yes' },
+  w:   { prompt: 'w, as in wig' },
+  z:   { prompt: 'zzz, as in zip' },
+  x:   { prompt: 'x says ks, as in fox' },
+  // Set 1
   sh:  { prompt: 'shhh, as in ship' },
   th:  { prompt: 'th, as in think' },
   ch:  { prompt: 'ch, as in chip' },
@@ -493,6 +700,11 @@ const SOUND_SPEECH_CUES = {
 
 // IPA representations for pure-sound SSP phonics (SSML phoneme tags)
 const PHONEME_IPA = {
+  // Set 0 — single letters
+  m: 'm', a: 'æ', s: 's', d: 'd', t: 't', i: 'ɪ', n: 'n', p: 'p',
+  g: 'ɡ', o: 'ɒ', c: 'k', k: 'k', u: 'ʌ', b: 'b', f: 'f', e: 'ɛ',
+  l: 'l', h: 'h', r: 'ɹ', j: 'dʒ', v: 'v', y: 'j', w: 'w', z: 'z', x: 'ks',
+  // Set 1+
   sh: 'ʃ', th: 'θ', ch: 'tʃ', qu: 'kw', ng: 'ŋ', nk: 'ŋk',
   ay: 'eɪ', ee: 'iː', igh: 'aɪ', ow: 'əʊ', oo: 'uː', oo_book: 'ʊ',
   ar: 'ɑː', or: 'ɔː', air: 'eə', ir: 'ɜː', ou: 'aʊ', oy: 'ɔɪ',
@@ -802,10 +1014,10 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
         </motion.button>
         {/* RWI set label + progression level */}
         <p className="font-round text-white/60 text-xs mb-1 flex items-center justify-center gap-2">
-          <span>Set {info.set} · {info.setLabel}</span>
-          {soundSetLevel > 1 && (
+          <span>{info.set === 0 ? 'RWI Set 1' : `Set ${info.set}`} · {info.setLabel}</span>
+          {soundSetLevel > 0 && (
             <span className="bg-white/30 rounded-full px-2 py-0.5 font-bubble text-white text-xs leading-none">
-              Lv.{soundSetLevel}
+              Lv.{soundSetLevel + 1}
             </span>
           )}
         </p>

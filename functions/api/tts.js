@@ -130,6 +130,14 @@ export async function onRequestPost(context) {
 
   const audio = await azureResp.arrayBuffer()
 
+  // Azure occasionally sends HTML error pages with Content-Type: audio/mpeg.
+  // Guard against this by checking the actual first bytes — MP3 never starts with '<'.
+  const firstByte = new Uint8Array(audio, 0, 1)[0]
+  if (firstByte === 0x3C) {
+    const preview = new TextDecoder().decode(audio.slice(0, 300))
+    return new Response(`Azure returned HTML body despite audio content-type: ${preview}`, { status: 502 })
+  }
+
   return new Response(audio, {
     headers: {
       'Content-Type': 'audio/mpeg',

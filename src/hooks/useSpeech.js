@@ -28,11 +28,11 @@ const AZURE_VOICE = 'en-GB-LibbyNeural'
 const AZURE_VOICE_GB = 'en-GB-LibbyNeural'
 
 async function fetchAzureTTS(text, ratePercent, voice = AZURE_VOICE, ssmlInner = null) {
-  const cacheKey = `v3|${voice}|${ratePercent}|${ssmlInner ?? text}`
+  const cacheKey = `v4|${voice}|${ratePercent}|${ssmlInner ?? text}`
   const cached = await getCached(cacheKey)
   if (cached) return cached
 
-  const resp = await fetch('/api/tts?v=3', {
+  const resp = await fetch('/api/tts?v=4', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text, voice, rate: ratePercent, ...(ssmlInner ? { ssmlInner } : {}) }),

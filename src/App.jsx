@@ -967,6 +967,7 @@ export default function App() {
   const { profiles, activeId, activeProfile, createProfile, switchProfile, deleteProfile, updateProfile, resetProfiles } = useProfiles()
   const [ageGroup, setAgeGroup] = useState(null)
   const [showProfiles, setShowProfiles] = useState(false)
+  const [classroomAddMode, setClassroomAddMode] = useState(false)
   const [authEntryMode, setAuthEntryMode] = useState('setup')   // 'setup' | 'login' | 'teacher'
   const [showLanding, setShowLanding] = useState(() => {
     // Show landing only to first-time visitors — skip if they have account data or forced via URL
@@ -1130,6 +1131,7 @@ export default function App() {
   const handleBackToLanding = () => {
     setAgeGroup(null)
     setShowProfiles(false)
+    setClassroomAddMode(false)
     switchProfile(null)
   }
 
@@ -1194,9 +1196,6 @@ export default function App() {
       const handleTeacherComplete = async (payload) => {
         const schoolName = payload.schoolName || payload.schoolName2 || ''
         await registerTeacher({ ...payload, schoolName })
-        // Create the first class as a child profile so ClassroomDashboard has something to show
-        const id = createProfile(payload.className || 'Class', 0, payload.classAgeGroup || 'early', '🏫', 30)
-        if (id) updateProfile(id, { emoji: '🏫' })
       }
       return (
         <>
@@ -1250,7 +1249,9 @@ export default function App() {
       }
     }
     const handleClassroomAddStudent = () => {
-      setAgeGroup(null)
+      const defaultGroup = profiles[0]?.ageGroup || 'early'
+      setAgeGroup(defaultGroup)
+      setClassroomAddMode(true)
       setShowProfiles(true)
     }
     return (
@@ -1300,6 +1301,9 @@ export default function App() {
           onDelete={deleteProfile}
           onBack={handleBackToLanding}
           onLogout={handleLogout}
+          autoCreate={classroomAddMode}
+          maxProfiles={guardian?.classroomMode ? 30 : 2}
+          classroomMode={!!guardian?.classroomMode}
         />
       </>
     )
