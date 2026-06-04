@@ -118,7 +118,7 @@ function SoundTile({ sound, lit, idx, onTap }) {
 }
 
 function AreaTile({ area, unlocked, onNavigate, theme }) {
-  const lockedText = theme?.text || '#1E1B4B'
+  const bodyText = theme?.text || '#1E1B4B'
   return (
     <motion.button
       initial={{ opacity: 0, y: 16 }}
@@ -130,11 +130,21 @@ function AreaTile({ area, unlocked, onNavigate, theme }) {
       style={{
         background: unlocked
           ? area.bg
-          : `linear-gradient(135deg, ${area.color}18, ${area.color}0C)`,
-        border: `2px solid ${unlocked ? area.color + '88' : area.color + '40'}`,
-        boxShadow: unlocked ? `0 8px 24px ${area.color}30` : `0 2px 8px ${area.color}18`,
+          : (theme?.card || '#F5F3FF'),
+        border: `2px solid ${area.color}${unlocked ? 'AA' : '55'}`,
+        boxShadow: unlocked
+          ? `0 8px 24px ${area.color}35`
+          : `0 2px 10px rgba(0,0,0,0.08)`,
       }}
     >
+      {/* Coloured left accent bar */}
+      {!unlocked && (
+        <div
+          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-[20px]"
+          style={{ background: area.color }}
+        />
+      )}
+
       {unlocked && (
         <div
           className="absolute inset-0 pointer-events-none"
@@ -145,27 +155,41 @@ function AreaTile({ area, unlocked, onNavigate, theme }) {
         <div
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] text-2xl"
           style={{
-            background: unlocked ? 'rgba(255,255,255,0.2)' : `${area.color}22`,
-            border: `1.5px solid ${area.color}44`,
+            background: unlocked ? 'rgba(255,255,255,0.22)' : `${area.color}22`,
+            border: `1.5px solid ${area.color}66`,
           }}
         >
           {unlocked ? area.emoji : '🔒'}
         </div>
         <div className="min-w-0">
-          <p className="font-bubble text-base leading-tight" style={{ color: unlocked ? '#fff' : lockedText }}>
+          <p
+            className="font-bubble text-base leading-tight"
+            style={{ color: unlocked ? '#fff' : area.color }}
+          >
             {area.name}
           </p>
-          <p className="font-round text-xs font-bold mt-0.5" style={{ color: unlocked ? 'rgba(255,255,255,0.75)' : `${lockedText}99` }}>
+          <p
+            className="font-round text-xs font-bold mt-0.5"
+            style={{ color: unlocked ? 'rgba(255,255,255,0.8)' : bodyText, opacity: unlocked ? 1 : 0.7 }}
+          >
             {unlocked ? area.sounds : `Unlocks after ${area.unlockAt} Sound Pop sessions`}
           </p>
           {unlocked && (
-            <p className="font-round text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.55)' }}>
+            <p className="font-round text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.6)' }}>
               {area.desc}
             </p>
           )}
         </div>
         {unlocked && (
-          <span className="font-bubble text-white/60 text-xl ml-auto">→</span>
+          <span className="font-bubble text-white/70 text-xl ml-auto">→</span>
+        )}
+        {!unlocked && (
+          <div
+            className="ml-auto rounded-full px-2 py-0.5 font-bubble text-xs shrink-0"
+            style={{ background: `${area.color}18`, color: area.color, border: `1px solid ${area.color}44` }}
+          >
+            Soon
+          </div>
         )}
       </div>
     </motion.button>
