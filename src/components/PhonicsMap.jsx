@@ -64,10 +64,22 @@ const SET3_AREA = {
   desc: 'Split digraphs & more',
 }
 
-const SOUND_PROMPTS = {
-  m: 'mmm', a: 'a', s: 'sss', d: 'd', t: 't', i: 'i', n: 'n', p: 'p',
-  g: 'g', o: 'o', c: 'c', k: 'k', u: 'u', b: 'b', f: 'fff', e: 'e',
-  l: 'lll', h: 'h', r: 'rrr', j: 'j', v: 'vvv', y: 'y', w: 'w', z: 'zzz', x: 'ks',
+// IPA phoneme SSML for each RWI Set 0 sound.
+// Using <phoneme alphabet="ipa"> so Azure Neural TTS produces the pure phoneme
+// rather than reading the letter name (e.g. "ess" for "s").
+// Continuants get a length mark (ː) so they're audible; stops use the bare phoneme.
+const SOUND_IPA = {
+  m: 'mː',  a: 'æ',  s: 'sː',  d: 'd',   t: 't',
+  i: 'ɪ',   n: 'nː', p: 'p',   g: 'ɡ',   o: 'ɒ',
+  c: 'k',   k: 'k',  u: 'ʌ',   b: 'b',   f: 'fː',
+  e: 'ɛ',   l: 'lː', h: 'h',   r: 'r',   j: 'dʒ',
+  v: 'vː',  y: 'j',  w: 'w',   z: 'zː',  x: 'ks',
+}
+
+function phonemeSsml(key) {
+  const ipa = SOUND_IPA[key]
+  if (!ipa) return null
+  return `<phoneme alphabet="ipa" ph="${ipa}">${key}</phoneme>`
 }
 
 // Estimate how many Set 0 tiles are lit based on score
@@ -196,7 +208,9 @@ function AreaTile({ area, unlocked, onNavigate, theme }) {
   )
 }
 
-export default function PhonicsMap({ phonicsProgress, theme, onNavigate }) {
+// onNavigate = gated navigator (for area tiles)
+// onPlay     = direct navigator used by the Play button (always goes to phonics)
+export default function PhonicsMap({ phonicsProgress, theme, onNavigate, onPlay }) {
   const { speak } = useSpeech()
   const [activeSound, setActiveSound] = useState(null)
   const played = phonicsProgress?.played || 0
@@ -204,8 +218,13 @@ export default function PhonicsMap({ phonicsProgress, theme, onNavigate }) {
 
   const handleSoundTap = (sound) => {
     setActiveSound(sound.key)
-    speak(SOUND_PROMPTS[sound.key] || sound.label, { mood: 'phonics' })
-    setTimeout(() => setActiveSound(null), 1200)
+    const ssmlInner = phonemeSsml(sound.key)
+    if (ssmlInner) {
+      speak(sound.key, { mood: 'phonics', ssmlInner })
+    } else {
+      speak(sound.label, { mood: 'phonics' })
+    }
+    setTimeout(() => setActiveSound(null), 1400)
   }
 
   const pct = Math.round((masteredCount / SET0.length) * 100)
@@ -226,7 +245,7 @@ export default function PhonicsMap({ phonicsProgress, theme, onNavigate }) {
           </p>
         </div>
         <button
-          onClick={() => onNavigate('phonics')}
+          onClick={() => (onPlay || onNavigate)('phonics')}
           className="rounded-full px-4 py-2 font-bubble text-sm text-white shadow-lg"
           style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent || theme.secondary})` }}
         >

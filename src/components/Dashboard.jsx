@@ -1241,6 +1241,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
         phonicsProgress={progress.phonics}
         theme={theme}
         onNavigate={handleGatedNavigate}
+        onPlay={onNavigate}
       />
 
       <BloomGarden
