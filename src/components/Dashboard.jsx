@@ -5,6 +5,9 @@ import { getAssistant } from '../assistants'
 import { MONSTERS, MonsterCollection } from './MonsterReward'
 import { STUDY_MODULES, getArcadeUnlockStatus, getTodayStudySessions, getTodayAdventureModules } from '../utils/arcadeUnlock'
 import RetentionPanel from './RetentionWidgets'
+import { useSpeech } from '../hooks/useSpeech'
+import PhonicsMap from './PhonicsMap'
+import ParentHandoff from './ParentHandoff'
 
 // ── Module registry ───────────────────────────────────────────────────────────
 const PREMIUM_IDS = new Set(['worldgk','science','planets','anatomy','sacred','shapes','shop','logic'])
@@ -403,43 +406,103 @@ function PremiumModal({ mod, theme, onClose }) {
   )
 }
 
-function GuideHeroCard({ assistant, theme }) {
+function getYaagviState(arcadeStatus, dailyAdventure, profileName) {
+  const name = profileName || 'superstar'
+  if (arcadeStatus.unlocked) {
+    return {
+      mood: 'celebrate',
+      headline: 'Study pass complete!',
+      message: `You did it, ${name}! The arcade is open. Go and play — you earned it.`,
+      emoji: '🎉',
+      border: 'rgba(34,197,94,0.55)',
+      glow: 'rgba(34,197,94,0.18)',
+    }
+  }
+  if (dailyAdventure.completedCount > 0) {
+    const left = dailyAdventure.steps.length - dailyAdventure.completedCount
+    const next = dailyAdventure.steps.find(s => !s.done)
+    return {
+      mood: 'encourage',
+      headline: `Almost there, ${name}!`,
+      message: `${left} more step${left > 1 ? 's' : ''} and the arcade opens. ${next ? `Try ${next.module.label} next.` : ''}`,
+      emoji: '💪',
+      border: 'rgba(251,191,36,0.45)',
+      glow: 'rgba(251,191,36,0.12)',
+    }
+  }
+  const hour = new Date().getHours()
+  if (hour < 12) {
+    return {
+      mood: 'curious',
+      headline: `Morning, ${name}!`,
+      message: "I've got today's adventures ready. Finish 2 to unlock the arcade.",
+      emoji: '🌟',
+      border: 'rgba(255,255,255,0.18)',
+      glow: 'rgba(255,255,255,0.06)',
+    }
+  }
+  return {
+    mood: 'guide',
+    headline: `Ready when you are, ${name}`,
+    message: "Pick the first adventure and I'll cheer you on every step.",
+    emoji: '🐾',
+    border: 'rgba(255,255,255,0.18)',
+    glow: 'rgba(255,255,255,0.06)',
+  }
+}
+
+function YaagviStateCard({ theme, arcadeStatus, dailyAdventure, profileName, onSpeak }) {
+  const state = getYaagviState(arcadeStatus, dailyAdventure, profileName)
+  const { speak } = useSpeech()
+
+  const handleTap = () => {
+    speak(state.message, { mood: state.mood })
+    onSpeak?.()
+  }
+
   return (
-    <motion.div
+    <motion.button
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.42 }}
-      className="glass-dark mt-4 flex max-w-xl items-center gap-3 rounded-[24px] p-3.5"
+      whileTap={{ scale: 0.97 }}
+      onClick={handleTap}
+      className="mt-4 flex max-w-xl w-full items-center gap-3 rounded-[24px] p-3.5 text-left"
+      style={{
+        background: `rgba(255,255,255,0.07)`,
+        border: `1.5px solid ${state.border}`,
+        boxShadow: `0 8px 24px ${state.glow}`,
+        backdropFilter: 'blur(12px)',
+      }}
     >
-      <div
-        className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[20px]"
-        style={{
-          background: `linear-gradient(150deg, ${theme.primary}, ${theme.secondary})`,
-          boxShadow: `0 12px 28px ${theme.primary}35`,
-        }}
-      >
-        {assistant.image ? (
-          <img
-            src={assistant.image}
-            alt={assistant.name}
-            className="h-full w-full object-cover"
-            style={{ objectPosition: assistant.imagePosition || 'center' }}
-            draggable={false}
-          />
-        ) : (
-          <span style={{ fontSize: 28, lineHeight: 1 }}>{assistant.emoji}</span>
-        )}
+      <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[20px] bg-white/10">
+        <img src="/yaagvi-mascot-single.webp" alt="Yaagvi" className="h-full w-full object-cover" draggable={false} />
+        <motion.div
+          className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full text-sm"
+          style={{ background: 'rgba(0,0,0,0.55)', border: '1.5px solid rgba(255,255,255,0.2)' }}
+          animate={state.mood === 'celebrate' ? { rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] } : { y: [0, -2, 0] }}
+          transition={{ duration: state.mood === 'celebrate' ? 0.6 : 2.5, repeat: Infinity, repeatDelay: 1.5 }}
+        >
+          {state.emoji}
+        </motion.div>
       </div>
 
-      <div className="min-w-0">
-        <p className="font-bubble text-sm text-white">
-          {assistant.name} is your learning buddy today
+      <div className="min-w-0 flex-1">
+        <p className="font-bubble text-sm leading-tight text-white">
+          {state.headline}
         </p>
-        <p className="font-round mt-1 text-xs font-semibold leading-5 text-white/70 md:text-sm">
-          More natural voice, calmer nudges, and a quick plan whenever you tap the guide.
+        <p className="font-round mt-1 text-xs font-semibold leading-4 text-white/70">
+          {state.message}
         </p>
       </div>
-    </motion.div>
+
+      <div
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/60"
+        style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}
+      >
+        <span style={{ fontSize: 14 }}>🔊</span>
+      </div>
+    </motion.button>
   )
 }
 
@@ -1154,7 +1217,12 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
             </div>
           </motion.div>
 
-          <GuideHeroCard assistant={assistant} theme={theme} />
+          <YaagviStateCard
+            theme={theme}
+            arcadeStatus={arcadeStatus}
+            dailyAdventure={dailyAdventure}
+            profileName={profileName}
+          />
         </div>
       </div>
 
@@ -1166,6 +1234,19 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
         arcadeStatus={arcadeStatus}
         adventure={dailyAdventure}
         onNavigate={handleGatedNavigate}
+      />
+
+      <PhonicsMap
+        phonicsProgress={progress.phonics}
+        theme={theme}
+        onNavigate={handleGatedNavigate}
+      />
+
+      <ParentHandoff
+        progress={progress}
+        profileName={profileName}
+        arcadeStatus={arcadeStatus}
+        theme={theme}
       />
 
       {/* ── EXPLORE MORE TOGGLE ─────────────────────────────────────────────── */}

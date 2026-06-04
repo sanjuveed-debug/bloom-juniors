@@ -51,7 +51,7 @@ export async function onRequestPost(context) {
   const { request, env } = context
 
   const key = (env.AZURE_TTS_KEY || '').trim().replace(/[^\x20-\x7E]/g, '')
-  const region = (env.AZURE_TTS_REGION || 'eastus').trim()
+  const region = (env.AZURE_TTS_REGION || 'uksouth').trim()
 
   if (!key) {
     return new Response('TTS not configured', { status: 503 })
@@ -118,7 +118,14 @@ export async function onRequestPost(context) {
   }
 
   if (!azureResp.ok) {
-    return new Response('Azure TTS error', { status: 502 })
+    const errBody = await azureResp.text().catch(() => '')
+    return new Response(`Azure TTS error ${azureResp.status}: ${errBody.slice(0, 300)}`, { status: 502 })
+  }
+
+  const azureCT = azureResp.headers.get('content-type') || ''
+  if (!azureCT.startsWith('audio/')) {
+    const errBody = await azureResp.text().catch(() => '')
+    return new Response(`Azure non-audio response (${azureCT}): ${errBody.slice(0, 300)}`, { status: 502 })
   }
 
   const audio = await azureResp.arrayBuffer()
@@ -126,7 +133,7 @@ export async function onRequestPost(context) {
   return new Response(audio, {
     headers: {
       'Content-Type': 'audio/mpeg',
-      'Cache-Control': 'public, max-age=604800',
+      'Cache-Control': 'no-store',
       'Access-Control-Allow-Origin': '*',
     },
   })

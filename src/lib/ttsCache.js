@@ -7,9 +7,13 @@ let dbPromise = null
 function openDB() {
   if (dbPromise) return dbPromise
   dbPromise = new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1)
-    req.onupgradeneeded = () => {
+    const req = indexedDB.open(DB_NAME, 2)
+    req.onupgradeneeded = (e) => {
       const db = req.result
+      // v2: wipe any v1 store that may contain stale non-audio blobs
+      if (e.oldVersion < 2 && db.objectStoreNames.contains(STORE)) {
+        db.deleteObjectStore(STORE)
+      }
       if (!db.objectStoreNames.contains(STORE)) {
         db.createObjectStore(STORE, { keyPath: 'k' }).createIndex('t', 't')
       }

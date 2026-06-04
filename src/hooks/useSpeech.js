@@ -28,17 +28,24 @@ const AZURE_VOICE = 'en-GB-LibbyNeural'
 const AZURE_VOICE_GB = 'en-GB-LibbyNeural'
 
 async function fetchAzureTTS(text, ratePercent, voice = AZURE_VOICE, ssmlInner = null) {
-  const cacheKey = `${voice}|${ratePercent}|${ssmlInner ?? text}`
+  const cacheKey = `v3|${voice}|${ratePercent}|${ssmlInner ?? text}`
   const cached = await getCached(cacheKey)
   if (cached) return cached
 
-  const resp = await fetch('/api/tts', {
+  const resp = await fetch('/api/tts?v=3', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text, voice, rate: ratePercent, ...(ssmlInner ? { ssmlInner } : {}) }),
   })
 
-  if (!resp.ok) throw new Error(`TTS ${resp.status}`)
+  if (!resp.ok) {
+    const body = await resp.text().catch(() => '')
+    console.error('[TTS]', resp.status, body.slice(0, 300))
+    throw new Error(`TTS ${resp.status}: ${body.slice(0, 100)}`)
+  }
+
+  const contentType = resp.headers.get('content-type') || ''
+  if (!contentType.includes('audio')) throw new Error('TTS returned non-audio response')
 
   const blob = await resp.blob()
   setCached(cacheKey, blob)
