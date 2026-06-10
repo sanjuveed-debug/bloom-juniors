@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { getCached, setCached } from '../lib/ttsCache'
+import { VoiceContext } from '../contexts/VoiceContext'
 
 function preprocessText(text) {
   if (!text) return ''
@@ -62,6 +63,7 @@ function getPreferredSpeechLang() {
 export function useSpeech() {
   const [speaking, setSpeaking] = useState(false)
   const [listening, setListening] = useState(false)
+  const defaultVoice = useContext(VoiceContext)
 
   const recognitionRef = useRef(null)
   const isMounted = useRef(true)
@@ -112,7 +114,7 @@ export function useSpeech() {
     const moodRatePercent = mood ? (MOOD_RATE[mood] ?? 0) : 0
     const overridePercent = rateOverride != null ? Math.round((rateOverride - 1) * 100) : null
     const ratePercent = overridePercent ?? moodRatePercent
-    const voice = voiceOverride === 'gb' ? AZURE_VOICE_GB : (voiceOverride || AZURE_VOICE)
+    const voice = voiceOverride === 'gb' ? AZURE_VOICE_GB : (voiceOverride || defaultVoice || AZURE_VOICE)
 
     // iOS Safari: gesture activation must be registered on the element via .play()
     // before the async fetch resolves. Empty src rejects immediately — that's expected.
@@ -152,7 +154,7 @@ export function useSpeech() {
         if (audioRef.current === audio) audioRef.current = null
         setSpeaking(false)
       })
-  }, [stopSpeaking])
+  }, [stopSpeaking, defaultVoice])
 
   const listen = useCallback((onResult, onEnd) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition

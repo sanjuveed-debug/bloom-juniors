@@ -95,6 +95,7 @@ export function useProfiles() {
     if (!isSupabaseConfigured) return
 
     let cancelRetry = false
+    let firstAttemptTimer = null
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
@@ -109,11 +110,15 @@ export function useProfiles() {
               else reportSyncError()
             })
         }
-        attempt(1)
+        firstAttemptTimer = setTimeout(() => attempt(1), 700)
       }
     })
 
-    return () => { cancelRetry = true; subscription.unsubscribe() }
+    return () => {
+      cancelRetry = true
+      clearTimeout(firstAttemptTimer)
+      subscription.unsubscribe()
+    }
   }, [applyCloudProfiles])
 
   const creatingRef = useRef(false)
@@ -136,6 +141,55 @@ export function useProfiles() {
     // cycle is blocked but a genuine second creation later is allowed
     window.setTimeout(() => { creatingRef.current = false }, 0)
     return id
+  }, [profiles])
+
+  const createProfilesBulk = useCallback((entries = [], ageGroup = 'early', maxPerGroup = 30) => {
+    const currentGroup = profiles.filter(profile => (profile.ageGroup || 'early') === ageGroup)
+    const existingNames = new Set(currentGroup.map(profile => profile.name.trim().toLowerCase()))
+    const available = Math.max(0, maxPerGroup - currentGroup.length)
+    const accepted = []
+    const rejected = []
+
+    for (const entry of entries) {
+      if (accepted.length >= available) {
+        rejected.push({ ...entry, reason: `Class limit is ${maxPerGroup}` })
+        continue
+      }
+
+      const cleanName = String(entry?.name || '').trim().replace(/\s+/g, ' ').slice(0, 14)
+      const nameKey = cleanName.toLowerCase()
+      if (!cleanName) {
+        rejected.push({ ...entry, reason: 'Missing name' })
+        continue
+      }
+      if (existingNames.has(nameKey)) {
+        rejected.push({ ...entry, reason: 'Duplicate name' })
+        continue
+      }
+
+      existingNames.add(nameKey)
+      accepted.push({
+        id: crypto.randomUUID(),
+        name: cleanName,
+        colorIdx: Number.isFinite(entry?.colorIdx) ? entry.colorIdx : 0,
+        ageGroup: entry?.ageGroup || ageGroup,
+        emoji: entry?.emoji || null,
+        createdAt: Date.now() + accepted.length,
+      })
+    }
+
+    if (accepted.length > 0) {
+      setProfiles(prev => {
+        const next = [...prev, ...accepted]
+        saveProfiles(next)
+        return next
+      })
+      if (isSupabaseConfigured) {
+        accepted.forEach(profile => saveCloudProfile(profile).catch(() => reportSyncError()))
+      }
+    }
+
+    return { created: accepted, rejected }
   }, [profiles])
 
   const switchProfile = useCallback((id) => {
@@ -178,6 +232,7 @@ export function useProfiles() {
     activeId,
     activeProfile: profiles.find(p => p.id === activeId) || null,
     createProfile,
+    createProfilesBulk,
     switchProfile,
     deleteProfile,
     updateProfile,

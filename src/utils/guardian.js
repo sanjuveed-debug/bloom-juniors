@@ -34,9 +34,11 @@ export function normalizeGuardianData(source = {}) {
     registeredAt:    String(source.registeredAt || new Date().toISOString()),
     classroomMode:   Boolean(source.classroomMode),
     schoolId:        source.schoolId   ? String(source.schoolId).trim()   : null,
+    classId:         source.classId    ? String(source.classId).trim()    : null,
     schoolName:      source.schoolName ? cleanText(source.schoolName, 120) : '',
     teacherRole:     source.teacherRole ? cleanText(source.teacherRole, 20) : '',
     className:       source.className   ? cleanText(source.className, 60)   : '',
+    classCode:       source.classCode   ? cleanText(source.classCode, 20).toUpperCase() : '',
   }
 }
 

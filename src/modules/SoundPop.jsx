@@ -745,6 +745,13 @@ function buildRetrySSML(key) {
   return `Not quite. The sound is<break time="200ms"/><prosody rate="-25%"><phoneme alphabet="ipa" ph="${ipa}">${display}</phoneme></prosody>.<break time="300ms"/>Try again.`
 }
 
+function buildCorrectWithContextSSML(key, word) {
+  const ipa = PHONEME_IPA[key]
+  const display = getSoundDisplay(key)
+  if (!ipa) return null
+  return `Yes! Can you hear the<break time="150ms"/><prosody rate="-25%"><phoneme alphabet="ipa" ph="${ipa}">${display}</phoneme></prosody><break time="150ms"/>in ${word}? Brilliant!`
+}
+
 function getSoundDisplay(key) {
   return SOUND_BANK[key]?.display || key
 }
@@ -875,7 +882,6 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
   const handleChoice = useCallback((word) => {
     if (selected !== null) return
     setSelected(word)
-    speak(word, { rate: 0.85, voice: 'gb' })
 
     const correct = word === question.targetWord
 
@@ -890,6 +896,11 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
       const msg = avatarTheme.correct[Math.floor(Math.random() * avatarTheme.correct.length)]
       setFeedback({ type: 'correct', msg: streak >= 2 ? `🔥 ${streak + 1} streak! ${msg}` : msg })
       confetti({ particleCount: 70, spread: 90, origin: { x: 0.5, y: 0.5 }, colors: ['#FFD700', '#FF6B9D', '#38BDF8'] })
+      // Reinforce phoneme awareness: "Can you hear /sh/ in shell?"
+      speak(
+        `Can you hear the ${getSoundSpeechCue(question.targetKey).prompt} in ${word}? Brilliant!`,
+        { mood: 'celebrate', voice: 'gb', ssmlInner: buildCorrectWithContextSSML(question.targetKey, word) }
+      )
       streak >= 2 ? buddy.onWow() : buddy.onCorrect()
 
       if (round >= totalRounds) {
@@ -916,7 +927,10 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
       setWrongSounds(prev => [...prev, question.targetKey])
       const msg = avatarTheme.wrong[Math.floor(Math.random() * avatarTheme.wrong.length)]
       setFeedback({ type: 'wrong', msg })
-      speak(`Not quite. The sound is ${getSoundSpeechCue(question.targetKey).prompt}. Try again.`, { mood: 'phonics', voice: 'gb', ssmlInner: buildRetrySSML(question.targetKey) })
+      speak(
+        `Not quite. Listen for the ${getSoundSpeechCue(question.targetKey).prompt}. Can you find it?`,
+        { mood: 'phonics', voice: 'gb', ssmlInner: buildRetrySSML(question.targetKey) }
+      )
       buddy.onWrong(newWrong >= 2)
       if (newWrong >= 2) {
         defer(() => setShowHint(true), 1600)
@@ -1003,17 +1017,26 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
         className="mx-4 mt-1 rounded-3xl p-5 text-center shadow-lg"
         style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}
       >
-        <p className="font-round text-white/80 text-sm">Tap the word that has the sound</p>
+        {/* Clear learning objective */}
+        <div className="bg-white/20 rounded-2xl px-3 py-1.5 mb-2 inline-block">
+          <p className="font-round text-white text-xs font-bold">
+            👂 Listen for this sound — which word has it?
+          </p>
+        </div>
+
+        {/* The phoneme — tap to hear it */}
         <motion.button
           whileTap={{ scale: 0.92 }}
           onClick={playPhonemeOnly}
-          className="font-bubble text-6xl text-white tracking-widest my-1 cursor-pointer"
+          className="font-bubble text-6xl text-white tracking-widest my-1 cursor-pointer block w-full"
           aria-label={`Hear the sound ${getSoundDisplay(question.targetKey)}`}
         >
           {getSoundDisplay(question.targetKey).toUpperCase()}
         </motion.button>
-        {/* RWI set label + progression level */}
-        <p className="font-round text-white/60 text-xs mb-1 flex items-center justify-center gap-2">
+
+        {/* Description + set label */}
+        <p className="font-round text-white text-sm font-bold">{info.description}</p>
+        <p className="font-round text-white/60 text-xs mt-0.5 flex items-center justify-center gap-2">
           <span>{info.set === 0 ? 'RWI Set 1' : `Set ${info.set}`} · {info.setLabel}</span>
           {soundSetLevel > 0 && (
             <span className="bg-white/30 rounded-full px-2 py-0.5 font-bubble text-white text-xs leading-none">
@@ -1021,7 +1044,8 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
             </span>
           )}
         </p>
-        <p className="font-round text-white/90 text-sm">{info.description}</p>
+
+        {/* Hear it again */}
         <div className="flex items-center justify-center gap-3 mt-2">
           <span className="text-2xl">{info.emoji}</span>
           <motion.button

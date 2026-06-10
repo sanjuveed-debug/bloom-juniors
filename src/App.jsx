@@ -11,7 +11,9 @@ import { THEMES, applyTheme } from './themes'
 import { logSessionStart } from './utils/analytics'
 import { STUDY_MODULES, getArcadeUnlockStatus, getTodayStudySessions, getTodayAdventureModules } from './utils/arcadeUnlock'
 import { formatLocalDate, formatYesterdayLocalDate } from './utils/date.js'
-import { shouldSendAutoDigest, markDigestSent, buildDigestPayload, sendDigestEmail } from './utils/weeklyDigest.js'
+import { shouldSendAutoDigest, markDigestSent, buildDigestPayload, sendDigestEmail, sendNudgeEmail } from './utils/weeklyDigest.js'
+import { getClassroomLesson, setClassroomLesson } from './utils/classroomLesson.js'
+import { CLASS_SESSION_KEY, loadCloudClassLesson } from './services/cloudStore.js'
 import { getAssistant } from './assistants'
 
 import LandingPage from './pages/LandingPage'
@@ -33,6 +35,7 @@ import PasswordReset from './components/PasswordReset'
 import SchoolsPage from './pages/SchoolsPage'
 import ClassroomDashboard from './components/ClassroomDashboard'
 import CurriculumMap from './pages/CurriculumMap'
+import ClassLogin from './components/ClassLogin'
 
 import MonsterReward, { MONSTERS } from './components/MonsterReward'
 
@@ -58,10 +61,10 @@ const GAME_SCREENS = [
   'davinci', 'anatomy', 'science', 'worldgk', 'exercise', 'planets', 'arcade', 'sacred', 'piggybank',
 ]
 
-function getDailyGate(progress = {}) {
+function getDailyGate(progress = {}, classroomLesson = null) {
   const arcadeStatus = getArcadeUnlockStatus(progress)
   const todayIds = new Set(getTodayStudySessions(progress.sessions || []).map(session => session.module))
-  const [focusId, secondId] = getTodayAdventureModules(progress)
+  const [focusId, secondId] = getTodayAdventureModules(progress, classroomLesson)
   const rewardId = arcadeStatus.unlocked ? 'arcade' : 'davinci'
   const steps = [focusId, secondId, rewardId]
   const studyIds = STUDY_MODULES.map(module => module.id)
@@ -293,7 +296,7 @@ function AdventureStepBridge({ starsEarned, emoji, label, onContinue, avatar }) 
 }
 
 // ── Inner app — remounts fresh when profileId changes ─────────────────────────
-function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, onSwitchProfiles, onQuickSwitch, profiles, onLogout, guardianEmail, onUpdateGuardian, onUpdateProfile, classroomMode, ageGroup }) {
+function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, onSwitchProfiles, onQuickSwitch, profiles, onLogout, guardianEmail, onUpdateGuardian, onUpdateProfile, classroomMode, ageGroup, guardianId, schoolId, classId, className }) {
   const { progress, update, addStars, logSession, tickChallenge,
           ensureDailyChallenges, setAvatar, addSticker, setDailyChallenge, resetProgress } = useProgress(profileId)
 
@@ -309,13 +312,27 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
   const { speak } = useSpeech()
   const { resume } = useSound()
   const theme = THEMES[progress.avatar] || THEMES.rumi
-  const screenEntryRef = useRef(null)
-  const progressRef    = useRef(progress)
-  const timersRef      = useRef(new Set())
-  const screenRef      = useRef(screen)
+  const screenEntryRef      = useRef(null)
+  const progressRef         = useRef(progress)
+  const timersRef           = useRef(new Set())
+  const screenRef           = useRef(screen)
+  const classroomLessonRef  = useRef(classroomMode && guardianId ? getClassroomLesson(guardianId) : null)
 
   useEffect(() => { progressRef.current = progress }, [progress])
   useEffect(() => { screenRef.current = screen }, [screen])
+
+  useEffect(() => {
+    if (!classroomMode || !guardianId || !schoolId) return
+    let active = true
+    loadCloudClassLesson(schoolId, className || '', formatLocalDate(), classId || null)
+      .then(moduleIds => {
+        if (!active || !moduleIds) return
+        setClassroomLesson(guardianId, moduleIds)
+        classroomLessonRef.current = moduleIds
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [classroomMode, guardianId, schoolId, classId, className])
 
   // Clean up all pending timers on unmount
   useEffect(() => () => {
@@ -356,10 +373,13 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
     if (!shouldSendAutoDigest(profileId)) return
     const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
     const hasActivity = (progress.sessions || []).some(s => s.date >= sevenDaysAgo)
-    if (!hasActivity) return
     markDigestSent(profileId)
-    sendDigestEmail(buildDigestPayload({ progress, profileName, parentEmail: guardianEmail }))
-  // run once per profile mount — progress may not be fully loaded yet but sessions are from localStorage
+    if (hasActivity) {
+      sendDigestEmail(buildDigestPayload({ progress, profileName, parentEmail: guardianEmail }))
+    } else {
+      sendNudgeEmail({ parentEmail: guardianEmail, childName: profileName })
+    }
+  // run once per profile mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileId, guardianEmail])
 
@@ -407,14 +427,15 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
   const moodLoggedToday = moodLog.some(entry => entry.date === todayKey)
 
   const handleSplashDone = useCallback(() => {
+    const skipMood = classroomMode || moodLoggedToday
     if (!progress.avatar) {
       setAvatar('yaagvi')
       applyTheme('yaagvi')
-      setScreen(moodLoggedToday ? 'home' : 'mood')
+      setScreen(skipMood ? 'home' : 'mood')
       return
     }
-    setScreen(moodLoggedToday ? 'home' : 'mood')
-  }, [progress.avatar, moodLoggedToday, setAvatar])
+    setScreen(skipMood ? 'home' : 'mood')
+  }, [progress.avatar, moodLoggedToday, setAvatar, classroomMode])
 
   const handleMoodComplete = useCallback((mood) => {
     update(p => {
@@ -442,7 +463,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
     triggerHaptic('tap')
     if (sessionLocked && GAME_SCREENS.includes(to)) return
     if (GAME_SCREENS.includes(to) && !GATE_FREE_SCREENS.has(to)) {
-      const gate = getDailyGate(progress)
+      const gate = getDailyGate(progress, classroomLessonRef.current)
       if (!gate.availableIds.has(to)) {
         setScreen(gate.nextId || 'home')
         return
@@ -541,7 +562,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
     }
     if (!stayOnModule) {
       // Adventure bridge — guide child from step 1 to step 2 without returning to the menu
-      const [focusId, secondId] = getTodayAdventureModules(latest)
+      const [focusId, secondId] = getTodayAdventureModules(latest, classroomLessonRef.current)
       const doneIds = new Set(getTodayStudySessions(latest.sessions || []).map(s => s.module))
       if (module === focusId && !doneIds.has(secondId)) {
         const nextMod = STUDY_MODULES.find(m => m.id === secondId)
@@ -948,6 +969,65 @@ function ClassroomPinModal({ show, pinInput, pinError, onDigit, onClose }) {
 }
 
 // ── Root — profile gate ────────────────────────────────────────────────────────
+function loadStoredClassSession() {
+  try {
+    const session = JSON.parse(localStorage.getItem(CLASS_SESSION_KEY) || 'null')
+    if (!session?.profile?.id || !session?.sessionToken) return null
+    return session
+  } catch {
+    return null
+  }
+}
+
+function ClassPupilExperience({ session, onExit }) {
+  const profile = session.profile || {}
+  const profileAgeGroup = profile.ageGroup || 'early'
+  const sharedProps = {
+    profileId: profile.id,
+    profileName: profile.name || 'Superstar',
+    profileAgeGroup,
+    parentPin: '',
+    onSwitchProfiles: onExit,
+    onUpdateProfile: () => {},
+    onLogout: onExit,
+    guardianEmail: '',
+    onUpdateGuardian: undefined,
+    classroomMode: true,
+    guardianId: `class-${session.classId || session.classCode || 'session'}`,
+    schoolId: session.schoolId || '',
+    classId: session.classId || '',
+    className: session.className || '',
+  }
+
+  if (profileAgeGroup === 'junior') {
+    const KS2AppWithProfile = React.lazy(() => import('./ks2/KS2App'))
+    return (
+      <React.Suspense fallback={<LoadingSpinner />}>
+        <KS2AppWithProfile key={profile.id} {...sharedProps} />
+      </React.Suspense>
+    )
+  }
+
+  if (profileAgeGroup === 'toddler') {
+    const ToddlerAppWithProfile = React.lazy(() => import('./toddler/ToddlerApp'))
+    return (
+      <React.Suspense fallback={<LoadingSpinner />}>
+        <ToddlerAppWithProfile key={profile.id} {...sharedProps} />
+      </React.Suspense>
+    )
+  }
+
+  return (
+    <AppWithProfile
+      key={profile.id}
+      {...sharedProps}
+      profiles={[profile]}
+      onQuickSwitch={() => {}}
+      ageGroup={profileAgeGroup}
+    />
+  )
+}
+
 export default function App() {
   const {
     guardian,
@@ -964,14 +1044,17 @@ export default function App() {
     updateAccountPassword,
     updateGuardian,
   } = useGuardian()
-  const { profiles, activeId, activeProfile, createProfile, switchProfile, deleteProfile, updateProfile, resetProfiles } = useProfiles()
+  const { profiles, activeId, activeProfile, createProfile, createProfilesBulk, switchProfile, deleteProfile, updateProfile, resetProfiles } = useProfiles()
   const [ageGroup, setAgeGroup] = useState(null)
   const [showProfiles, setShowProfiles] = useState(false)
   const [classroomAddMode, setClassroomAddMode] = useState(false)
-  const [authEntryMode, setAuthEntryMode] = useState('setup')   // 'setup' | 'login' | 'teacher'
   const [showLanding, setShowLanding] = useState(() => {
-    // Show landing only to first-time visitors — skip if they have account data or forced via URL
-    const forceApp = window.location.search.includes('app=1') || window.location.hash.includes('app')
+    const forceApp =
+      window.location.search.includes('app=1') ||
+      window.location.hash.includes('app') ||
+      window.location.search.includes('teacher=1') ||
+      window.location.pathname === '/teacher-invite' ||
+      window.location.pathname === '/class'
     const hasAccount = Object.keys(localStorage).some(k =>
       k.startsWith('yaagvi_') ||
       k === 'eduapp_guardian_v1' ||
@@ -982,7 +1065,15 @@ export default function App() {
     )
     return !forceApp && !hasAccount
   })
+
+  // ?teacher=1 URL param → go straight to teacher signup
+  const [authEntryMode, setAuthEntryMode] = useState(() =>
+    window.location.search.includes('teacher=1') ? 'teacher' : 'setup'
+  )
   const routePath = window.location.pathname
+  const [classPupilSession, setClassPupilSession] = useState(() =>
+    window.location.pathname === '/class' ? loadStoredClassSession() : null
+  )
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
   const searchParams = new URLSearchParams(window.location.search.replace(/^\?/, ''))
   const isPasswordResetRoute = routePath === '/reset-password'
@@ -1078,6 +1169,30 @@ export default function App() {
     await startNewRegistration()
   }, [resetProfiles, startNewRegistration, switchProfile])
 
+  if (routePath === '/class') {
+    const handleClassSessionStart = (session) => {
+      setClassPupilSession(session)
+    }
+    const handleClassSessionExit = () => {
+      try { localStorage.removeItem(CLASS_SESSION_KEY) } catch {}
+      setClassPupilSession(null)
+    }
+    if (classPupilSession?.profile?.id) {
+      return (
+        <>
+          <SyncStatusBanner />
+          <ClassPupilExperience session={classPupilSession} onExit={handleClassSessionExit} />
+        </>
+      )
+    }
+    return (
+      <>
+        <SyncStatusBanner />
+        <ClassLogin onStart={handleClassSessionStart} />
+      </>
+    )
+  }
+
   if (window.location.pathname === '/privacy') {
     return <PrivacyPolicy />
   }
@@ -1095,9 +1210,9 @@ export default function App() {
       : ''
   if (teacherInviteToken && !guardian) {
     const handleTeacherInviteComplete = async (payload) => {
-      const schoolName = payload.schoolName2 || ''
-      await registerTeacher({ ...payload, schoolName })
-      if (payload.childAgeGroup === undefined) {
+      await registerTeacher(payload)
+      setShowLanding(false)
+      if (false && payload.childAgeGroup === undefined) {
         const id = createProfile(payload.className || 'Class', 0, payload.classAgeGroup || 'early', '🏫', 30)
         if (id) updateProfile(id, { emoji: '🏫' })
       }
@@ -1137,6 +1252,11 @@ export default function App() {
 
   const handleCreateNew = (name, colorIdx, emoji, group = ageGroup || 'early') => {
     const maxPerGroup = guardian?.classroomMode ? 30 : 2
+    const duplicate = profiles.some(profile =>
+      (profile.ageGroup || 'early') === group &&
+      profile.name.trim().toLowerCase() === String(name || '').trim().toLowerCase()
+    )
+    if (duplicate) return null
     const id = createProfile(name, colorIdx, group, emoji, maxPerGroup)
     if (!id) return null
     updateProfile(id, { emoji })
@@ -1153,7 +1273,11 @@ export default function App() {
         junior: '🚀',
       }[payload.childAgeGroup] || '🌟'
       const id = createProfile(payload.childName, 0, payload.childAgeGroup, starterEmoji)
-      if (id) updateProfile(id, { emoji: starterEmoji })
+      if (id) {
+        updateProfile(id, { emoji: starterEmoji })
+        setAgeGroup(payload.childAgeGroup)
+        switchProfile(id)
+      }
     }
     return nextGuardian
   }
@@ -1163,6 +1287,7 @@ export default function App() {
       <LandingPage
         onGetStarted={() => { setShowLanding(false); setAuthEntryMode('setup') }}
         onSignIn={() => { setShowLanding(false); setAuthEntryMode('login') }}
+        onTeacherSetup={() => { setShowLanding(false); setAuthEntryMode('teacher') }}
       />
     )
   }
@@ -1203,6 +1328,7 @@ export default function App() {
           <TeacherSetup
             onComplete={handleTeacherComplete}
             onBack={() => setAuthEntryMode('setup')}
+            onLogin={() => setAuthEntryMode('login')}
           />
         </>
       )
@@ -1254,6 +1380,10 @@ export default function App() {
       setClassroomAddMode(true)
       setShowProfiles(true)
     }
+    const handleClassroomBulkAdd = (entries) => {
+      const defaultGroup = profiles[0]?.ageGroup || 'early'
+      return createProfilesBulk(entries, defaultGroup, 30)
+    }
     return (
       <>
         <SyncStatusBanner />
@@ -1262,6 +1392,8 @@ export default function App() {
           guardian={guardian}
           onSelectStudent={handleClassroomSelectStudent}
           onAddStudent={handleClassroomAddStudent}
+          onBulkAddStudents={handleClassroomBulkAdd}
+          onUpdateGuardian={updateGuardian}
           onBack={() => updateGuardian({ classroomMode: false })}
           onLogout={handleLogout}
         />
@@ -1353,6 +1485,10 @@ export default function App() {
             guardianEmail={guardian.email || ''}
             onUpdateGuardian={isAdmin ? updateGuardian : undefined}
             classroomMode={guardian?.classroomMode || false}
+            guardianId={guardian?.id || guardian?.email || ''}
+            schoolId={guardian?.schoolId || ''}
+            classId={guardian?.classId || ''}
+            className={guardian?.className || ''}
           />
         </React.Suspense>
         {classroomPinModal}
@@ -1377,6 +1513,10 @@ export default function App() {
             guardianEmail={guardian.email || ''}
             onUpdateGuardian={isAdmin ? updateGuardian : undefined}
             classroomMode={guardian?.classroomMode || false}
+            guardianId={guardian?.id || guardian?.email || ''}
+            schoolId={guardian?.schoolId || ''}
+            classId={guardian?.classId || ''}
+            className={guardian?.className || ''}
           />
         </React.Suspense>
         {classroomPinModal}
@@ -1402,6 +1542,10 @@ export default function App() {
         onUpdateGuardian={isAdmin ? updateGuardian : undefined}
         classroomMode={guardian?.classroomMode || false}
         ageGroup={profileAgeGroup}
+        guardianId={guardian?.id || guardian?.email || ''}
+        schoolId={guardian?.schoolId || ''}
+        classId={guardian?.classId || ''}
+        className={guardian?.className || ''}
       />
       {classroomPinModal}
     </>

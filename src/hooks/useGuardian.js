@@ -4,7 +4,7 @@ import {
   loadSession, createSession, clearSession, clearGuardian, verifyGuardianLogin,
 } from '../utils/guardian'
 import { isSupabaseConfigured, supabase } from '../lib/supabase.js'
-import { loadCloudGuardian, saveCloudGuardian } from '../services/cloudStore.js'
+import { ensureCloudClass, loadCloudGuardian, saveCloudGuardian } from '../services/cloudStore.js'
 
 const APP_ORIGIN =
   import.meta.env.VITE_APP_ORIGIN ||
@@ -146,8 +146,8 @@ export function useGuardian() {
     const jwt = session?.access_token
 
     let schoolId   = data.schoolId   || null
-    let schoolName = data.schoolName || ''
-    let teacherRole = data.schoolName ? 'admin' : 'teacher'
+    let schoolName = data.schoolName || data.schoolName2 || ''
+    let teacherRole = data.inviteToken ? 'teacher' : data.schoolName ? 'admin' : 'teacher'
 
     // 2. Create school if this is the founding teacher
     if ((data.schoolName || data.inviteToken) && !jwt) {
@@ -156,7 +156,7 @@ export function useGuardian() {
       throw new Error(message)
     }
 
-    if (data.schoolName && jwt) {
+    if (data.schoolName && !data.inviteToken && jwt) {
       const resp = await fetch('/api/teacher-create-school', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}` },
@@ -179,7 +179,7 @@ export function useGuardian() {
     }
 
     // 3. Save guardian profile with classroom + school data
-    const next = normalizeGuardianData({
+    const baseTeacher = normalizeGuardianData({
       guardianName:    data.guardianName,
       relationship:    'Teacher / Carer',
       email:           data.email,
@@ -194,9 +194,33 @@ export function useGuardian() {
     })
 
     try {
-      await saveCloudGuardian(next)
+      await saveCloudGuardian(baseTeacher)
     } catch {
       const message = 'Could not save teacher profile to the cloud. Please check your connection and try again.'
+      setAuthError(message)
+      throw new Error(message)
+    }
+
+    let cloudClass = null
+    try {
+      cloudClass = await ensureCloudClass(schoolId, data.className || 'Class', data.classAgeGroup || 'early')
+    } catch {
+      const message = 'Could not create the classroom. Please check your connection and try again.'
+      setAuthError(message)
+      throw new Error(message)
+    }
+
+    const next = normalizeGuardianData({
+      ...baseTeacher,
+      classId: cloudClass?.id || null,
+      className: cloudClass?.name || baseTeacher.className,
+      classCode: cloudClass?.classCode || '',
+    })
+
+    try {
+      await saveCloudGuardian(next)
+    } catch {
+      const message = 'Could not attach this teacher to the classroom. Please check your connection and try again.'
       setAuthError(message)
       throw new Error(message)
     }

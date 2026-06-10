@@ -27,9 +27,11 @@ test('normalizeGuardianData trims contact fields and restricts the parent PIN', 
     registeredAt: '2026-04-09T08:15:00.000Z',
     classroomMode: false,
     schoolId: null,
+    classId: null,
     schoolName: '',
     teacherRole: '',
     className: '',
+    classCode: '',
   })
 })
 

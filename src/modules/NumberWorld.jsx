@@ -5,6 +5,7 @@ import { useSpeech } from '../hooks/useSpeech'
 import { THEMES } from '../themes'
 import SkillHint, { getHint } from '../components/SkillHint'
 import BuddyCompanion, { useBuddyMood } from '../components/BuddyCompanion'
+import MatchingActivity from '../components/MatchingActivity'
 
 // ── Avatar object sets ────────────────────────────────────────────────────────
 const OBJECT_SETS = {
@@ -28,6 +29,38 @@ const OPS = {
     desc: 'Take away from a group' },
   multiply: { label: 'Multiply',    icon: '✖️', colour: '#8B5CF6', maxNum: 5,
     desc: 'Equal groups of the same size' },
+}
+
+// ── Match Up activity ──────────────────────────────────────────────────────────
+const MATCH_CONFIG = {
+  label: 'Match Up', icon: '🎯', colour: '#FF6B9D',
+  desc: 'Tap a sum, then tap its matching answer!',
+}
+const MATCH_PAIR_COUNT = 6
+
+function generateMatchPairs(count, maxNum) {
+  const pairs = []
+  const usedAnswers = new Set()
+  let attempts = 0
+  while (pairs.length < count && attempts < count * 30) {
+    attempts++
+    let qText, answer
+    if (Math.random() < 0.5) {
+      const a = Math.floor(Math.random() * maxNum) + 1
+      const b = Math.floor(Math.random() * maxNum) + 1
+      answer = a + b
+      qText = `${a} + ${b}`
+    } else {
+      const a = Math.floor(Math.random() * maxNum) + 2
+      const b = Math.floor(Math.random() * (a - 1)) + 1
+      answer = a - b
+      qText = `${a} − ${b}`
+    }
+    if (usedAnswers.has(answer)) continue
+    usedAnswers.add(answer)
+    pairs.push({ id: `p${pairs.length}`, question: qText, answer: String(answer) })
+  }
+  return pairs
 }
 
 function getOpDifficulty(plays) {
@@ -358,37 +391,27 @@ function MulVisual({ n1, n2, emoji, colour }) {
 }
 
 // ── Counting Visual ───────────────────────────────────────────────────────────
-// Objects in a ten-frame with a big number that counts up
+// Objects revealed one-by-one in a ten-frame — number NOT shown (child must count)
 function CountVisual({ n, emoji, colour }) {
   const [revealed, setRevealed] = useState(0)
-  const [counting, setCounting] = useState(false)
 
   useEffect(() => {
     setRevealed(0)
-    setCounting(false)
-    // Auto-reveal one by one
     let i = 0
     const t = setInterval(() => {
       i++
       setRevealed(i)
-      if (i >= n) { clearInterval(t); setCounting(false) }
-    }, 200)
+      if (i >= n) clearInterval(t)
+    }, 220)
     return () => clearInterval(t)
   }, [n])
 
   return (
     <div className="flex flex-col items-center gap-3">
       <TenFrame count={revealed} emoji={emoji} colour={colour} maxCells={10} />
-      <motion.div
-        key={revealed}
-        initial={{ scale: 1.5, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="font-bubble text-6xl"
-        style={{ color: colour, textShadow: `0 4px 12px ${colour}50` }}
-      >
-        {revealed}
-      </motion.div>
-      <p className="font-round text-sm text-gray-500">Count the {emoji} — how many?</p>
+      <p className="font-round text-sm font-bold" style={{ color: colour }}>
+        Count the {emoji} — tap the right number!
+      </p>
     </div>
   )
 }
@@ -513,9 +536,13 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
   const [answered,         setAnswered]          = useState(false)
   const totalRounds = 10
 
+  const [matchPairs,  setMatchPairs]  = useState([])
+  const [matchResult, setMatchResult] = useState(null)
+
   const opPlayed = progress?.math?.opPlayed || {}
   const buddy = useBuddyMood()
   const awardedRef = useRef(false)
+  const matchAwardedRef = useRef(false)
   const timersRef  = useRef(new Set())
 
   useEffect(() => () => {
@@ -550,6 +577,15 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
     })
   }, [buddy, onAddStars, selectedOp, totalRounds, wrongAnswers])
 
+  const OP_OBJECTIVES = {
+    count:    'Count the objects carefully, then tap the matching number.',
+    onemore:  'Find the number that is one more — count one step forward!',
+    oneless:  'Find the number that is one less — count one step back!',
+    add:      'Put the two groups together and find the total.',
+    subtract: 'Take away the crossed-out ones — how many are left?',
+    multiply: 'Count the equal groups and find the total.',
+  }
+
   const handleOpSelect = useCallback((op) => {
     awardedRef.current = false
     const plays = opPlayed[op] || 0
@@ -563,9 +599,32 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
     setConsecutiveWrong(0)
     newQuestion(op, maxNum)
     const levelMsg = level > 1 ? ` Level ${level}!` : ''
-    speak(`${OPS[op].label}! Let's go!${levelMsg}`, { mood: 'celebrate' })
+    speak(`${OPS[op].label}! ${OP_OBJECTIVES[op]}${levelMsg}`, { mood: 'instruct' })
     buddy.onGameStart()
   }, [newQuestion, speak, buddy, opPlayed])
+
+  const handleMatchSelect = useCallback(() => {
+    matchAwardedRef.current = false
+    const plays = opPlayed.match || 0
+    const { mult } = getOpDifficulty(plays)
+    const maxNum = Math.floor(10 * mult)
+    setMatchPairs(generateMatchPairs(MATCH_PAIR_COUNT, maxNum))
+    setMatchResult(null)
+    setSelectedOp('match')
+    speak(`${MATCH_CONFIG.label}! ${MATCH_CONFIG.desc}`, { mood: 'instruct' })
+    buddy.onGameStart()
+  }, [opPlayed, speak, buddy])
+
+  const handleMatchComplete = useCallback((misses, total) => {
+    if (matchAwardedRef.current) return
+    matchAwardedRef.current = true
+    const finalScore = Math.max(0, total - misses)
+    buddy.onGameEnd()
+    confetti({ particleCount: 80, spread: 100, origin: { y: 0.5 } })
+    speak(`Amazing matching, ${profileName || 'superstar'}!`, { mood: 'celebrate' })
+    onAddStars('math', finalScore, { total, correct: finalScore, struggles: [], op: 'match' })
+    setMatchResult({ finalScore, total })
+  }, [buddy, onAddStars, profileName, speak])
 
   const handleChoice = useCallback((choice) => {
     if (selected !== null || answered) return
@@ -624,6 +683,98 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
               onSelect={handleOpSelect} index={i}
               diffLevel={getOpDifficulty(opPlayed[key] || 0).level} />
           ))}
+        </div>
+
+        <motion.button
+          initial={{ opacity: 0, y: 20, scale: 0.85 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: Object.keys(OPS).length * 0.07, type: 'spring', stiffness: 280 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={handleMatchSelect}
+          className="relative rounded-3xl overflow-hidden flex items-center gap-3 shadow-xl mx-4 mt-4 px-5 py-4"
+          style={{ background: `linear-gradient(135deg, ${MATCH_CONFIG.colour}, ${MATCH_CONFIG.colour}CC)` }}
+        >
+          <div className="text-3xl">{MATCH_CONFIG.icon}</div>
+          <div className="text-left flex-1">
+            <p className="font-bubble text-white text-lg leading-tight">{MATCH_CONFIG.label}</p>
+            <p className="font-round text-white/80 text-xs">{MATCH_CONFIG.desc}</p>
+          </div>
+        </motion.button>
+      </div>
+    )
+  }
+
+  // ── Match Up screen ──────────────────────────────────────────────────────────
+  if (selectedOp === 'match') {
+    return (
+      <div className="min-h-screen flex flex-col overflow-hidden"
+        style={{ background: `linear-gradient(160deg, ${theme.bg} 0%, white 60%, ${theme.bg} 100%)` }}>
+
+        <div className="flex items-center justify-between px-4 pb-2 pt-safe shrink-0">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => setSelectedOp(null)}
+            className="w-11 h-11 rounded-full flex items-center justify-center shadow"
+            style={{ background: theme.card, color: theme.text }}>←</motion.button>
+
+          <div className="text-center">
+            <div className="flex items-center gap-1.5 justify-center">
+              <span className="text-xl">{MATCH_CONFIG.icon}</span>
+              <p className="font-bubble text-base" style={{ color: MATCH_CONFIG.colour }}>{MATCH_CONFIG.label}</p>
+            </div>
+          </div>
+
+          <div className="w-11 h-11" />
+        </div>
+
+        <div className="flex-1 overflow-y-auto scroll-ios px-4 pb-32">
+          {!matchResult && (
+            <>
+              <p className="font-round text-sm text-center mb-4 opacity-70" style={{ color: theme.text }}>
+                {MATCH_CONFIG.desc}
+              </p>
+              <MatchingActivity
+                pairs={matchPairs}
+                colour={MATCH_CONFIG.colour}
+                onSpeak={(text) => speak(String(text), { mood: 'instruct' })}
+                onComplete={handleMatchComplete}
+              />
+            </>
+          )}
+
+          {matchResult && (
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 16 }}
+              className="flex flex-col items-center justify-center text-center pt-10">
+              <motion.div className="text-8xl mb-3"
+                animate={{ rotate: [0, 20, -20, 0], scale: [1, 1.2, 1] }}
+                transition={{ duration: 1, repeat: Infinity, repeatDelay: 2 }}>
+                {matchResult.finalScore === matchResult.total ? '🏆' : '🌟'}
+              </motion.div>
+              <h2 className="font-bubble text-4xl shimmer-text mb-1">All Matched!</h2>
+              <p className="font-bubble text-5xl mb-1" style={{ color: MATCH_CONFIG.colour }}>
+                {matchResult.finalScore}/{matchResult.total}
+              </p>
+              <p className="font-round text-lg mb-6 opacity-70" style={{ color: theme.text }}>
+                {matchResult.finalScore === matchResult.total ? 'Perfect! Amazing work!' : 'Great effort! Practice makes perfect!'}
+              </p>
+              <div className="flex gap-3 justify-center">
+                <motion.button whileTap={{ scale: 0.9 }}
+                  onClick={handleMatchSelect}
+                  className="bubble-btn px-6 py-3 text-base"
+                  style={{ background: `linear-gradient(135deg, ${theme.secondary}, ${theme.primary})` }}>
+                  Try Another
+                </motion.button>
+                <motion.button whileTap={{ scale: 0.9 }} onClick={onBack}
+                  className="bubble-btn px-6 py-3 text-base"
+                  style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}>
+                  Home 🏠
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </div>
+
+        <div className="fixed bottom-safe-buddy left-2 z-30 pointer-events-none">
+          <BuddyCompanion avatar={avatar} mood={buddy.mood} speak={buddy.speak} size={80} side="right" autoSpeak />
         </div>
       </div>
     )
@@ -722,7 +873,10 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
               {/* Coloured header */}
               <div className="px-5 py-3 flex items-center justify-between"
                 style={{ background: `linear-gradient(135deg, ${opColour}, ${opColour}CC)` }}>
-                <p className="font-bubble text-white text-xl leading-tight">{question.q}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-round text-white/70 text-xs mb-0.5">🎯 {OP_OBJECTIVES[selectedOp]}</p>
+                  <p className="font-bubble text-white text-xl leading-tight">{question.q}</p>
+                </div>
                 <motion.button
                   whileTap={{ scale: 0.85 }}
                   onClick={() => speak(question.q, { mood: 'instruct' })}
@@ -809,16 +963,11 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
                 {showWrong  && <span className="text-2xl">❌</span>}
                 {showReveal && <span className="text-2xl">✅</span>}
 
-                {/* Number */}
+                {/* Number only — no dot visual so child must count to match */}
                 <span className="font-bubble text-4xl leading-none"
                   style={{ color: showRight || showWrong || showReveal ? 'white' : opColour }}>
                   {choice}
                 </span>
-
-                {/* Mini dot visual under the number */}
-                {!showRight && !showWrong && !showReveal && (
-                  <MiniTenFrame count={choice} colour={opColour} />
-                )}
               </motion.button>
             )
           })}

@@ -3,12 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useProgress } from '../hooks/useProgress'
 import JarvisOrb from '../components/JarvisOrb'
-import RetentionPanel from '../components/RetentionWidgets'
 import MoodCheckIn from '../components/MoodCheckIn'
 import ParentZone from '../components/ParentZone'
 import HeroAvatar from './HeroAvatar'
 import { formatLocalDate } from '../utils/date.js'
-import { shouldSendAutoDigest, markDigestSent, buildDigestPayload, sendDigestEmail } from '../utils/weeklyDigest.js'
+import { shouldSendAutoDigest, markDigestSent, buildDigestPayload, sendDigestEmail, sendNudgeEmail } from '../utils/weeklyDigest.js'
+import { getClassroomLesson } from '../utils/classroomLesson.js'
 
 import TimesTablesModule from './modules/TimesTablesModule'
 import FractionsModule   from './modules/FractionsModule'
@@ -21,6 +21,7 @@ import WorldMapModule    from './modules/WorldMapModule'
 import SpiritualityModule from './modules/SpiritualityModule'
 import GamesModule       from './modules/GamesModule'
 import PiggyBankGame     from '../modules/PiggyBankGame'
+import { VoiceContext }  from '../contexts/VoiceContext'
 
 // ── Themes ────────────────────────────────────────────────────────────────────
 const KS2_THEMES = {
@@ -106,17 +107,29 @@ const DAILY_STUDY_MODULES = [
 ]
 const DAILY_UNLOCK_TARGET = 2
 
-function getKS2DailyMission(progress = {}, todayKey) {
+function getKS2DailyMission(progress = {}, todayKey, classroomLesson = null) {
   const allModules = SECTIONS.flatMap(section => section.modules).filter(module => module.id !== 'games')
-  const seed = new Date().getDate()
-  const maths = SECTIONS.find(section => section.id === 'maths')?.modules || []
-  const english = SECTIONS.find(section => section.id === 'english')?.modules || []
-  const explore = SECTIONS.find(section => section.id === 'explore')?.modules || []
-  const picks = [
-    maths[seed % maths.length],
-    english[(seed + 1) % english.length],
-    explore[(seed + 2) % explore.length],
-  ].filter(Boolean)
+
+  let picks
+  if (classroomLesson && classroomLesson.length >= 2) {
+    picks = classroomLesson
+      .map(id => allModules.find(m => m.id === id))
+      .filter(Boolean)
+      .slice(0, 3)
+  }
+
+  if (!picks || picks.length < 2) {
+    const seed = new Date().getDate()
+    const maths   = SECTIONS.find(s => s.id === 'maths')?.modules   || []
+    const english = SECTIONS.find(s => s.id === 'english')?.modules || []
+    const explore = SECTIONS.find(s => s.id === 'explore')?.modules || []
+    picks = [
+      maths[seed % maths.length],
+      english[(seed + 1) % english.length],
+      explore[(seed + 2) % explore.length],
+    ].filter(Boolean)
+  }
+
   const steps = picks.map(module => ({
     module,
     done: progress[module.id]?.lastPlayedDate === todayKey,
@@ -325,11 +338,11 @@ function KS2AvatarSelector({ onSelect }) {
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-function KS2Dashboard({ theme, profileName, progress, todayKey, gamesUnlocked, studyDoneCount, onNavigate, onSwitchProfiles, profileId, onParent }) {
+function KS2Dashboard({ theme, profileName, progress, todayKey, gamesUnlocked, studyDoneCount, onNavigate, onSwitchProfiles, profileId, onParent, classroomLesson }) {
   const xp = progress.ks2Xp || 0
   const level = getLevel(xp)
   const levelPct = getLevelPct(xp)
-  const dailyMission = getKS2DailyMission(progress, todayKey)
+  const dailyMission = getKS2DailyMission(progress, todayKey, classroomLesson)
 
   return (
     <div className="min-h-screen pb-32 overflow-y-auto" style={{ background: theme.bg }}>
@@ -443,27 +456,6 @@ function KS2Dashboard({ theme, profileName, progress, todayKey, gamesUnlocked, s
         )}
       </div>
 
-      <RetentionPanel
-        ageGroup="junior"
-        theme={{
-          ...theme,
-          text: '#FFFFFF',
-          secondary: theme.accent,
-        }}
-        profileName={profileName}
-        missionTitle="Power Mission"
-        missionSubtitle="Study first, then unlock Game Zone as the reward."
-        steps={dailyMission.steps.map(step => ({
-          id: step.module.id,
-          label: step.module.label,
-          done: step.done,
-        }))}
-        nextLabel={dailyMission.next?.module?.label}
-        onNavigate={onNavigate}
-        roomScore={Math.floor((progress.ks2Xp || 0) / 10) + studyDoneCount * 5}
-        stickersCount={(progress.stickers || []).length}
-        dark
-      />
 
       {/* Adventure Map */}
       <div className="mt-4 mx-4 rounded-[28px] overflow-hidden"
@@ -564,14 +556,15 @@ function KS2Dashboard({ theme, profileName, progress, todayKey, gamesUnlocked, s
 }
 
 // ── Main app ──────────────────────────────────────────────────────────────────
-export default function KS2App({ profileId, profileName, profileAgeGroup, onSwitchProfiles, parentPin, onUpdateProfile, onLogout, guardianEmail, onUpdateGuardian, classroomMode }) {
+export default function KS2App({ profileId, profileName, profileAgeGroup, onSwitchProfiles, parentPin, onUpdateProfile, onLogout, guardianEmail, onUpdateGuardian, classroomMode, guardianId }) {
   const { progress, update, logSession, resetProgress, addSticker } = useProgress(profileId)
-  const todayKey = useMemo(() => {
-    return formatLocalDate()
-  }, [])
+  const todayKey = useMemo(() => formatLocalDate(), [])
+  const classroomLesson = useMemo(() =>
+    classroomMode && guardianId ? getClassroomLesson(guardianId) : null
+  , [classroomMode, guardianId])
   const moodLog = progress.moodLog || []
   const moodLoggedToday = moodLog.some(entry => entry.date === todayKey)
-  const [screen, setScreen] = useState(moodLoggedToday ? 'home' : 'mood')
+  const [screen, setScreen] = useState(classroomMode || moodLoggedToday ? 'home' : 'mood')
   const [rewardInfo, setRewardInfo] = useState(null)
   // Per-session idempotency guard: moduleId:date → only one completion per module per day
   const completedModulesRef = useRef(new Set())
@@ -590,9 +583,12 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
     if (!shouldSendAutoDigest(profileId)) return
     const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
     const hasActivity = (progress.sessions || []).some(s => s.date >= sevenDaysAgo)
-    if (!hasActivity) return
     markDigestSent(profileId)
-    sendDigestEmail(buildDigestPayload({ progress, profileName, parentEmail: guardianEmail }))
+    if (hasActivity) {
+      sendDigestEmail(buildDigestPayload({ progress, profileName, parentEmail: guardianEmail }))
+    } else {
+      sendNudgeEmail({ parentEmail: guardianEmail, childName: profileName })
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileId, guardianEmail])
 
@@ -717,7 +713,7 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
   if (moduleMap[screen]) return moduleMap[screen]
 
   return (
-    <>
+    <VoiceContext.Provider value="en-GB-SoniaNeural">
       <KS2Dashboard
         theme={theme}
         profileName={profileName}
@@ -729,6 +725,7 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
         onSwitchProfiles={onSwitchProfiles}
         profileId={profileId}
         onParent={parentPin ? () => setScreen('parent') : undefined}
+        classroomLesson={classroomLesson}
       />
       <AnimatePresence>
         {rewardInfo && (
@@ -796,6 +793,6 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </VoiceContext.Provider>
   )
 }

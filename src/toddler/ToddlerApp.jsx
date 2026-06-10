@@ -7,8 +7,9 @@ import RetentionPanel from '../components/RetentionWidgets'
 import MoodCheckIn from '../components/MoodCheckIn'
 import ParentZone from '../components/ParentZone'
 import { formatLocalDate } from '../utils/date.js'
-import { shouldSendAutoDigest, markDigestSent, buildDigestPayload, sendDigestEmail } from '../utils/weeklyDigest.js'
+import { shouldSendAutoDigest, markDigestSent, buildDigestPayload, sendDigestEmail, sendNudgeEmail } from '../utils/weeklyDigest.js'
 import { useSpeech } from '../hooks/useSpeech'
+import { VoiceContext } from '../contexts/VoiceContext'
 
 // ── Toddler themes (3–4 year olds) ───────────────────────────────────────────
 const TODDLER_THEMES = {
@@ -56,12 +57,34 @@ const TODDLER_THEMES = {
 
 // ── Module registry (build out incrementally) ─────────────────────────────────
 const TODDLER_MODULES = [
-  { id: 'colours',  label: 'Colours',     emoji: '🎨', desc: 'Learn colours!',   bg: '#FF6B9D', comingSoon: false },
-  { id: 'shapes',   label: 'Shapes',      emoji: '🔷', desc: 'Find the shapes!', bg: '#8B00FF', comingSoon: false },
-  { id: 'numbers',  label: '1 2 3',       emoji: '🔢', desc: 'Count with me!',   bg: '#00B4FF', comingSoon: false },
-  { id: 'animals',  label: 'Animals',     emoji: '🐘', desc: 'Animal sounds!',   bg: '#22C55E', comingSoon: false },
-  { id: 'alphabet', label: 'A B C',       emoji: '🔤', desc: 'Learn letters!',   bg: '#FF9A3C', comingSoon: true  },
-  { id: 'songs',    label: 'Songs',       emoji: '🎵', desc: 'Sing along!',      bg: '#E21C1C', comingSoon: true  },
+  { id: 'colours',    label: 'Colours',     emoji: '🎨', desc: 'Learn colours!',    bg: '#FF6B9D', comingSoon: false },
+  { id: 'shapes',     label: 'Shapes',      emoji: '🔷', desc: 'Find the shapes!',  bg: '#8B00FF', comingSoon: false },
+  { id: 'numbers',    label: '1 2 3',       emoji: '🔢', desc: 'Count with me!',    bg: '#00B4FF', comingSoon: false },
+  { id: 'animals',    label: 'Animals',     emoji: '🐘', desc: 'Animal sounds!',    bg: '#22C55E', comingSoon: false },
+  { id: 'fruits',     label: 'Fruits',      emoji: '🍎', desc: 'Name the fruits!',  bg: '#FF9A3C', comingSoon: false },
+  { id: 'bodyparts',  label: 'My Body',     emoji: '🖐️', desc: 'Head to toe!',     bg: '#E879F9', comingSoon: false },
+  { id: 'alphabet',   label: 'A B C',       emoji: '🔤', desc: 'Learn letters!',    bg: '#F59E0B', comingSoon: true  },
+  { id: 'songs',      label: 'Songs',       emoji: '🎵', desc: 'Sing along!',       bg: '#E21C1C', comingSoon: true  },
+]
+
+// ── Fruits game data ──────────────────────────────────────────────────────────
+const FRUIT_QUESTIONS = [
+  { emoji: '🍎', fruit: 'Apple',       options: ['Apple', 'Banana', 'Orange'] },
+  { emoji: '🍌', fruit: 'Banana',      options: ['Apple', 'Banana', 'Grapes'] },
+  { emoji: '🍊', fruit: 'Orange',      options: ['Mango', 'Orange', 'Lemon'] },
+  { emoji: '🍇', fruit: 'Grapes',      options: ['Grapes', 'Apple', 'Strawberry'] },
+  { emoji: '🍓', fruit: 'Strawberry',  options: ['Cherry', 'Strawberry', 'Watermelon'] },
+  { emoji: '🍉', fruit: 'Watermelon',  options: ['Watermelon', 'Melon', 'Apple'] },
+]
+
+// ── Body parts game data ──────────────────────────────────────────────────────
+const BODY_QUESTIONS = [
+  { emoji: '👀', part: 'Eyes',   options: ['Eyes', 'Ears', 'Nose'] },
+  { emoji: '👃', part: 'Nose',   options: ['Mouth', 'Nose', 'Ears'] },
+  { emoji: '👂', part: 'Ears',   options: ['Eyes', 'Ears', 'Mouth'] },
+  { emoji: '👄', part: 'Mouth',  options: ['Nose', 'Mouth', 'Hands'] },
+  { emoji: '🖐️', part: 'Hands',  options: ['Hands', 'Feet', 'Tummy'] },
+  { emoji: '🦶', part: 'Feet',   options: ['Hands', 'Feet', 'Head'] },
 ]
 
 // ── Avatar selector ───────────────────────────────────────────────────────────
@@ -162,6 +185,11 @@ function ColoursModule({ theme, onDone, onBack }) {
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
 
   useEffect(() => {
+    speak(`Let's learn colours! Look at each colour and tap the right answer!`, { mood: 'instruct', rate: 0.8 })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
     if (spokenQ.current === q) return
     spokenQ.current = q
     speak(`What colour is this?`, { mood: 'question', rate: 0.8, queue: true })
@@ -190,7 +218,7 @@ function ColoursModule({ theme, onDone, onBack }) {
         setQ(v => v + 1)
         lockedRef.current = false
       }
-    }, 1200)
+    }, 2800)
     timersRef.current.push(id)
   }
 
@@ -202,6 +230,11 @@ function ColoursModule({ theme, onDone, onBack }) {
         ← Back
       </motion.button>
       <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl mb-4"
+          style={{ background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.35)' }}>
+          <span>🎯</span>
+          <p className="font-round text-white text-sm font-bold">Look at the colour — tap the right name!</p>
+        </div>
         <div className="text-8xl mb-4">{current.emoji}</div>
         <p className="font-bubble text-white text-2xl">What colour is this?</p>
         <div className="w-24 h-24 rounded-full mx-auto mt-4 shadow-2xl border-4 border-white/50"
@@ -253,6 +286,11 @@ function ShapesModule({ theme, onDone, onBack }) {
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
 
   useEffect(() => {
+    speak(`Let's learn shapes! Look at each shape and tap its name!`, { mood: 'instruct', rate: 0.8 })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
     if (spokenQ.current === q) return
     spokenQ.current = q
     speak(`What shape is this?`, { mood: 'question', rate: 0.8, queue: true })
@@ -281,7 +319,7 @@ function ShapesModule({ theme, onDone, onBack }) {
         setQ(v => v + 1)
         lockedRef.current = false
       }
-    }, 1200)
+    }, 2800)
     timersRef.current.push(id)
   }
 
@@ -293,6 +331,11 @@ function ShapesModule({ theme, onDone, onBack }) {
         ← Back
       </motion.button>
       <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl mb-4"
+          style={{ background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.35)' }}>
+          <span>🎯</span>
+          <p className="font-round text-white text-sm font-bold">Look at the shape — tap its name!</p>
+        </div>
         <p className="font-bubble text-white text-2xl mb-6">What shape is this?</p>
         <svg viewBox="0 0 100 100" className="w-40 h-40 mx-auto" fill="white" opacity="0.9">
           {current.svg}
@@ -338,6 +381,11 @@ function NumbersModule({ theme, onDone, onBack }) {
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
 
   useEffect(() => {
+    speak(`Let's count! Count the pictures carefully, then tap the right number!`, { mood: 'instruct', rate: 0.8 })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
     if (spokenQ.current === q) return
     spokenQ.current = q
     speak(`Count the pictures. How many are there?`, { mood: 'question', rate: 0.8, queue: true })
@@ -366,7 +414,7 @@ function NumbersModule({ theme, onDone, onBack }) {
         setQ(v => v + 1)
         lockedRef.current = false
       }
-    }, 1200)
+    }, 2800)
     timersRef.current.push(id)
   }
 
@@ -378,6 +426,11 @@ function NumbersModule({ theme, onDone, onBack }) {
         ← Back
       </motion.button>
       <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl mb-4"
+          style={{ background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.35)' }}>
+          <span>🎯</span>
+          <p className="font-round text-white text-sm font-bold">Count carefully — tap the right number!</p>
+        </div>
         <p className="font-bubble text-white text-2xl mb-6">How many {current.emoji}?</p>
         <div className="flex flex-wrap justify-center gap-3 max-w-xs mx-auto mb-4">
           {Array.from({ length: current.count }).map((_, i) => (
@@ -428,6 +481,11 @@ function AnimalsModule({ theme, onDone, onBack }) {
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
 
   useEffect(() => {
+    speak(`Let's learn animals! Listen to the sound each animal makes, then tap the right animal!`, { mood: 'instruct', rate: 0.8 })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
     if (spokenQ.current === q) return
     spokenQ.current = q
     speak(`This animal says ${current.sound}. What animal is this?`, { mood: 'question', rate: 0.8, queue: true })
@@ -456,7 +514,7 @@ function AnimalsModule({ theme, onDone, onBack }) {
         setQ(v => v + 1)
         lockedRef.current = false
       }
-    }, 1200)
+    }, 2800)
     timersRef.current.push(id)
   }
 
@@ -468,6 +526,11 @@ function AnimalsModule({ theme, onDone, onBack }) {
         ← Back
       </motion.button>
       <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl mb-4"
+          style={{ background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.35)' }}>
+          <span>🎯</span>
+          <p className="font-round text-white text-sm font-bold">Listen to the sound — which animal is it?</p>
+        </div>
         <motion.div className="text-9xl mb-4"
           animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 2, repeat: Infinity }}>
           {current.emoji}
@@ -492,6 +555,164 @@ function AnimalsModule({ theme, onDone, onBack }) {
   )
 }
 
+// ── Fruits module ─────────────────────────────────────────────────────────────
+function FruitsModule({ theme, onDone, onBack }) {
+  const [q, setQ] = useState(0)
+  const [score, setScore] = useState(0)
+  const [feedback, setFeedback] = useState(null)
+  const lockedRef = useRef(false)
+  const completedRef = useRef(false)
+  const timersRef = useRef([])
+  const spokenQ = useRef(-1)
+  const { speak } = useSpeech()
+
+  useEffect(() => () => timersRef.current.forEach(t => clearTimeout(t)), [])
+
+  useEffect(() => {
+    speak(`Let's learn fruits! Look at each fruit and tap its name!`, { mood: 'instruct', rate: 0.8 })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const current = FRUIT_QUESTIONS[q]
+
+  useEffect(() => {
+    if (spokenQ.current === q) return
+    spokenQ.current = q
+    speak(`What fruit is this?`, { mood: 'question', rate: 0.8, queue: true })
+  }, [q, speak])
+
+  const handleAnswer = (answer) => {
+    if (lockedRef.current || completedRef.current) return
+    lockedRef.current = true
+    const correct = answer === current.fruit
+    const nextScore = score + (correct ? 1 : 0)
+    if (correct) {
+      setScore(nextScore)
+      confetti({ particleCount: 60, spread: 80, origin: { x: 0.5, y: 0.4 } })
+      speak(`Yes! That is a ${current.fruit}! Well done!`, { mood: 'celebrate', rate: 0.8 })
+    } else {
+      speak(`This is a ${current.fruit}. Keep going!`, { mood: 'instruct', rate: 0.8 })
+    }
+    setFeedback(correct ? 'correct' : 'wrong')
+    const id = window.setTimeout(() => {
+      timersRef.current = timersRef.current.filter(t => t !== id)
+      setFeedback(null)
+      if (q + 1 >= FRUIT_QUESTIONS.length) {
+        completedRef.current = true
+        onDone(nextScore)
+      } else {
+        setQ(v => v + 1)
+        lockedRef.current = false
+      }
+    }, 2800)
+    timersRef.current.push(id)
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: theme.bg }}>
+      <motion.button whileTap={{ scale: 0.9 }} onClick={onBack} className="absolute top-safe left-4 mt-3 font-round text-white/70 text-sm">← Back</motion.button>
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl mb-4"
+          style={{ background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.35)' }}>
+          <span>🎯</span>
+          <p className="font-round text-white text-sm font-bold">Look at the fruit — tap its name!</p>
+        </div>
+        <motion.div className="text-9xl mb-4" animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 2, repeat: Infinity }}>{current.emoji}</motion.div>
+        <p className="font-bubble text-white text-2xl">What fruit is this?</p>
+      </div>
+      <div className="grid grid-cols-3 gap-4 w-full max-w-xs">
+        {current.options.map(opt => (
+          <motion.button key={opt} whileTap={{ scale: 0.85 }} onClick={() => handleAnswer(opt)}
+            className="py-4 rounded-2xl font-bubble text-white text-base shadow-lg"
+            style={{ background: feedback && opt === current.fruit ? '#22C55E' : 'rgba(255,255,255,0.25)', border: '3px solid rgba(255,255,255,0.4)' }}>
+            {opt}
+          </motion.button>
+        ))}
+      </div>
+      <p className="font-round text-white/70 text-sm mt-8">{q + 1} / {FRUIT_QUESTIONS.length}</p>
+    </div>
+  )
+}
+
+// ── Body parts module ─────────────────────────────────────────────────────────
+function BodyPartsModule({ theme, onDone, onBack }) {
+  const [q, setQ] = useState(0)
+  const [score, setScore] = useState(0)
+  const [feedback, setFeedback] = useState(null)
+  const lockedRef = useRef(false)
+  const completedRef = useRef(false)
+  const timersRef = useRef([])
+  const spokenQ = useRef(-1)
+  const { speak } = useSpeech()
+
+  useEffect(() => () => timersRef.current.forEach(t => clearTimeout(t)), [])
+
+  useEffect(() => {
+    speak(`Let's learn our body parts! Look at each picture and tap the right body part!`, { mood: 'instruct', rate: 0.8 })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const current = BODY_QUESTIONS[q]
+
+  useEffect(() => {
+    if (spokenQ.current === q) return
+    spokenQ.current = q
+    speak(`What body part is this?`, { mood: 'question', rate: 0.8, queue: true })
+  }, [q, speak])
+
+  const handleAnswer = (answer) => {
+    if (lockedRef.current || completedRef.current) return
+    lockedRef.current = true
+    const correct = answer === current.part
+    const nextScore = score + (correct ? 1 : 0)
+    if (correct) {
+      setScore(nextScore)
+      confetti({ particleCount: 60, spread: 80, origin: { x: 0.5, y: 0.4 } })
+      speak(`Yes! ${current.part}! Fantastic!`, { mood: 'celebrate', rate: 0.8 })
+    } else {
+      speak(`These are ${current.part}. Try again!`, { mood: 'instruct', rate: 0.8 })
+    }
+    setFeedback(correct ? 'correct' : 'wrong')
+    const id = window.setTimeout(() => {
+      timersRef.current = timersRef.current.filter(t => t !== id)
+      setFeedback(null)
+      if (q + 1 >= BODY_QUESTIONS.length) {
+        completedRef.current = true
+        onDone(nextScore)
+      } else {
+        setQ(v => v + 1)
+        lockedRef.current = false
+      }
+    }, 2800)
+    timersRef.current.push(id)
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: theme.bg }}>
+      <motion.button whileTap={{ scale: 0.9 }} onClick={onBack} className="absolute top-safe left-4 mt-3 font-round text-white/70 text-sm">← Back</motion.button>
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl mb-4"
+          style={{ background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.35)' }}>
+          <span>🎯</span>
+          <p className="font-round text-white text-sm font-bold">Look at the picture — tap the body part!</p>
+        </div>
+        <motion.div className="text-9xl mb-4" animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 2, repeat: Infinity }}>{current.emoji}</motion.div>
+        <p className="font-bubble text-white text-2xl">What body part is this?</p>
+      </div>
+      <div className="grid grid-cols-3 gap-4 w-full max-w-xs">
+        {current.options.map(opt => (
+          <motion.button key={opt} whileTap={{ scale: 0.85 }} onClick={() => handleAnswer(opt)}
+            className="py-4 rounded-2xl font-bubble text-white text-base shadow-lg"
+            style={{ background: feedback && opt === current.part ? '#22C55E' : 'rgba(255,255,255,0.25)', border: '3px solid rgba(255,255,255,0.4)' }}>
+            {opt}
+          </motion.button>
+        ))}
+      </div>
+      <p className="font-round text-white/70 text-sm mt-8">{q + 1} / {BODY_QUESTIONS.length}</p>
+    </div>
+  )
+}
+
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 function ToddlerDashboard({ theme, profileId, profileName, progress, onNavigate, onSwitchProfiles, onParent }) {
   const totalStars = TODDLER_MODULES.reduce((acc, m) => acc + (progress[m.id]?.stars || 0), 0)
@@ -510,40 +731,37 @@ function ToddlerDashboard({ theme, profileId, profileName, progress, onNavigate,
       ))}
 
       {/* Header */}
-      <div className="pt-safe px-5 pt-6 pb-4 flex items-center gap-4"
-        style={{ background: 'rgba(0,0,0,0.2)' }}>
-        <motion.div className="text-5xl"
-          animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 3, repeat: Infinity }}>
-          {theme.emoji}
-        </motion.div>
-        <div>
-          <p className="font-bubble text-white text-xl drop-shadow">Hi, {profileName}! 👋</p>
-          <p className="font-round text-white/80 text-sm">{theme.tagline}</p>
+      <div className="pt-safe px-4 pt-5 pb-3" style={{ background: 'rgba(0,0,0,0.2)' }}>
+        {/* Row 1: emoji + name + stars */}
+        <div className="flex items-center gap-3">
+          <motion.div className="text-4xl shrink-0"
+            animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 3, repeat: Infinity }}>
+            {theme.emoji}
+          </motion.div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bubble text-white text-xl drop-shadow leading-tight">Hi, {profileName}! 👋</p>
+            <p className="font-round text-white/75 text-xs mt-0.5 truncate">{theme.tagline}</p>
+          </div>
+          <div className="flex items-center gap-1 bg-white/20 px-3 py-1.5 rounded-full shrink-0">
+            <span className="text-yellow-300 text-base">⭐</span>
+            <span className="font-bubble text-white text-base leading-none">{totalStars}</span>
+          </div>
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        {/* Row 2: actions */}
+        <div className="flex items-center gap-2 mt-2.5">
           {onSwitchProfiles && (
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={onSwitchProfiles}
-              className="rounded-full px-4 py-2.5 font-bubble text-xs text-[#2b1458] shadow-lg ring-2 ring-white/70"
-              style={{ background: 'linear-gradient(135deg, #FFE45E, #FFB347, #FF5E7E)' }}
-            >
+            <motion.button whileTap={{ scale: 0.9 }} onClick={onSwitchProfiles}
+              className="rounded-full px-3 py-1.5 font-bubble text-xs text-[#2b1458] shadow"
+              style={{ background: 'linear-gradient(135deg, #FFE45E, #FFB347, #FF5E7E)' }}>
               ↩ Switch
             </motion.button>
           )}
           {onParent && (
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={onParent}
-              className="rounded-full px-3 py-2.5 font-round text-xs text-white/50 border border-white/20 bg-white/10"
-            >
-              🔒
+            <motion.button whileTap={{ scale: 0.9 }} onClick={onParent}
+              className="rounded-full px-3 py-1.5 font-round text-xs text-white/60 border border-white/25 bg-white/10">
+              🔒 Parent
             </motion.button>
           )}
-        </div>
-        <div className="flex items-center gap-1 bg-white/20 px-3 py-1.5 rounded-full">
-          <span className="text-yellow-300 text-lg">⭐</span>
-          <span className="font-bubble text-white text-lg">{totalStars}</span>
         </div>
       </div>
 
@@ -616,7 +834,10 @@ function ToddlerDashboard({ theme, profileId, profileName, progress, onNavigate,
       <div className="px-4 pt-6">
         <p className="font-bubble text-white/80 text-sm uppercase tracking-widest mb-3">More games</p>
         <div className="grid grid-cols-2 gap-5">
-        {TODDLER_MODULES.filter(m => !m.comingSoon).map((mod, idx) => (
+        {TODDLER_MODULES.filter(m => {
+          const dailyIds = new Set(dailyPath.steps.map(s => s.module.id))
+          return !dailyIds.has(m.id)
+        }).map((mod, idx) => (
           <motion.button
             key={mod.id}
             initial={{ opacity: 0, scale: 0.8 }}
@@ -780,9 +1001,12 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
     if (!shouldSendAutoDigest(profileId)) return
     const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
     const hasActivity = (progress.sessions || []).some(s => s.date >= sevenDaysAgo)
-    if (!hasActivity) return
     markDigestSent(profileId)
-    sendDigestEmail(buildDigestPayload({ progress, profileName, parentEmail: guardianEmail }))
+    if (hasActivity) {
+      sendDigestEmail(buildDigestPayload({ progress, profileName, parentEmail: guardianEmail }))
+    } else {
+      sendNudgeEmail({ parentEmail: guardianEmail, childName: profileName })
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileId, guardianEmail])
 
@@ -857,18 +1081,20 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
   }
 
   const moduleMap = {
-    colours:  <ColoursModule  theme={theme} onDone={(s) => handleModuleDone('colours', s)}  onBack={() => setScreen('home')} />,
-    shapes:   <ShapesModule   theme={theme} onDone={(s) => handleModuleDone('shapes', s)}   onBack={() => setScreen('home')} />,
-    numbers:  <NumbersModule  theme={theme} onDone={(s) => handleModuleDone('numbers', s)}  onBack={() => setScreen('home')} />,
-    animals:  <AnimalsModule  theme={theme} onDone={(s) => handleModuleDone('animals', s)}  onBack={() => setScreen('home')} />,
-    alphabet: <ComingSoonModule theme={theme} onBack={() => setScreen('home')} />,
-    songs:    <ComingSoonModule theme={theme} onBack={() => setScreen('home')} />,
+    colours:   <ColoursModule   theme={theme} onDone={(s) => handleModuleDone('colours', s)}   onBack={() => setScreen('home')} />,
+    shapes:    <ShapesModule    theme={theme} onDone={(s) => handleModuleDone('shapes', s)}    onBack={() => setScreen('home')} />,
+    numbers:   <NumbersModule   theme={theme} onDone={(s) => handleModuleDone('numbers', s)}   onBack={() => setScreen('home')} />,
+    animals:   <AnimalsModule   theme={theme} onDone={(s) => handleModuleDone('animals', s)}   onBack={() => setScreen('home')} />,
+    fruits:    <FruitsModule    theme={theme} onDone={(s) => handleModuleDone('fruits', s)}    onBack={() => setScreen('home')} />,
+    bodyparts: <BodyPartsModule theme={theme} onDone={(s) => handleModuleDone('bodyparts', s)} onBack={() => setScreen('home')} />,
+    alphabet:  <ComingSoonModule theme={theme} onBack={() => setScreen('home')} />,
+    songs:     <ComingSoonModule theme={theme} onBack={() => setScreen('home')} />,
   }
 
   if (moduleMap[screen]) return moduleMap[screen]
 
   return (
-    <>
+    <VoiceContext.Provider value="en-US-AnaNeural">
       <ToddlerDashboard
         theme={theme}
         profileId={profileId}
@@ -939,6 +1165,6 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </VoiceContext.Provider>
   )
 }

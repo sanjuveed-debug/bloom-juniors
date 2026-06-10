@@ -3,16 +3,23 @@ import { formatLocalDate } from './date.js'
 export const STUDY_PATH_TARGET = 2
 
 export const STUDY_MODULES = [
-  { id: 'phonics', label: 'Sound Pop', shortLabel: 'Phonics', emoji: '🎤' },
-  { id: 'math', label: 'Number World', shortLabel: 'Maths', emoji: '🔢' },
-  { id: 'tricky', label: 'Star Catch', shortLabel: 'Words', emoji: '⭐' },
-  { id: 'story', label: 'Story Room', shortLabel: 'Stories', emoji: '📖' },
+  { id: 'phonics', label: 'Sound Pop',    shortLabel: 'Phonics',  emoji: '🎤' },
+  { id: 'math',    label: 'Number World', shortLabel: 'Maths',    emoji: '🔢' },
+  { id: 'tricky',  label: 'Star Catch',   shortLabel: 'Words',    emoji: '⭐' },
+  { id: 'story',   label: 'Story Room',   shortLabel: 'Stories',  emoji: '📖' },
+  { id: 'shapes',  label: 'Shape World',  shortLabel: 'Shapes',   emoji: '🔷' },
+  { id: 'logic',   label: 'Puzzle Quest', shortLabel: 'Puzzles',  emoji: '🧩' },
 ]
 
 const STUDY_MODULE_IDS = new Set(STUDY_MODULES.map(module => module.id))
 
-// Returns the two study-module IDs assigned for today (fixed by date seed).
-export function getTodayAdventureModules(progress = {}) {
+// Returns the two study-module IDs assigned for today.
+// classroomLesson (string[]) overrides the date seed when set by a teacher.
+export function getTodayAdventureModules(progress = {}, classroomLesson = null) {
+  if (classroomLesson && classroomLesson.length >= 2) {
+    const valid = classroomLesson.filter(id => STUDY_MODULES.some(m => m.id === id))
+    if (valid.length >= 2) return [valid[0], valid[1]]
+  }
   const dateStr = formatLocalDate()
   let seed = dateStr.split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 1)
   const pool = [...STUDY_MODULES]

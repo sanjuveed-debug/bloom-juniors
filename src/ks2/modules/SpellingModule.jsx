@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { dailySeedFor, seededShuffle } from '../../utils/seededRandom'
+import { useSpeech } from '../../hooks/useSpeech'
 
 // Y3-4 and Y5-6 statutory word lists (NC England)
 const WORD_SETS = {
@@ -178,6 +179,7 @@ const WORD_SETS = {
 }
 
 export default function SpellingModule({ theme, onDone, onBack, played = 0 }) {
+  const { speak } = useSpeech()
   const autoLevel = played >= 3 ? 'Year 5-6' : 'Year 3-4'
   const [level, setLevel] = useState(null)
   const [words, setWords] = useState([])
@@ -204,6 +206,7 @@ export default function SpellingModule({ theme, onDone, onBack, played = 0 }) {
     setInput('')
     setFeedback(null)
     setHint(false)
+    speak(`${lv} spelling! Read the clue, unscramble the letters, and type the correct spelling. Use the hint if you need help!`, { mood: 'instruct' })
   }
 
   const handleSubmit = () => {
@@ -317,11 +320,14 @@ export default function SpellingModule({ theme, onDone, onBack, played = 0 }) {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-6 gap-5">
-        <span className="font-round text-xs px-3 py-1 rounded-full" style={{ background: `${theme.primary}40`, color: theme.accent }}>
-          Unscramble the word
-        </span>
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-2xl"
+          style={{ background: `${theme.primary}25`, border: `1px solid ${theme.primary}40` }}>
+          <span className="text-sm">🎯</span>
+          <p className="font-round text-white/70 text-xs font-bold">Read the clue · unscramble · type the correct spelling</p>
+        </div>
 
         <div className="w-full max-w-sm p-6 rounded-3xl text-center" style={{ background: theme.card, border: `1px solid ${theme.primary}40` }}>
+          <p className="font-round text-white/40 text-xs mb-1 uppercase tracking-wider">Unscramble these letters</p>
           <p className="font-bubble text-3xl mb-3 tracking-widest" style={{ color: theme.accent, letterSpacing: '0.25em' }}>
             {curr.scrambled.toUpperCase()}
           </p>

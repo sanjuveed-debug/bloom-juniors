@@ -172,12 +172,15 @@ function PlotTile({ plot, score, watered, onTap, idx }) {
       >
         {plot.label}
       </p>
-      <p
-        className="font-bubble"
-        style={{ fontSize: 9, color: plot.color }}
-      >
-        {stageLabel}
-      </p>
+      {stage === 0 ? (
+        <p className="font-round text-center" style={{ fontSize: 8, color: plot.color, maxWidth: 64 }}>
+          Tap to play! →
+        </p>
+      ) : (
+        <p className="font-bubble" style={{ fontSize: 9, color: plot.color }}>
+          {stageLabel}
+        </p>
+      )}
     </motion.button>
   )
 }
@@ -242,9 +245,12 @@ export default function BloomGarden({ progress, theme, onNavigate }) {
   const tree = getCentralTree(loginStreak, totalStars)
 
   const handlePlotTap = (plot, stage) => {
-    speak(plot.speech[stage], { mood: 'guide' })
-    setToast({ text: plot.speech[stage], color: plot.color })
-    setTimeout(() => setToast(null), 3200)
+    const msg = stage === 0
+      ? `Let's grow your ${plot.label}! Playing now… 🌱`
+      : plot.speech[stage]
+    speak(msg, { mood: 'guide' })
+    setToast({ text: msg, color: plot.color })
+    setTimeout(() => setToast(null), 2800)
     onNavigate?.(plot.id)
   }
 
@@ -292,18 +298,21 @@ export default function BloomGarden({ progress, theme, onNavigate }) {
               className="font-round text-[10px] font-black uppercase tracking-[0.16em]"
               style={{ color: 'rgba(255,255,255,0.5)' }}
             >
-              {sky.label} · Living World
+              {sky.label === 'Night' ? '🌙' : sky.label === 'Dawn' ? '🌅' : sky.label === 'Dusk' ? '🌇' : '☀️'} Your Learning Garden
             </p>
             <p className="font-bubble text-base leading-tight text-white">
               Bloom Garden
+            </p>
+            <p className="font-round text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,0.55)' }}>
+              Play activities to grow your plants! 🌱
             </p>
           </div>
           <div
             className="flex items-center gap-1.5 rounded-full px-3 py-1"
             style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}
           >
-            <span style={{ fontSize: 13 }}>🌱</span>
-            <span className="font-bubble text-xs text-white">{gardenPct}% grown</span>
+            <span style={{ fontSize: 13 }}>🌿</span>
+            <span className="font-bubble text-xs text-white">{PLOTS.filter(p => getStage(progress[p.id]?.score || 0) > 0).length}/{PLOTS.length} growing</span>
           </div>
         </div>
 

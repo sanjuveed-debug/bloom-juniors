@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback, useEffect, useRef } from 'react'
+﻿import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSpeech } from '../hooks/useSpeech'
 import { THEMES } from '../themes'
@@ -353,6 +353,80 @@ const STORIES = [
   },
 ]
 
+// IPA for each phoneme — used when speaking the sound within a word
+const STORY_PHONEME_IPA = {
+  sh: 'ʃ', th: 'θ', ch: 'tʃ', qu: 'kw', ng: 'ŋ', nk: 'ŋk',
+  ay: 'eɪ', ee: 'iː', igh: 'aɪ', ow: 'əʊ', oo: 'uː',
+  ar: 'ɑː', or: 'ɔː', air: 'eə', ir: 'ɜː', ou: 'aʊ', oy: 'ɔɪ',
+  ea: 'iː', oi: 'ɔɪ', ai: 'eɪ', oa: 'əʊ', aw: 'ɔː', ur: 'ɜː', er: 'ə',
+}
+
+// Reverse lookup: word → which phoneme it demonstrates
+const WORD_PHONEME_MAP = new Map([
+  // sh
+  ...['ship','shop','shed','shelf','shell','shore','fish','dish','wish','fresh','flash','shout','shimmered','shining','shimmer'].map(w=>[w,'sh']),
+  // th
+  ...['thin','thick','bath','path','tooth','with','thing','thorn','thud','thump'].map(w=>[w,'th']),
+  // ch
+  ...['chip','chat','cheese','chain','chest','cheek','each','catch','match','bench','rich','lunch','child'].map(w=>[w,'ch']),
+  // ng
+  ...['ring','sing','king','wing','song','long','bang','hang','bring','sting','swing','strong','string','spring','young'].map(w=>[w,'ng']),
+  // nk
+  ...['sink','pink','drink','blink','bank','tank','trunk','skunk'].map(w=>[w,'nk']),
+  // ay
+  ...['play','day','say','way','clay','stay','tray','away'].map(w=>[w,'ay']),
+  // ee
+  ...['tree','bee','see','feet','seed','meet','need','keep','deep','sleep','feel','green','sweet','seen'].map(w=>[w,'ee']),
+  // igh
+  ...['light','night','right','fight','bright','might','sight','high','flight','knight'].map(w=>[w,'igh']),
+  // ow (snow)
+  ...['snow','blow','flow','glow','grow','show','slow','know','own','below','window','yellow','pillow'].map(w=>[w,'ow']),
+  // oo
+  ...['moon','pool','food','boot','zoo','cool','room','zoom','bloom','goose','spoon','school','stool'].map(w=>[w,'oo']),
+  // ar
+  ...['car','star','dark','park','farm','arm','art','start','shark','spark','yard'].map(w=>[w,'ar']),
+  // or
+  ...['door','floor','store','more','horn','corn','born','fort','sort','storm','short','sport','horse','torch'].map(w=>[w,'or']),
+  // air
+  ...['air','hair','fair','pair','chair','stair'].map(w=>[w,'air']),
+  // ir
+  ...['bird','girl','stir','firm','first','shirt','circle','twirl','swirl'].map(w=>[w,'ir']),
+  // ou
+  ...['shout','out','loud','found','round','sound','ground','mouth','cloud','proud','house','mouse'].map(w=>[w,'ou']),
+  // oy
+  ...['toy','boy','joy','enjoy','royal'].map(w=>[w,'oy']),
+  // ea
+  ...['tea','sea','read','bead','meal','seal','beat','heat','meat','seat','team','cream','dream','beach','reach','peach','leaf','bean','clean'].map(w=>[w,'ea']),
+  // oi
+  ...['coin','foil','soil','oil','boil','join','point','noise','voice','choice'].map(w=>[w,'oi']),
+  // ai
+  ...['rain','tail','nail','sail','mail','pain','brain','train','wait','snail','paint','trail'].map(w=>[w,'ai']),
+  // oa
+  ...['boat','coat','road','toad','foam','load','coal','soap','goat','toast','coast','float','groan'].map(w=>[w,'oa']),
+  // aw
+  ...['claw','draw','paw','straw','crawl','yawn','dawn','jaw','hawk'].map(w=>[w,'aw']),
+  // ur
+  ...['nurse','purse','fur','burn','turn','hurt','curl','turtle','purple'].map(w=>[w,'ur']),
+  // er
+  ...['letter','better','river','flower','over','under','silver','finger','sister','number','fern'].map(w=>[w,'er']),
+])
+
+function buildPhonicsWordSSML(word, phonemeKey) {
+  const ipa = STORY_PHONEME_IPA[phonemeKey]
+  if (!ipa) return null
+  return `<prosody rate="-20%"><phoneme alphabet="ipa" ph="${ipa}">${phonemeKey}</phoneme></prosody><break time="300ms"/>${word}`
+}
+
+// RWI "red words" / tricky words — common exception words that don't follow regular phonics rules.
+// Highlighted in red/orange so children know to remember them as whole words.
+const TRICKY_WORDS = new Set([
+  'the','to','was','said','of','his','has','i','you','they','are','we','my','her',
+  'all','some','come','were','there','little','one','do','when','out','what','into',
+  'go','no','so','he','she','me','be','have','like','by','our','day','made','came',
+  'make','here','saw','put','love','your','once','upon','their','oh','could','looked',
+  'very','would','should','called','asked','who','many','water','again','today',
+])
+
 // RWI-aligned phonics words kids can spot in stories.
 // Organised by RWI Set so children recognise sounds they have been taught.
 const PHONICS_WORDS = new Set([
@@ -445,7 +519,25 @@ export default function StoryRoom({ avatar, progress, onAddStars, onBack, profil
   const autoRef = useRef(null)
   const timersRef = useRef([])
   const completedRef = useRef(false)
+  const introSpokenRef = useRef(false)
   const recommendedStories = getRecommendedStories(STORIES, progress)
+
+  // Count unique phonics words (non-tricky) on the current page — drives the mission target
+  const pagePhonicsWords = useMemo(() => {
+    if (!selectedStory) return new Set()
+    return new Set(
+      selectedStory.pages[page].text.split(' ')
+        .map(w => w.replace(/[^a-zA-Z]/g, '').toLowerCase())
+        .filter(clean => clean && PHONICS_WORDS.has(clean) && !TRICKY_WORDS.has(clean))
+    )
+  }, [selectedStory, page])
+
+  const pagePhonicsTarget = pagePhonicsWords.size
+  const pagePhonicsFound  = useMemo(
+    () => [...pagePhonicsWords].filter(w => foundPhonics.has(w)).length,
+    [pagePhonicsWords, foundPhonics]
+  )
+  const pageMissionDone = pagePhonicsTarget > 0 && pagePhonicsFound >= pagePhonicsTarget
 
   const clearStoryTimers = useCallback(() => {
     timersRef.current.forEach(clearTimeout)
@@ -528,29 +620,54 @@ export default function StoryRoom({ avatar, progress, onAddStars, onBack, profil
 
   const handleStorySelect = useCallback((story) => {
     completedRef.current = false
+    introSpokenRef.current = false
     setSelectedStory(story)
     setPage(0)
     setAutoPlay(false)
     setFoundPhonics(new Set())
     setTapFeedback(null)
+    // Speak phonics-hunt intro before the page text so child knows the task
+    if (!introSpokenRef.current) {
+      introSpokenRef.current = true
+      speak(
+        'Listen carefully! Can you find the special phonics words? Look for the underlined words and tap them to hear their sounds!',
+        { mood: 'instruct', voice: 'gb' }
+      )
+    }
     const id = window.setTimeout(() => {
       timersRef.current = timersRef.current.filter(t => t !== id)
       readPage(story, 0)
-    }, 600)
+    }, 2200)
     timersRef.current.push(id)
-  }, [readPage])
+  }, [readPage, speak])
 
   const handleWordTap = useCallback((word, idx) => {
     const clean = word.replace(/[^a-zA-Z]/g, '').toLowerCase()
     const isPhonics = PHONICS_WORDS.has(clean)
-    speak(clean, { rate: 0.8 })
-    setTapFeedback({ idx, correct: isPhonics })
+    const isTricky = TRICKY_WORDS.has(clean)
+
+    if (isTricky) {
+      speak(`Tricky word — ${clean}! This one is special. Try to remember it.`, { rate: 0.85, voice: 'gb' })
+    } else if (isPhonics) {
+      const phonemeKey = WORD_PHONEME_MAP.get(clean)
+      const ssml = phonemeKey ? buildPhonicsWordSSML(clean, phonemeKey) : null
+      // Speak the phoneme sound first, then the word — so child hears the sound IN context
+      speak(
+        phonemeKey ? `${phonemeKey}… ${clean}` : clean,
+        { rate: 0.8, voice: 'gb', ssmlInner: ssml }
+      )
+    } else {
+      speak(clean, { rate: 0.8, voice: 'gb' })
+    }
+
+    setTapFeedback({ idx, correct: isPhonics, tricky: isTricky })
     const id = window.setTimeout(() => {
       timersRef.current = timersRef.current.filter(t => t !== id)
       setTapFeedback(null)
-    }, 900)
+    }, 1200)
     timersRef.current.push(id)
-    if (isPhonics && !foundPhonics.has(clean)) {
+    // Tricky words don't count toward phonics score even if they're in PHONICS_WORDS
+    if (isPhonics && !isTricky && !foundPhonics.has(clean)) {
       setFoundPhonics(prev => new Set([...prev, clean]))
     }
   }, [speak, foundPhonics])
@@ -773,21 +890,41 @@ export default function StoryRoom({ avatar, progress, onAddStars, onBack, profil
 
           {/* Text with word highlighting + phonics tap */}
           <div className="p-4" style={{ background: 'rgba(255,255,255,0.97)' }}>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-sm font-bubble" style={{ color: theme.primary }}>
-                🔍 Tap any word to hear it!
-              </span>
-              {foundPhonics.size > 0 && (
-                <span className="text-xs font-round px-2 py-0.5 rounded-full text-white"
-                  style={{ background: '#22C55E' }}>
-                  ✨ {foundPhonics.size} phonics found
-                </span>
+
+            {/* Mission banner — explicit goal + live progress */}
+            <div className="rounded-2xl p-3 mb-3"
+              style={{ background: pageMissionDone ? 'rgba(34,197,94,0.12)' : `${theme.primary}12`, border: `1.5px solid ${pageMissionDone ? '#22C55E50' : theme.primary + '40'}` }}>
+              {/* Objective */}
+              <p className="font-round text-xs font-bold mb-1.5"
+                style={{ color: pageMissionDone ? '#16A34A' : theme.primary }}>
+                {pageMissionDone ? '🌟 All phonics words found on this page!' : '🔍 Find the underlined phonics words — tap each one to hear its sound!'}
+              </p>
+              {/* Progress bar + count */}
+              {pagePhonicsTarget > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(0,0,0,0.08)' }}>
+                    <div className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${(pagePhonicsFound / pagePhonicsTarget) * 100}%`, background: pageMissionDone ? '#22C55E' : theme.primary }} />
+                  </div>
+                  <span className="font-round text-xs font-bold shrink-0"
+                    style={{ color: pageMissionDone ? '#16A34A' : theme.primary }}>
+                    {pagePhonicsFound}/{pagePhonicsTarget} words
+                  </span>
+                </div>
               )}
+              {/* Word type key */}
+              <div className="flex items-center gap-3 mt-2">
+                <span className="font-round text-xs px-2 py-0.5 rounded-full text-white font-bold"
+                  style={{ background: '#DC2626' }}>🔴 Remember it</span>
+                <span className="font-round text-xs px-2 py-0.5 rounded-full text-white font-bold"
+                  style={{ background: theme.primary }}>🔵 Tap to hear the sound</span>
+              </div>
             </div>
             <p className="font-round text-lg font-bold leading-relaxed text-center" style={{ color: theme.text }}>
               {words.map((word, i) => {
                 const clean = word.replace(/[^a-zA-Z]/g, '').toLowerCase()
                 const isPhonics = PHONICS_WORDS.has(clean)
+                const isTricky = TRICKY_WORDS.has(clean)
                 const isFound = foundPhonics.has(clean)
                 const isTapped = tapFeedback?.idx === i
                 return (
@@ -796,16 +933,19 @@ export default function StoryRoom({ avatar, progress, onAddStars, onBack, profil
                     className="inline-block mx-0.5 px-1 rounded-md cursor-pointer select-none"
                     animate={
                       isTapped
-                        ? { scale: 1.25, backgroundColor: tapFeedback.correct ? '#22C55E' : '#E5E7EB' }
+                        ? { scale: 1.25, backgroundColor: tapFeedback.tricky ? '#FCA5A5' : tapFeedback.correct ? '#22C55E' : '#E5E7EB' }
                         : highlightedWord === i
                         ? { backgroundColor: theme.accent, color: 'white', scale: 1.1 }
                         : { backgroundColor: 'transparent', scale: 1 }
                     }
                     style={{
-                      color: theme.text,
-                      textDecoration: isPhonics && !isFound ? 'underline dotted' : 'none',
+                      color: isTricky ? '#DC2626' : theme.text,
+                      background: isTricky && !isTapped ? 'rgba(220,38,38,0.08)' : undefined,
+                      border: isTricky ? '1px solid rgba(220,38,38,0.25)' : undefined,
+                      borderRadius: isTricky ? '4px' : undefined,
+                      textDecoration: isPhonics && !isTricky && !isFound ? 'underline dotted' : 'none',
                       textDecorationColor: theme.primary,
-                      fontWeight: isPhonics ? '800' : '700',
+                      fontWeight: isPhonics || isTricky ? '800' : '700',
                       filter: isFound ? 'drop-shadow(0 0 4px #22C55E)' : 'none',
                     }}
                     onClick={() => handleWordTap(word, i)}

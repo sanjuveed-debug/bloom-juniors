@@ -73,7 +73,7 @@ const SOUND_IPA = {
   i: 'ɪ',   n: 'nː', p: 'p',   g: 'ɡ',   o: 'ɒ',
   c: 'k',   k: 'k',  u: 'ʌ',   b: 'b',   f: 'fː',
   e: 'ɛ',   l: 'lː', h: 'h',   r: 'r',   j: 'dʒ',
-  v: 'vː',  y: 'j',  w: 'w',   z: 'zː',  x: 'ks',
+  v: 'vː',  y: 'jɛ', w: 'w',   z: 'zː',  x: 'ks',
 }
 
 function phonemeSsml(key) {

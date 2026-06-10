@@ -85,3 +85,12 @@ export async function sendDigestEmail(payload) {
   })
   return res.ok
 }
+
+export async function sendNudgeEmail({ parentEmail, childName }) {
+  const res = await fetch('/api/weekly-digest', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'nudge', parentEmail, childName }),
+  })
+  return res.ok
+}

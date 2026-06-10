@@ -4,11 +4,13 @@ import { THEMES } from '../themes'
 import { getAssistant } from '../assistants'
 import { MONSTERS, MonsterCollection } from './MonsterReward'
 import { STUDY_MODULES, getArcadeUnlockStatus, getTodayStudySessions, getTodayAdventureModules } from '../utils/arcadeUnlock'
-import RetentionPanel from './RetentionWidgets'
+import RetentionPanel, { YaagviRoom } from './RetentionWidgets'
 import { useSpeech } from '../hooks/useSpeech'
 import PhonicsMap from './PhonicsMap'
 import BloomGarden from './BloomGarden'
 import ParentHandoff from './ParentHandoff'
+import DailyBloomPath from './DailyBloomPath'
+import CelebrationScreen from './CelebrationScreen'
 
 // ── Module registry ───────────────────────────────────────────────────────────
 const PREMIUM_IDS = new Set(['worldgk','science','planets','anatomy','sacred','shapes','shop','logic'])
@@ -1030,7 +1032,10 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
   const longRef  = useRef(null)
   const [showMonsters, setShowMonsters] = useState(false)
   const [premiumMod, setPremiumMod] = useState(null)
-  const [showMore, setShowMore] = useState(false)
+  const [tab, setTab] = useState('today')
+  const [celebrationSeen, setCelebrationSeen] = useState(
+    () => sessionStorage.getItem('bloomCelebration') === 'true'
+  )
   const arcadeStatus = getArcadeUnlockStatus(progress)
 
   const startLong = () => { longRef.current = setTimeout(() => onLongPress?.(), 1200) }
@@ -1060,6 +1065,15 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
       return
     }
     onNavigate(dailyAccess.nextId || 'phonics')
+  }
+
+  const isDailyPathDone = arcadeStatus?.unlocked === true ||
+    (dailyAdventure?.steps?.length > 0 && dailyAdventure.steps.every(s => s.done))
+  const showCelebration = isDailyPathDone && !celebrationSeen
+  const handleCelebrationDismiss = (goTo) => {
+    sessionStorage.setItem('bloomCelebration', 'true')
+    setCelebrationSeen(true)
+    if (goTo) handleGatedNavigate(goTo)
   }
 
   const HERO_BG = `linear-gradient(160deg, #0B0F2A 0%, #1A1550 40%, ${theme.primary}55 100%)`
@@ -1141,82 +1155,59 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
                 <motion.button
                   whileTap={{ scale: 0.88 }}
                   onClick={onSwitchProfiles}
-                  className="mt-3 inline-flex items-center gap-2 rounded-full px-5 py-3 font-bubble text-sm text-[#2b1458] shadow-xl ring-2 ring-white/70"
-                  style={{
-                    background: 'linear-gradient(135deg, #FFE45E 0%, #FFB347 48%, #FF5E7E 100%)',
-                    boxShadow: '0 10px 26px rgba(255, 122, 24, 0.35), 0 0 0 6px rgba(255,255,255,0.08)',
-                  }}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-round text-xs text-white/70"
+                  style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.22)' }}
                 >
-                  <span aria-hidden="true">↩</span>
-                  Switch Profile
+                  ↩ Switch
                 </motion.button>
               )}
             </div>
 
-            {/* Avatar + XP ring */}
+            {/* Avatar circle — clean, no level display */}
             <div className="relative shrink-0">
-              {/* Pulse ring */}
-              <div className="absolute inset-0 rounded-full"
-                style={{ background: `${theme.primary}50` }}
-                data-pulse="true"
+              <motion.div
+                className="flex items-center justify-center rounded-full text-4xl"
+                style={{
+                  width: 64, height: 64,
+                  background: `${theme.primary}30`,
+                  border: `3px solid ${theme.primary}80`,
+                  boxShadow: `0 0 20px ${theme.primary}40`,
+                }}
+                animate={{ scale: [1, 1.04, 1] }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
               >
-                <motion.div
-                  className="absolute inset-0 rounded-full"
-                  style={{ border: `2px solid ${theme.primary}` }}
-                  animate={{ scale: [1, 1.35], opacity: [0.7, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
-                />
-              </div>
-
-              <motion.button
-                whileTap={{ scale: 0.88 }}
-                onTouchStart={startLong} onTouchEnd={endLong}
-                onMouseDown={startLong}  onMouseUp={endLong}
-                type="button"
-                aria-label="Open rewards"
-                onClick={() => setShowMonsters(true)}
-              >
-                <XPArc pct={xpPct} lvl={lvl} emoji={theme.emoji} primary={theme.primary} />
-              </motion.button>
+                {theme.emoji}
+              </motion.div>
             </div>
           </div>
 
-          {/* ── 4 Stat pills ── */}
-          <div className="grid grid-cols-4 gap-2 mt-4">
-            <StatPill icon="⭐" value={<CountUp target={totalStars} />} label="Treasure"    delay={0.05} />
-            <StatPill icon="🏆" value={`Lv.${lvl}`}                    label="Level"    delay={0.10} />
-            <StatPill icon="🔥" value={`${loginStreak}d`}              label="Streak"   delay={0.15} />
-            <StatPill icon="🐾"
-              value={`${unlockedMonsters.length}/${MONSTERS.length}`}
-              label="Monsters"
-              delay={0.20}
-              onClick={() => setShowMonsters(true)}
-            />
+          {/* ── Stars + Streak (simplified) ── */}
+          <div className="flex items-center gap-2 mt-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 }}
+              className="flex items-center gap-2 rounded-2xl px-4 py-2"
+              style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }}
+            >
+              <span className="text-xl">⭐</span>
+              <span className="font-bubble text-lg text-white leading-none"><CountUp target={totalStars} /></span>
+              <span className="font-round text-white/50 text-xs">stars</span>
+            </motion.div>
+            {loginStreak >= 1 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.15 }}
+                className="flex items-center gap-2 rounded-2xl px-4 py-2"
+                style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }}
+              >
+                <span className="text-xl">🔥</span>
+                <span className="font-bubble text-lg text-white leading-none">{loginStreak}</span>
+                <span className="font-round text-white/50 text-xs">day streak</span>
+              </motion.div>
+            )}
           </div>
-
-          {/* XP Bar */}
-          <motion.div
-            className="mt-3"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-          >
-            <div className="flex justify-between mb-1">
-              <span className="font-round text-white/50" style={{ fontSize: 11 }}>Level {lvl} Progress</span>
-              <span className="font-round text-white/50" style={{ fontSize: 11 }}>
-                {nextMonster
-                  ? `${nextMonster.stars - totalStars} stars → ${nextMonster.name} 🐾`
-                  : '🏆 All monsters!'}
-              </span>
-            </div>
-            <div className="progress-bar">
-              <motion.div className="progress-fill"
-                initial={{ width: 0 }}
-                animate={{ width: `${xpPct}%` }}
-                transition={{ duration: 1.2, delay: 0.5, ease: 'easeOut' }}
-              />
-            </div>
-          </motion.div>
 
           <YaagviStateCard
             theme={theme}
@@ -1227,28 +1218,159 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
         </div>
       </div>
 
-      <DailyAdventureCard
-        theme={theme}
-        profileName={profileName}
-        progress={progress}
-        challenges={challenges}
-        arcadeStatus={arcadeStatus}
-        adventure={dailyAdventure}
-        onNavigate={handleGatedNavigate}
-      />
+      {/* ── PHASE 1: DAILY BLOOM PATH (path not done) ────────────────────────── */}
+      {!isDailyPathDone && (
+        <DailyBloomPath
+          adventure={dailyAdventure}
+          theme={theme}
+          onNavigate={handleGatedNavigate}
+          profileName={profileName}
+        />
+      )}
 
-      <PhonicsMap
-        phonicsProgress={progress.phonics}
-        theme={theme}
-        onNavigate={handleGatedNavigate}
-        onPlay={onNavigate}
-      />
+      {/* ── PHASE 2: CELEBRATION SCREEN ───────────────────────────────────────── */}
+      <AnimatePresence>
+        {showCelebration && (
+          <CelebrationScreen
+            profileName={profileName}
+            onPlayArcade={() => handleCelebrationDismiss('arcade')}
+            onShowGrownUp={() => handleCelebrationDismiss(null)}
+          />
+        )}
+      </AnimatePresence>
 
-      <BloomGarden
-        progress={progress}
-        theme={theme}
-        onNavigate={handleGatedNavigate}
-      />
+      {/* ── PHASE 3: TABS (path done, celebration seen) ───────────────────────── */}
+      {isDailyPathDone && !showCelebration && (
+        <>
+          {/* Tab bar */}
+          <div className="mx-auto mt-4 max-w-6xl px-4 md:px-6 xl:px-8">
+            <div
+              className="flex rounded-[20px] p-1 gap-1"
+              style={{ background: `${theme.primary}14`, border: `1.5px solid ${theme.primary}22` }}
+            >
+              {[
+                { id: 'today',    emoji: '⭐', label: 'Today' },
+                { id: 'progress', emoji: '🌱', label: 'My Garden' },
+                { id: 'explore',  emoji: '🎮', label: 'Play More' },
+              ].map(t => (
+                <motion.button
+                  key={t.id}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setTab(t.id)}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-[16px] py-2.5 font-bubble text-sm transition-all"
+                  style={{
+                    background: tab === t.id ? theme.primary : 'transparent',
+                    color: tab === t.id ? '#fff' : `${theme.text}88`,
+                    boxShadow: tab === t.id ? `0 4px 14px ${theme.primary}40` : 'none',
+                  }}
+                >
+                  <span style={{ fontSize: 14 }}>{t.emoji}</span>
+                  {t.label}
+                </motion.button>
+              ))}
+            </div>
+          </div>
+
+          <AnimatePresence mode="wait">
+            {tab === 'today' && (
+              <motion.div key="today"
+                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.22 }}
+              >
+                <DailyAdventureCard
+                  theme={theme}
+                  profileName={profileName}
+                  progress={progress}
+                  challenges={challenges}
+                  arcadeStatus={arcadeStatus}
+                  adventure={dailyAdventure}
+                  onNavigate={handleGatedNavigate}
+                />
+                <PlayPassBanner theme={theme} status={arcadeStatus} onNavigate={handleGatedNavigate} />
+                {challenges.length > 0 && (
+                  <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.1 }} className="mt-4">
+                    <div className="mx-auto mb-3 flex max-w-6xl items-center justify-between px-4 md:px-6 xl:px-8">
+                      <div className="flex items-center gap-2">
+                        <motion.span className="text-2xl" animate={{ rotate:[0,20,-20,0] }} transition={{ duration:1.8, repeat:Infinity, repeatDelay:2 }}>⭐</motion.span>
+                        <div>
+                          <p className="font-bubble text-base leading-none" style={{ color:theme.text }}>Bonus Quests</p>
+                          <p className="font-round leading-none mt-0.5" style={{ fontSize:11, color:theme.text, opacity:0.5 }}>
+                            Extra tasks for bonus points · {doneCount}/3{doneCount===3?' · All done! 🎉':''}
+                          </p>
+                        </div>
+                      </div>
+                      {challengeStreak > 0 && (
+                        <div className="flex items-center gap-1 px-2 py-1 rounded-full"
+                          style={{ background:'rgba(255,154,60,0.15)', border:'1px solid rgba(255,154,60,0.3)' }}>
+                          <span>🔥</span>
+                          <span className="font-bubble text-sm" style={{ color:'#F97316' }}>{challengeStreak}d</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mx-auto flex max-w-6xl gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide md:px-6 xl:px-8">
+                      {challenges.map((c, i) => (
+                        <ChallengeCard key={c.id} challenge={c} onNavigate={handleGatedNavigate} index={i} />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+                <PiggyBankFeature onNavigate={onNavigate} />
+              </motion.div>
+            )}
+
+            {tab === 'progress' && (
+              <motion.div key="progress"
+                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.22 }}
+              >
+                <BloomGarden progress={progress} theme={theme} onNavigate={handleGatedNavigate} />
+                <PhonicsMap phonicsProgress={progress.phonics} theme={theme} onNavigate={handleGatedNavigate} onPlay={onNavigate} />
+                <section className="mx-auto mt-4 max-w-6xl px-4 md:px-6 xl:px-8">
+                  <YaagviRoom
+                    theme={theme}
+                    roomScore={progress.totalStars || 0}
+                    stickersCount={(progress.stickers || []).length}
+                    dark={false}
+                    profileName={profileName}
+                  />
+                </section>
+              </motion.div>
+            )}
+
+            {tab === 'explore' && (
+              <motion.div key="explore"
+                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.22 }}
+              >
+                <ForYouFeed theme={theme} progress={progress} challenges={challenges} arcadeStatus={arcadeStatus} dailyAdventure={dailyAdventure} onNavigate={handleGatedNavigate} />
+                {(progress?.artGallery || []).length > 0 && (
+                  <div className="mx-auto max-w-6xl px-4 md:px-6 xl:px-8">
+                    <SectionHeader emoji="🖼️" label="My Art Gallery" sub="Your saved masterpieces" theme={theme} />
+                    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                      {(progress.artGallery || []).map(art => (
+                        <button key={art.id} onClick={() => handleGatedNavigate('davinci')}
+                          className="shrink-0 rounded-2xl overflow-hidden shadow-md"
+                          style={{ width: 96, height: 96, background: theme.card, border: `2px solid ${theme.primary}40` }}>
+                          <img src={art.dataUrl} alt={art.template} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="mt-4 mx-4 rounded-[28px] overflow-hidden"
+                  style={{ background: 'linear-gradient(160deg, #0a0518 0%, #1a0a35 50%, #0a1528 100%)', boxShadow: '0 8px 32px rgba(0,0,0,0.25)' }}>
+                  <div className="px-4 pt-4 pb-1 flex items-center gap-2">
+                    <span className="text-lg">🗺️</span>
+                    <p className="font-bubble text-white/70 text-xs uppercase tracking-widest">Your Adventure</p>
+                    <div className="flex-1 h-px ml-2" style={{ background: 'rgba(255,255,255,0.08)' }} />
+                  </div>
+                  <FS2AdventureMap progress={progress} dailyAdventure={dailyAdventure} onNavigate={handleGatedNavigate} />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      )}
 
       <ParentHandoff
         progress={progress}
@@ -1256,157 +1378,6 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
         arcadeStatus={arcadeStatus}
         theme={theme}
       />
-
-      {/* ── EXPLORE MORE TOGGLE ─────────────────────────────────────────────── */}
-      <div className="mx-auto mt-5 max-w-6xl px-4 md:px-6 xl:px-8">
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={() => setShowMore(v => !v)}
-          className="w-full flex items-center justify-between rounded-[22px] px-5 py-4"
-          style={{
-            background: showMore ? `${theme.primary}18` : `${theme.primary}10`,
-            border: `1.5px solid ${theme.primary}30`,
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">{showMore ? '🗺️' : '🎮'}</span>
-            <div className="text-left">
-              <p className="font-bubble text-base leading-none" style={{ color: theme.text }}>
-                {showMore ? 'All activities' : 'Explore more'}
-              </p>
-              <p className="font-round text-xs mt-0.5 opacity-55" style={{ color: theme.text }}>
-                {showMore ? 'Tap to collapse' : 'Challenges · Arcade · All modules'}
-              </p>
-            </div>
-          </div>
-          <motion.span
-            animate={{ rotate: showMore ? 180 : 0 }}
-            transition={{ duration: 0.25 }}
-            className="font-bold text-xl opacity-40"
-            style={{ color: theme.text }}
-          >
-            ↓
-          </motion.span>
-        </motion.button>
-      </div>
-
-      <AnimatePresence>
-        {showMore && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.32, ease: 'easeInOut' }}
-            style={{ overflow: 'hidden' }}
-          >
-            <RetentionPanel
-              ageGroup="early"
-              theme={theme}
-              profileName={profileName}
-              missionTitle="Daily Mission"
-              missionSubtitle="Complete the next adventure step, then collect room rewards."
-              steps={dailyAdventure.steps.map(step => ({
-                id: step.module.id,
-                label: step.module.label,
-                done: step.done,
-              }))}
-              nextLabel={dailyAdventure.nextStep?.module?.label}
-              onNavigate={handleGatedNavigate}
-              roomScore={progress.totalStars || 0}
-              stickersCount={(progress.stickers || []).length}
-            />
-
-            <ForYouFeed
-              theme={theme}
-              progress={progress}
-              challenges={challenges}
-              arcadeStatus={arcadeStatus}
-              dailyAdventure={dailyAdventure}
-              onNavigate={handleGatedNavigate}
-            />
-
-            {/* ── DAILY CHALLENGES ───────────────────────────────────────────── */}
-            {challenges.length > 0 && (
-              <motion.div
-                initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}
-                transition={{ delay:0.1 }}
-                className="mt-4"
-              >
-                <div className="mx-auto mb-3 flex max-w-6xl items-center justify-between px-4 md:px-6 xl:px-8">
-                  <div className="flex items-center gap-2">
-                    <motion.span className="text-2xl"
-                      animate={{ rotate:[0,20,-20,0] }}
-                      transition={{ duration:1.8, repeat:Infinity, repeatDelay:2 }}>🎯</motion.span>
-                    <div>
-                      <p className="font-bubble text-base leading-none" style={{ color:theme.text }}>Daily Challenges</p>
-                      <p className="font-round leading-none mt-0.5" style={{ fontSize:11, color:theme.text, opacity:0.5 }}>
-                        {doneCount}/3 completed{doneCount===3?' · All done! 🎉':''}
-                      </p>
-                    </div>
-                  </div>
-                  {challengeStreak > 0 && (
-                    <div className="flex items-center gap-1 px-2 py-1 rounded-full"
-                      style={{ background:'rgba(255,154,60,0.15)', border:'1px solid rgba(255,154,60,0.3)' }}>
-                      <span>🔥</span>
-                      <span className="font-bubble text-sm" style={{ color:'#F97316' }}>{challengeStreak}d</span>
-                    </div>
-                  )}
-                </div>
-                <div className="mx-auto flex max-w-6xl gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide md:px-6 xl:px-8">
-                  {challenges.map((c, i) => (
-                    <ChallengeCard key={c.id} challenge={c} onNavigate={handleGatedNavigate} index={i} />
-                  ))}
-                  {doneCount === 3 && (
-                    <motion.div
-                      initial={{ scale:0 }} animate={{ scale:1 }}
-                      transition={{ type:'spring', stiffness:300, delay:0.2 }}
-                      className="flex-shrink-0 rounded-[22px] p-3 flex flex-col items-center justify-center"
-                      style={{ width:138, background:'linear-gradient(135deg,#FFD700,#FF9A3C)', boxShadow:'0 6px 24px rgba(255,215,0,0.45)' }}
-                    >
-                      <motion.span className="text-4xl"
-                        animate={{ scale:[1,1.3,1], rotate:[0,15,-15,0] }}
-                        transition={{ duration:0.8, repeat:Infinity, repeatDelay:1 }}>🏆</motion.span>
-                      <p className="font-bubble text-white text-sm text-center mt-1">Champion!</p>
-                      <p className="font-round text-white/80 text-center mt-0.5" style={{ fontSize:10 }}>All done!</p>
-                    </motion.div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-
-            <PlayPassBanner theme={theme} status={arcadeStatus} onNavigate={handleGatedNavigate} />
-
-            <PiggyBankFeature onNavigate={onNavigate} />
-
-            {(progress?.artGallery || []).length > 0 && (
-              <div className="mx-auto max-w-6xl px-4 md:px-6 xl:px-8">
-                <SectionHeader emoji="🖼️" label="My Art Gallery" sub="Your saved masterpieces" theme={theme} />
-                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                  {(progress.artGallery || []).map(art => (
-                    <button
-                      key={art.id}
-                      onClick={() => handleGatedNavigate('davinci')}
-                      className="shrink-0 rounded-2xl overflow-hidden shadow-md"
-                      style={{ width: 96, height: 96, background: theme.card, border: `2px solid ${theme.primary}40` }}>
-                      <img src={art.dataUrl} alt={art.template} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-4 mx-4 rounded-[28px] overflow-hidden"
-              style={{ background: `linear-gradient(160deg, #0a0518 0%, #1a0a35 50%, #0a1528 100%)`, boxShadow: '0 8px 32px rgba(0,0,0,0.25)' }}>
-              <div className="px-4 pt-4 pb-1 flex items-center gap-2">
-                <span className="text-lg">🗺️</span>
-                <p className="font-bubble text-white/70 text-xs uppercase tracking-widest">Your Adventure</p>
-                <div className="flex-1 h-px ml-2" style={{ background: 'rgba(255,255,255,0.08)' }} />
-              </div>
-              <FS2AdventureMap progress={progress} dailyAdventure={dailyAdventure} onNavigate={handleGatedNavigate} />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* ── PARENT ZONE CTA ───────────────────────────────────────────────────── */}
       <motion.button

@@ -113,8 +113,8 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
             ) : (
               <>
                 <div>
-                  <label className="font-round text-sm font-bold text-white block mb-1">Email Address</label>
-                  <input type="email" value={prEmail}
+                  <label htmlFor="pin-reset-email" className="font-round text-sm font-bold text-white block mb-1">Email Address</label>
+                  <input id="pin-reset-email" type="email" value={prEmail}
                     onChange={e => { setPrEmail(e.target.value); setPrError('') }}
                     placeholder="name@example.com" inputMode="email" autoComplete="email"
                     className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 font-round text-white outline-none placeholder:text-white/30"
@@ -122,8 +122,8 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
                 </div>
 
                 <div>
-                  <label className="font-round text-sm font-bold text-white block mb-1">Account Password</label>
-                  <input type="password" value={prPassword}
+                  <label htmlFor="pin-reset-password" className="font-round text-sm font-bold text-white block mb-1">Account Password</label>
+                  <input id="pin-reset-password" type="password" value={prPassword}
                     onChange={e => { setPrPassword(e.target.value); setPrError('') }}
                     placeholder="Your account password" autoComplete="current-password"
                     className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 font-round text-white outline-none placeholder:text-white/30"
@@ -229,8 +229,9 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
 
           {fullLogin && (
             <div>
-              <label className="font-round text-sm font-bold text-white block mb-1">Email Address</label>
+              <label htmlFor="guardian-login-email" className="font-round text-sm font-bold text-white block mb-1">Email Address</label>
               <input
+                id="guardian-login-email"
                 type="email"
                 value={email}
                 onChange={e => { setEmail(e.target.value); setError('') }}
@@ -246,8 +247,9 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
 
           {fullLogin && isSupabaseConfigured && (
             <div>
-              <label className="font-round text-sm font-bold text-white block mb-1">Account Password</label>
+              <label htmlFor="guardian-login-password" className="font-round text-sm font-bold text-white block mb-1">Account Password</label>
               <input
+                id="guardian-login-password"
                 type="password"
                 value={password}
                 onChange={e => { setPassword(e.target.value); setError('') }}

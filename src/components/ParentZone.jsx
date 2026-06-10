@@ -74,10 +74,18 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [resetPin, setResetPin] = useState('')
   const [reportEmail, setReportEmail] = useState(guardianEmail || '')
+  const [overrideEmail, setOverrideEmail] = useState(false)
   const [reportStatus, setReportStatus] = useState('idle')
   const [profileDraft, setProfileDraft] = useState({ name: profileName || '', ageGroup: profileAgeGroup || 'early' })
   const [editSaved, setEditSaved] = useState(false)
-  const [digestOptIn, setDigestOptInState] = useState(() => isDigestOptedIn(profileId))
+  const [digestOptIn, setDigestOptInState] = useState(() => {
+    // Auto-enable if registered email exists and not explicitly opted out
+    if (guardianEmail && localStorage.getItem(`bj_digest_optin_${profileId}`) === null) {
+      setDigestOptIn(profileId, true)
+      return true
+    }
+    return isDigestOptedIn(profileId)
+  })
   const pinTimerRef = useRef(null)
 
   useEffect(() => () => clearTimeout(pinTimerRef.current), [])
@@ -525,6 +533,69 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
                 </div>
               </div>
             )}
+
+            {/* ── EMAIL PROGRESS REPORT ── */}
+            <div className="p-4 rounded-3xl shadow" style={{ background: theme.card }}>
+              <div className="flex items-center justify-between mb-1">
+                <p className="font-bubble text-lg" style={{ color: theme.text }}>📧 Email Progress Report</p>
+                <div className="flex items-center gap-2">
+                  <span className="font-round text-xs opacity-60" style={{ color: theme.text }}>Weekly auto</span>
+                  <button
+                    onClick={() => {
+                      const next = !digestOptIn
+                      setDigestOptIn(profileId, next)
+                      setDigestOptInState(next)
+                    }}
+                    className="relative w-11 h-6 rounded-full transition-colors"
+                    style={{ background: digestOptIn ? '#8B00FF' : '#d1d5db' }}
+                  >
+                    <span className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform"
+                      style={{ transform: digestOptIn ? 'translateX(20px)' : 'translateX(0)' }} />
+                  </button>
+                </div>
+              </div>
+              <p className="font-round text-sm opacity-70 mb-3" style={{ color: theme.text }}>
+                {digestOptIn
+                  ? `Auto-sending every week to ${reportEmail || 'your email'}.`
+                  : `Send a weekly summary of ${profileName || "your child"}'s learning to any email.`}
+              </p>
+              {reportStatus === 'done' ? (
+                <div className="rounded-2xl p-3 text-center" style={{ background: '#22c55e18', border: '1.5px solid #22c55e44' }}>
+                  <p className="font-bubble text-base" style={{ color: '#16a34a' }}>✅ Report sent!</p>
+                  <p className="font-round text-xs mt-1 opacity-70" style={{ color: theme.text }}>Check your inbox.</p>
+                  <button onClick={() => setReportStatus('idle')} className="font-round text-xs mt-2 underline opacity-50" style={{ color: theme.text }}>Send another</button>
+                </div>
+              ) : (
+                <>
+                  {guardianEmail && !overrideEmail ? (
+                    <div className="flex items-center justify-between rounded-2xl px-4 py-2.5 mb-2"
+                      style={{ background: theme.bg, border: `1.5px solid ${theme.primary}40` }}>
+                      <span className="font-round text-sm" style={{ color: theme.text }}>{guardianEmail}</span>
+                      <button onClick={() => setOverrideEmail(true)} className="font-round text-xs underline opacity-50 ml-2 shrink-0" style={{ color: theme.text }}>Change</button>
+                    </div>
+                  ) : (
+                    <input
+                      type="email"
+                      value={reportEmail}
+                      onChange={e => { setReportEmail(e.target.value); if (reportStatus === 'error') setReportStatus('idle') }}
+                      placeholder="parent@email.com"
+                      className="w-full rounded-2xl px-4 py-2.5 font-round text-sm mb-2 outline-none"
+                      style={{ background: theme.bg, border: `1.5px solid ${theme.primary}40`, color: theme.text }}
+                    />
+                  )}
+                  <motion.button whileTap={{ scale: 0.95 }}
+                    onClick={sendProgressReport}
+                    disabled={reportStatus === 'sending'}
+                    className="w-full py-3 rounded-2xl font-bubble text-white disabled:opacity-50"
+                    style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}>
+                    {reportStatus === 'sending' ? 'Sending…' : 'Send Progress Report 📧'}
+                  </motion.button>
+                  {reportStatus === 'error' && (
+                    <p className="font-round text-xs text-red-400 mt-2 text-center">Failed to send. Check email and try again.</p>
+                  )}
+                </>
+              )}
+            </div>
           </motion.div>
         )}
 
@@ -659,61 +730,6 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
                     style={{ transform: progress.hideSacred ? 'translateX(0)' : 'translateX(20px)' }} />
                 </button>
               </div>
-            </div>
-
-            {/* Progress Report */}
-            <div className="p-4 rounded-3xl shadow" style={{ background: theme.card }}>
-              <div className="flex items-center justify-between mb-1">
-                <p className="font-bubble text-lg" style={{ color: theme.text }}>📧 Email Progress Report</p>
-                <div className="flex items-center gap-2">
-                  <span className="font-round text-xs opacity-60" style={{ color: theme.text }}>Weekly auto</span>
-                  <button
-                    onClick={() => {
-                      const next = !digestOptIn
-                      setDigestOptIn(profileId, next)
-                      setDigestOptInState(next)
-                    }}
-                    className="relative w-11 h-6 rounded-full transition-colors"
-                    style={{ background: digestOptIn ? '#8B00FF' : '#d1d5db' }}
-                  >
-                    <span className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform"
-                      style={{ transform: digestOptIn ? 'translateX(20px)' : 'translateX(0)' }} />
-                  </button>
-                </div>
-              </div>
-              <p className="font-round text-sm opacity-70 mb-3" style={{ color: theme.text }}>
-                {digestOptIn
-                  ? `Auto-sending every week to ${reportEmail || 'your email'}.`
-                  : `Send a weekly summary of ${profileName || "your child"}'s learning to any email.`}
-              </p>
-              {reportStatus === 'done' ? (
-                <div className="rounded-2xl p-3 text-center" style={{ background: '#22c55e18', border: '1.5px solid #22c55e44' }}>
-                  <p className="font-bubble text-base" style={{ color: '#16a34a' }}>✅ Report sent!</p>
-                  <p className="font-round text-xs mt-1 opacity-70" style={{ color: theme.text }}>Check your inbox.</p>
-                  <button onClick={() => setReportStatus('idle')} className="font-round text-xs mt-2 underline opacity-50" style={{ color: theme.text }}>Send another</button>
-                </div>
-              ) : (
-                <>
-                  <input
-                    type="email"
-                    value={reportEmail}
-                    onChange={e => { setReportEmail(e.target.value); if (reportStatus === 'error') setReportStatus('idle') }}
-                    placeholder="parent@email.com"
-                    className="w-full rounded-2xl px-4 py-2.5 font-round text-sm mb-2 outline-none"
-                    style={{ background: theme.bg, border: `1.5px solid ${theme.primary}40`, color: theme.text }}
-                  />
-                  <motion.button whileTap={{ scale: 0.95 }}
-                    onClick={sendProgressReport}
-                    disabled={reportStatus === 'sending'}
-                    className="w-full py-3 rounded-2xl font-bubble text-white disabled:opacity-50"
-                    style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}>
-                    {reportStatus === 'sending' ? 'Sending…' : 'Send Progress Report 📧'}
-                  </motion.button>
-                  {reportStatus === 'error' && (
-                    <p className="font-round text-xs text-red-400 mt-2 text-center">Failed to send. Check email and try again.</p>
-                  )}
-                </>
-              )}
             </div>
 
             {/* Edit Player */}

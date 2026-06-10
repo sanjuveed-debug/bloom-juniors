@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { dailySeedFor, seededShuffle } from '../../utils/seededRandom'
+import { useSpeech } from '../../hooks/useSpeech'
 
 const STARTER_TABLES = [2,3,4,5,10]
 const ALL_TABLES = [2,3,4,5,6,7,8,9,10,11,12]
@@ -31,6 +32,7 @@ function wrongOptions(ans) {
 }
 
 export default function TimesTablesModule({ theme, onDone, onBack, played = 0 }) {
+  const { speak } = useSpeech()
   const [manualUnlock, setManualUnlock] = useState(false)
   const availableTables = (manualUnlock || played >= 3) ? ALL_TABLES : getAvailableTables(played)
   const timerMax = getTimerSeconds(played)
@@ -62,6 +64,7 @@ export default function TimesTablesModule({ theme, onDone, onBack, played = 0 })
     setTimeLeft(timerMax)
     setFeedback(null)
     setPhase('quiz')
+    speak(`The ${t} times table! Answer each one as fast as you can. You have ${timerMax} seconds per question.`, { mood: 'instruct' })
   }
 
   const advance = useCallback((correct, qs, qi, sc) => {
@@ -220,6 +223,12 @@ export default function TimesTablesModule({ theme, onDone, onBack, played = 0 })
             {timeLeft}
           </div>
           <span className="font-round text-white/40 text-xs">seconds</span>
+        </div>
+
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-2xl"
+          style={{ background: `${theme.primary}25`, border: `1px solid ${theme.primary}40` }}>
+          <span className="text-sm">🎯</span>
+          <p className="font-round text-white/70 text-xs font-bold">Recall the {table}× table as fast as you can</p>
         </div>
 
         <div className="w-full max-w-sm p-8 rounded-3xl text-center"

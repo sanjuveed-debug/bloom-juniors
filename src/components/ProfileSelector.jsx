@@ -63,6 +63,10 @@ export default function ProfileSelector({
     const trimmed = name.trim()
     if (!trimmed) { setNameError('Please enter a name!'); return }
     if (trimmed.length > 14) { setNameError('Name too long (max 14 letters)'); return }
+    if (profiles.some(profile => profile.name.trim().toLowerCase() === trimmed.toLowerCase())) {
+      setNameError(`${trimmed} is already in this class.`)
+      return
+    }
 
     const newId = onCreateNew(trimmed, colorIdx, EMOJI_OPTIONS[emojiIdx], ageGroup)
     if (!newId) {

@@ -78,6 +78,49 @@ function buildDigestHtml({ parentName, childName, period, stats, modules, topMod
   `
 }
 
+function buildNudgeHtml({ childName }) {
+  const name = escapeHtml(childName || 'your child')
+  return `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08)">
+      <div style="background:linear-gradient(135deg,#8B00FF,#FF1D8E);padding:36px 28px;text-align:center">
+        <div style="font-size:64px;margin-bottom:12px">🌱</div>
+        <h1 style="color:white;font-size:26px;margin:0 0 8px">Yaagvi misses ${name}!</h1>
+        <p style="color:rgba(255,255,255,0.75);font-size:14px;margin:0">${name} hasn't had a learning session this week.</p>
+      </div>
+
+      <div style="padding:32px 28px;text-align:center">
+        <p style="font-size:16px;color:#334155;line-height:1.6;margin:0 0 24px">
+          Even <strong>5 minutes</strong> of learning keeps the streak alive and the Bloom Garden growing.
+          Yaagvi is ready with a short activity whenever ${name} is.
+        </p>
+
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:28px">
+          ${[
+            { emoji: '🎤', label: 'Sound Pop', desc: '5 min phonics' },
+            { emoji: '🔢', label: 'Number World', desc: '5 min maths' },
+            { emoji: '🎨', label: 'Da Vinci Studio', desc: 'Creative play' },
+          ].map(m => `
+            <div style="background:#f8fafc;border-radius:16px;padding:14px 18px;text-align:center;min-width:100px">
+              <div style="font-size:28px">${m.emoji}</div>
+              <div style="font-weight:700;color:#1e293b;font-size:13px;margin-top:4px">${m.label}</div>
+              <div style="color:#94a3b8;font-size:11px">${m.desc}</div>
+            </div>
+          `).join('')}
+        </div>
+
+        <a href="https://bloomjuniors.com?app=1"
+          style="display:inline-block;background:linear-gradient(135deg,#8B00FF,#FF1D8E);color:white;text-decoration:none;padding:14px 36px;border-radius:50px;font-weight:900;font-size:16px;box-shadow:0 8px 24px rgba(139,0,255,0.3)">
+          Start today's learning →
+        </a>
+
+        <p style="font-size:12px;color:#94a3b8;margin:24px 0 0">
+          Bloom Juniors · Sent because ${name} hasn't learned this week.
+        </p>
+      </div>
+    </div>
+  `
+}
+
 export async function onRequest(context) {
   const { request, env } = context
 
@@ -86,7 +129,7 @@ export async function onRequest(context) {
   let body = {}
   try { body = await request.json() } catch {}
 
-  const { parentEmail, parentName, childName, period, stats, modules, topModule, streakDays } = body
+  const { parentEmail, parentName, childName, period, stats, modules, topModule, streakDays, type } = body
 
   if (!parentEmail || !parentEmail.includes('@')) return json({ error: 'Valid parent email required' }, 400)
 
@@ -97,17 +140,19 @@ export async function onRequest(context) {
     return json({ ok: false, skipped: true, reason: 'missing_email_config' }, 202)
   }
 
-  const html = buildDigestHtml({ parentName, childName, period, stats, modules: modules || [], topModule, streakDays: streakDays || 0 })
+  const isNudge = type === 'nudge'
+  const html = isNudge
+    ? buildNudgeHtml({ childName })
+    : buildDigestHtml({ parentName, childName, period, stats, modules: modules || [], topModule, streakDays: streakDays || 0 })
+
+  const subject = isNudge
+    ? `Yaagvi misses ${escapeHtml(childName || 'your child')}! 🌱`
+    : `${escapeHtml(childName)}'s weekly learning report ⭐`
 
   const emailRes = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from,
-      to: [parentEmail],
-      subject: `${escapeHtml(childName)}'s weekly learning report ⭐`,
-      html,
-    }),
+    body: JSON.stringify({ from, to: [parentEmail], subject, html }),
   })
 
   if (!emailRes.ok) {
