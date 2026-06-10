@@ -567,6 +567,15 @@ function ArcadeLobby({ theme, profileName, progress, onBack, onSelect }) {
             <GameCard key={game.id} game={game} onSelect={onSelect} />
           ))}
         </div>
+
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={onBack}
+          className="bubble-btn mt-6 w-full px-6 py-4 text-lg"
+          style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}
+        >
+          ← Back to Today
+        </motion.button>
       </div>
     </div>
   )
