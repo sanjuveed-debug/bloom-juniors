@@ -67,6 +67,20 @@ const TODDLER_MODULES = [
   { id: 'songs',      label: 'Songs',       emoji: '🎵', desc: 'Sing along!',       bg: '#E21C1C', comingSoon: true  },
 ]
 
+// ── Session helper: shuffled subset so repeat plays differ ────────────────────
+function shuffleArr(arr) {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+function makeSession(pool, n = 6) {
+  return shuffleArr(pool).slice(0, Math.min(n, pool.length)).map(q => ({ ...q, options: shuffleArr(q.options) }))
+}
+
 // ── Fruits game data ──────────────────────────────────────────────────────────
 const FRUIT_QUESTIONS = [
   { emoji: '🍎', fruit: 'Apple',       options: ['Apple', 'Banana', 'Orange'] },
@@ -75,6 +89,10 @@ const FRUIT_QUESTIONS = [
   { emoji: '🍇', fruit: 'Grapes',      options: ['Grapes', 'Apple', 'Strawberry'] },
   { emoji: '🍓', fruit: 'Strawberry',  options: ['Cherry', 'Strawberry', 'Watermelon'] },
   { emoji: '🍉', fruit: 'Watermelon',  options: ['Watermelon', 'Melon', 'Apple'] },
+  { emoji: '🥭', fruit: 'Mango',       options: ['Mango', 'Orange', 'Banana'] },
+  { emoji: '🍒', fruit: 'Cherry',      options: ['Cherry', 'Strawberry', 'Grapes'] },
+  { emoji: '🍋', fruit: 'Lemon',       options: ['Lemon', 'Orange', 'Mango'] },
+  { emoji: '🍍', fruit: 'Pineapple',   options: ['Pineapple', 'Banana', 'Lemon'] },
 ]
 
 // ── Body parts game data ──────────────────────────────────────────────────────
@@ -85,6 +103,8 @@ const BODY_QUESTIONS = [
   { emoji: '👄', part: 'Mouth',  options: ['Nose', 'Mouth', 'Hands'] },
   { emoji: '🖐️', part: 'Hands',  options: ['Hands', 'Feet', 'Tummy'] },
   { emoji: '🦶', part: 'Feet',   options: ['Hands', 'Feet', 'Head'] },
+  { emoji: '🦷', part: 'Teeth',  options: ['Teeth', 'Mouth', 'Nose'] },
+  { emoji: '🦵', part: 'Legs',   options: ['Legs', 'Hands', 'Feet'] },
 ]
 
 // ── Avatar selector ───────────────────────────────────────────────────────────
@@ -169,13 +189,19 @@ const COLOUR_QUESTIONS = [
   { colour: 'Yellow', hex: '#EAB308', emoji: '🌻', options: ['Yellow', 'Purple', 'Red'] },
   { colour: 'Green',  hex: '#22C55E', emoji: '🐸', options: ['Orange', 'Green', 'Blue'] },
   { colour: 'Pink',   hex: '#EC4899', emoji: '🌸', options: ['Pink', 'Green', 'Yellow'] },
+  { colour: 'Orange', hex: '#F97316', emoji: '🥕', options: ['Orange', 'Red', 'Yellow'] },
+  { colour: 'Purple', hex: '#8B5CF6', emoji: '🍆', options: ['Purple', 'Pink', 'Blue'] },
+  { colour: 'Brown',  hex: '#92400E', emoji: '🐻', options: ['Brown', 'Orange', 'Black'] },
+  { colour: 'Black',  hex: '#1F2937', emoji: '🐧', options: ['Black', 'Brown', 'Blue'] },
+  { colour: 'White',  hex: '#F9FAFB', emoji: '☁️', options: ['White', 'Yellow', 'Pink'] },
 ]
 
 function ColoursModule({ theme, onDone, onBack }) {
+  const [questions] = useState(() => makeSession(COLOUR_QUESTIONS))
   const [q, setQ] = useState(0)
   const [score, setScore] = useState(0)
   const [feedback, setFeedback] = useState(null)
-  const current = COLOUR_QUESTIONS[q]
+  const current = questions[q]
   const { speak } = useSpeech()
   const spokenQ = useRef(-1)
   const lockedRef = useRef(false)
@@ -211,7 +237,7 @@ function ColoursModule({ theme, onDone, onBack }) {
     const id = window.setTimeout(() => {
       timersRef.current = timersRef.current.filter(t => t !== id)
       setFeedback(null)
-      if (q + 1 >= COLOUR_QUESTIONS.length) {
+      if (q + 1 >= questions.length) {
         completedRef.current = true
         onDone(nextScore)
       } else {
@@ -257,7 +283,7 @@ function ColoursModule({ theme, onDone, onBack }) {
         ))}
       </div>
       <p className="font-round text-white/70 text-sm mt-8">
-        {q + 1} / {COLOUR_QUESTIONS.length}
+        {q + 1} / {questions.length}
       </p>
     </div>
   )
@@ -270,13 +296,17 @@ const SHAPE_QUESTIONS = [
   { shape: 'Triangle', svg: <polygon points="50,10 90,90 10,90" />,                                options: ['Square', 'Triangle', 'Star']   },
   { shape: 'Star',     svg: <polygon points="50,5 61,35 95,35 68,57 79,91 50,70 21,91 32,57 5,35 39,35" />, options: ['Star', 'Circle', 'Square'] },
   { shape: 'Heart',    svg: <path d="M50,80 C10,50 10,10 50,30 C90,10 90,50 50,80Z" />,            options: ['Heart', 'Star', 'Triangle']    },
+  { shape: 'Oval',     svg: <ellipse cx="50" cy="50" rx="42" ry="28" />,                           options: ['Oval', 'Circle', 'Square']     },
+  { shape: 'Diamond',  svg: <polygon points="50,5 90,50 50,95 10,50" />,                           options: ['Diamond', 'Triangle', 'Star']  },
+  { shape: 'Rectangle', svg: <rect x="8" y="25" width="84" height="50" />,                         options: ['Rectangle', 'Square', 'Oval']  },
 ]
 
 function ShapesModule({ theme, onDone, onBack }) {
+  const [questions] = useState(() => makeSession(SHAPE_QUESTIONS))
   const [q, setQ] = useState(0)
   const [score, setScore] = useState(0)
   const [feedback, setFeedback] = useState(null)
-  const current = SHAPE_QUESTIONS[q]
+  const current = questions[q]
   const { speak } = useSpeech()
   const spokenQ = useRef(-1)
   const lockedRef = useRef(false)
@@ -306,13 +336,13 @@ function ShapesModule({ theme, onDone, onBack }) {
       confetti({ particleCount: 60, spread: 80, origin: { x: 0.5, y: 0.4 } })
       speak(`Yes! It is a ${current.shape}! Well done!`, { mood: 'celebrate', rate: 0.8 })
     } else {
-      speak(`This is a ${current.shape}. Have another try!`, { mood: 'instruct', rate: 0.8 })
+      speak(`This is a ${current.shape}. Let's look at the next one!`, { mood: 'instruct', rate: 0.8 })
     }
     setFeedback(correct ? 'correct' : 'wrong')
     const id = window.setTimeout(() => {
       timersRef.current = timersRef.current.filter(t => t !== id)
       setFeedback(null)
-      if (q + 1 >= SHAPE_QUESTIONS.length) {
+      if (q + 1 >= questions.length) {
         completedRef.current = true
         onDone(nextScore)
       } else {
@@ -353,25 +383,31 @@ function ShapesModule({ theme, onDone, onBack }) {
           </motion.button>
         ))}
       </div>
-      <p className="font-round text-white/70 text-sm mt-8">{q + 1} / {SHAPE_QUESTIONS.length}</p>
+      <p className="font-round text-white/70 text-sm mt-8">{q + 1} / {questions.length}</p>
     </div>
   )
 }
 
 // ── Numbers module ────────────────────────────────────────────────────────────
 const NUMBER_QUESTIONS = [
-  { count: 1, emoji: '🍎', options: [1, 2, 3] },
-  { count: 2, emoji: '🐧', options: [1, 2, 3] },
-  { count: 3, emoji: '🌟', options: [2, 3, 4] },
-  { count: 4, emoji: '🎈', options: [3, 4, 5] },
-  { count: 5, emoji: '🦋', options: [4, 5, 6] },
+  { count: 1,  emoji: '🍎', options: [1, 2, 3] },
+  { count: 2,  emoji: '🐧', options: [1, 2, 3] },
+  { count: 3,  emoji: '🌟', options: [2, 3, 4] },
+  { count: 4,  emoji: '🎈', options: [3, 4, 5] },
+  { count: 5,  emoji: '🦋', options: [4, 5, 6] },
+  { count: 6,  emoji: '🐞', options: [5, 6, 7] },
+  { count: 7,  emoji: '🌼', options: [6, 7, 8] },
+  { count: 8,  emoji: '🐠', options: [7, 8, 9] },
+  { count: 9,  emoji: '⭐', options: [8, 9, 10] },
+  { count: 10, emoji: '🎁', options: [8, 9, 10] },
 ]
 
 function NumbersModule({ theme, onDone, onBack }) {
+  const [questions] = useState(() => makeSession(NUMBER_QUESTIONS))
   const [q, setQ] = useState(0)
   const [score, setScore] = useState(0)
   const [feedback, setFeedback] = useState(null)
-  const current = NUMBER_QUESTIONS[q]
+  const current = questions[q]
   const { speak } = useSpeech()
   const spokenQ = useRef(-1)
   const lockedRef = useRef(false)
@@ -401,13 +437,13 @@ function NumbersModule({ theme, onDone, onBack }) {
       confetti({ particleCount: 80, spread: 100, origin: { x: 0.5, y: 0.4 } })
       speak(`Yes! There are ${current.count}! Brilliant!`, { mood: 'celebrate', rate: 0.8 })
     } else {
-      speak(`There are ${current.count}. Count again!`, { mood: 'instruct', rate: 0.8 })
+      speak(`There are ${current.count}. Let's count the next one together!`, { mood: 'instruct', rate: 0.8 })
     }
     setFeedback(correct ? 'correct' : 'wrong')
     const id = window.setTimeout(() => {
       timersRef.current = timersRef.current.filter(t => t !== id)
       setFeedback(null)
-      if (q + 1 >= NUMBER_QUESTIONS.length) {
+      if (q + 1 >= questions.length) {
         completedRef.current = true
         onDone(nextScore)
       } else {
@@ -453,7 +489,7 @@ function NumbersModule({ theme, onDone, onBack }) {
           </motion.button>
         ))}
       </div>
-      <p className="font-round text-white/70 text-sm mt-8">{q + 1} / {NUMBER_QUESTIONS.length}</p>
+      <p className="font-round text-white/70 text-sm mt-8">{q + 1} / {questions.length}</p>
     </div>
   )
 }
@@ -465,13 +501,19 @@ const ANIMAL_QUESTIONS = [
   { animal: 'Cow',      emoji: '🐮', sound: 'Moo!',    options: ['Cow', 'Pig', 'Sheep']    },
   { animal: 'Duck',     emoji: '🦆', sound: 'Quack!',  options: ['Frog', 'Duck', 'Bird']   },
   { animal: 'Elephant', emoji: '🐘', sound: 'Trumpet!', options: ['Elephant', 'Dog', 'Cat'] },
+  { animal: 'Lion',     emoji: '🦁', sound: 'Roar!',   options: ['Lion', 'Cat', 'Dog']     },
+  { animal: 'Sheep',    emoji: '🐑', sound: 'Baa!',    options: ['Sheep', 'Cow', 'Pig']    },
+  { animal: 'Pig',      emoji: '🐷', sound: 'Oink!',   options: ['Pig', 'Sheep', 'Cow']    },
+  { animal: 'Horse',    emoji: '🐴', sound: 'Neigh!',  options: ['Horse', 'Cow', 'Lion']   },
+  { animal: 'Frog',     emoji: '🐸', sound: 'Ribbit!', options: ['Frog', 'Duck', 'Bird']   },
 ]
 
 function AnimalsModule({ theme, onDone, onBack }) {
+  const [questions] = useState(() => makeSession(ANIMAL_QUESTIONS))
   const [q, setQ] = useState(0)
   const [score, setScore] = useState(0)
   const [feedback, setFeedback] = useState(null)
-  const current = ANIMAL_QUESTIONS[q]
+  const current = questions[q]
   const { speak } = useSpeech()
   const spokenQ = useRef(-1)
   const lockedRef = useRef(false)
@@ -501,13 +543,13 @@ function AnimalsModule({ theme, onDone, onBack }) {
       confetti({ particleCount: 60, spread: 80, origin: { x: 0.5, y: 0.4 } })
       speak(`Yes! It is a ${current.animal}! Great job!`, { mood: 'celebrate', rate: 0.8 })
     } else {
-      speak(`This is a ${current.animal}. Keep trying!`, { mood: 'instruct', rate: 0.8 })
+      speak(`This is a ${current.animal}. Let's meet the next animal!`, { mood: 'instruct', rate: 0.8 })
     }
     setFeedback(correct ? 'correct' : 'wrong')
     const id = window.setTimeout(() => {
       timersRef.current = timersRef.current.filter(t => t !== id)
       setFeedback(null)
-      if (q + 1 >= ANIMAL_QUESTIONS.length) {
+      if (q + 1 >= questions.length) {
         completedRef.current = true
         onDone(nextScore)
       } else {
@@ -550,13 +592,14 @@ function AnimalsModule({ theme, onDone, onBack }) {
           </motion.button>
         ))}
       </div>
-      <p className="font-round text-white/70 text-sm mt-8">{q + 1} / {ANIMAL_QUESTIONS.length}</p>
+      <p className="font-round text-white/70 text-sm mt-8">{q + 1} / {questions.length}</p>
     </div>
   )
 }
 
 // ── Fruits module ─────────────────────────────────────────────────────────────
 function FruitsModule({ theme, onDone, onBack }) {
+  const [questions] = useState(() => makeSession(FRUIT_QUESTIONS))
   const [q, setQ] = useState(0)
   const [score, setScore] = useState(0)
   const [feedback, setFeedback] = useState(null)
@@ -573,7 +616,7 @@ function FruitsModule({ theme, onDone, onBack }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const current = FRUIT_QUESTIONS[q]
+  const current = questions[q]
 
   useEffect(() => {
     if (spokenQ.current === q) return
@@ -597,7 +640,7 @@ function FruitsModule({ theme, onDone, onBack }) {
     const id = window.setTimeout(() => {
       timersRef.current = timersRef.current.filter(t => t !== id)
       setFeedback(null)
-      if (q + 1 >= FRUIT_QUESTIONS.length) {
+      if (q + 1 >= questions.length) {
         completedRef.current = true
         onDone(nextScore)
       } else {
@@ -629,13 +672,14 @@ function FruitsModule({ theme, onDone, onBack }) {
           </motion.button>
         ))}
       </div>
-      <p className="font-round text-white/70 text-sm mt-8">{q + 1} / {FRUIT_QUESTIONS.length}</p>
+      <p className="font-round text-white/70 text-sm mt-8">{q + 1} / {questions.length}</p>
     </div>
   )
 }
 
 // ── Body parts module ─────────────────────────────────────────────────────────
 function BodyPartsModule({ theme, onDone, onBack }) {
+  const [questions] = useState(() => makeSession(BODY_QUESTIONS))
   const [q, setQ] = useState(0)
   const [score, setScore] = useState(0)
   const [feedback, setFeedback] = useState(null)
@@ -652,7 +696,7 @@ function BodyPartsModule({ theme, onDone, onBack }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const current = BODY_QUESTIONS[q]
+  const current = questions[q]
 
   useEffect(() => {
     if (spokenQ.current === q) return
@@ -670,13 +714,13 @@ function BodyPartsModule({ theme, onDone, onBack }) {
       confetti({ particleCount: 60, spread: 80, origin: { x: 0.5, y: 0.4 } })
       speak(`Yes! ${current.part}! Fantastic!`, { mood: 'celebrate', rate: 0.8 })
     } else {
-      speak(`These are ${current.part}. Try again!`, { mood: 'instruct', rate: 0.8 })
+      speak(`These are ${current.part}. Here comes the next one!`, { mood: 'instruct', rate: 0.8 })
     }
     setFeedback(correct ? 'correct' : 'wrong')
     const id = window.setTimeout(() => {
       timersRef.current = timersRef.current.filter(t => t !== id)
       setFeedback(null)
-      if (q + 1 >= BODY_QUESTIONS.length) {
+      if (q + 1 >= questions.length) {
         completedRef.current = true
         onDone(nextScore)
       } else {
@@ -708,7 +752,7 @@ function BodyPartsModule({ theme, onDone, onBack }) {
           </motion.button>
         ))}
       </div>
-      <p className="font-round text-white/70 text-sm mt-8">{q + 1} / {BODY_QUESTIONS.length}</p>
+      <p className="font-round text-white/70 text-sm mt-8">{q + 1} / {questions.length}</p>
     </div>
   )
 }
@@ -984,7 +1028,7 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
   const todayKey = todayStamp()
   const moodLog = progress.moodLog || []
   const moodLoggedToday = moodLog.some(entry => entry.date === todayKey)
-  const [screen, setScreen] = useState(moodLoggedToday ? 'home' : 'mood')
+  const [screen, setScreen] = useState(classroomMode || moodLoggedToday ? 'home' : 'mood')
   const [rewardInfo, setRewardInfo] = useState(null)
 
   // Auto-assign default buddy on first visit so child skips the buddy picker
@@ -1027,12 +1071,13 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
   }, [update, todayKey])
 
   const handleModuleDone = useCallback((moduleId, stars) => {
+    const firstTreasureToday = progress[moduleId]?.lastPlayedDate !== todayStamp()
     update(p => {
       const today = todayStamp()
-      const firstTreasureToday = p[moduleId]?.lastPlayedDate !== today
+      const firstToday = p[moduleId]?.lastPlayedDate !== today
       return {
         ...p,
-        toddlerTreasurePoints: (p.toddlerTreasurePoints || 0) + (firstTreasureToday ? 5 : 0),
+        toddlerTreasurePoints: (p.toddlerTreasurePoints || 0) + (firstToday ? 5 : 0),
         [moduleId]: {
           ...p[moduleId],
           stars: Math.max(p[moduleId]?.stars || 0, stars),
@@ -1044,9 +1089,9 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
     confetti({ particleCount: 120, spread: 140, origin: { x: 0.5, y: 0.3 } })
     const mod = TODDLER_MODULES.find(m => m.id === moduleId)
     setScreen('home')
-    setRewardInfo({ mod, stars })
+    setRewardInfo({ mod, stars, treasure: firstTreasureToday ? 5 : 0 })
     setTimeout(() => setRewardInfo(null), 3000)
-  }, [update])
+  }, [update, progress])
 
   if (screen === 'avatar') {
     return <ToddlerAvatarSelector onSelect={handleAvatarSelect} />
@@ -1091,7 +1136,13 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
     songs:     <ComingSoonModule theme={theme} onBack={() => setScreen('home')} />,
   }
 
-  if (moduleMap[screen]) return moduleMap[screen]
+  if (moduleMap[screen]) {
+    return (
+      <VoiceContext.Provider value="en-US-AnaNeural">
+        {moduleMap[screen]}
+      </VoiceContext.Provider>
+    )
+  }
 
   return (
     <VoiceContext.Provider value="en-US-AnaNeural">
@@ -1148,7 +1199,9 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
                 style={{ background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.4)' }}
               >
                 <span className="text-2xl">⭐</span>
-                <span className="font-bubble text-white text-2xl">+5 stars</span>
+                <span className="font-bubble text-white text-2xl">
+                  {rewardInfo.treasure > 0 ? `+${rewardInfo.treasure} stars` : 'Super practice!'}
+                </span>
               </motion.div>
 
               <div className="flex gap-1">

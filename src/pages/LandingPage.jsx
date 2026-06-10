@@ -443,7 +443,7 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
 
             {/* Trust badges */}
             <div className="flex flex-wrap gap-2 justify-center md:justify-start mb-8">
-              {['✓ Free forever', '✓ No ads', '✓ Parent-guided', '✓ No download needed'].map(b => (
+              {['✓ Free to start', '✓ No ads', '✓ Parent-guided', '✓ No download needed'].map(b => (
                 <span key={b} className="font-round text-xs text-green-300 px-3 py-1 rounded-full"
                   style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)' }}>
                   {b}

@@ -637,7 +637,7 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
         ks2TreasurePoints: (p.ks2TreasurePoints || 0) + (firstToday ? treasure : 0),
         [moduleId]: {
           ...p[moduleId],
-          stars: Math.max(p[moduleId]?.stars || 0, correct),
+          stars: Math.max(p[moduleId]?.stars || 0, stars),
           played: (p[moduleId]?.played || 0) + 1,
           lastAccuracy: accuracy,
           lastPlayedDate: todayKey,
@@ -710,7 +710,13 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
     exercise:     <ExerciseModule     {...props} onDone={handleExerciseDone} />,
   }
 
-  if (moduleMap[screen]) return moduleMap[screen]
+  if (moduleMap[screen]) {
+    return (
+      <VoiceContext.Provider value="en-GB-SoniaNeural">
+        {moduleMap[screen]}
+      </VoiceContext.Provider>
+    )
+  }
 
   return (
     <VoiceContext.Provider value="en-GB-SoniaNeural">

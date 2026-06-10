@@ -516,7 +516,7 @@ export default function SchoolsPage() {
             <a href="/privacy" className="font-round text-white/30 text-xs hover:text-white/60 transition-colors">Privacy Policy</a>
             <a href="/" className="font-round text-white/30 text-xs hover:text-white/60 transition-colors">Home</a>
           </div>
-          <p className="font-round text-white/20 text-xs">© 2025 Bloom Juniors</p>
+          <p className="font-round text-white/20 text-xs">© 2026 Bloom Juniors</p>
         </div>
       </footer>
     </div>

@@ -38,22 +38,9 @@ export default function SchoolEnquiryForm({ source = 'schools-page' }) {
         if (!error) saved = true
       }
 
-      if (!saved) {
-        const body = [
-          `Name: ${form.name}`,
-          `School: ${form.school}`,
-          `Role: ${form.role}`,
-          `Email: ${form.email}`,
-          form.message ? `Message: ${form.message}` : '',
-        ].filter(Boolean).join('\n')
-        window.open(
-          `mailto:hello@bloomjuniors.com?subject=${encodeURIComponent(`School enquiry — ${form.school}`)}&body=${encodeURIComponent(body)}`
-        )
-      }
-
-      setStatus('done')
+      setStatus(saved ? 'done' : 'error')
     } catch {
-      setStatus('idle')
+      setStatus('error')
     }
   }
 
@@ -72,6 +59,25 @@ export default function SchoolEnquiryForm({ source = 'schools-page' }) {
           <strong className="text-white">{form.email}</strong> within 1–2 business days.
         </p>
       </motion.div>
+    )
+  }
+
+  if (status === 'error') {
+    return (
+      <div className="rounded-[24px] p-8 text-center"
+        style={{ background: 'rgba(239,68,68,0.12)', border: '1.5px solid rgba(239,68,68,0.3)' }}>
+        <div className="text-5xl mb-3">😕</div>
+        <p className="font-bubble text-white text-2xl mb-2">Something went wrong</p>
+        <p className="font-round text-white/65 text-sm leading-6 mb-4">
+          Your enquiry couldn't be sent. Please email us directly at{' '}
+          <a href="mailto:hello@bloomjuniors.com" className="text-purple-300 underline">hello@bloomjuniors.com</a>{' '}
+          and we'll get back to you within 1–2 business days.
+        </p>
+        <button onClick={() => setStatus('idle')}
+          className="font-round text-white/60 text-sm underline hover:text-white">
+          Try again
+        </button>
+      </div>
     )
   }
 

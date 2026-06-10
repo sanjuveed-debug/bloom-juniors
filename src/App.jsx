@@ -104,47 +104,6 @@ function FloatingParticles({ avatar }) {
   )
 }
 
-function BottomNav({ screen, onNavigate, theme }) {
-  const TABS = [
-    { id: 'home',    emoji: '🏠', label: 'Home'    },
-    { id: 'phonics', emoji: '🎤', label: 'Phonics' },
-    { id: 'math',    emoji: '🔢', label: 'Maths'   },
-    { id: 'story',   emoji: '📖', label: 'Stories' },
-  ]
-  return (
-    <div className="bottom-nav" style={{
-      background: `linear-gradient(135deg, rgba(10,5,25,0.94) 0%, ${theme.primary}33 100%)`,
-      border: `1.5px solid ${theme.primary}55`,
-      boxShadow: `0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px ${theme.primary}22`,
-    }}>
-      {TABS.map(tab => {
-        const active = screen === tab.id
-        return (
-          <motion.button
-            key={tab.id}
-            whileTap={{ scale: 0.78 }}
-            onClick={() => onNavigate(tab.id)}
-            className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-2xl"
-            style={{ background: active ? `${theme.primary}35` : 'transparent' }}
-          >
-            <motion.span
-              className="text-2xl md:text-3xl"
-              animate={active ? { scale: [1, 1.35, 1], rotate: [0, -12, 12, 0] } : { scale: 1 }}
-              transition={{ duration: 0.45 }}
-            >
-              {tab.emoji}
-            </motion.span>
-            <span className="font-round text-xs md:text-sm font-bold"
-              style={{ color: active ? theme.secondary : 'rgba(255,255,255,0.5)' }}>
-              {tab.label}
-            </span>
-          </motion.button>
-        )
-      })}
-    </div>
-  )
-}
-
 function Screen({ id, current, children }) {
   return (
     <AnimatePresence mode="wait">
