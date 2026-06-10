@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import BloomLogo from '../components/BloomLogo'
 import SchoolEnquiryForm from '../components/SchoolEnquiryForm'
+import LandingDemo from '../components/LandingDemo'
 
 const AGE_GROUPS = [
   { emoji: '🧸', label: 'Tiny Stars', range: 'Ages 3–4', color: '#FF9A3C', desc: 'Colours, shapes, numbers & animals through gentle tap games.' },
@@ -542,6 +543,9 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
           </div>
         </div>
       </section>
+
+      {/* ── INTERACTIVE DEMO ─────────────────────────────────────────────────── */}
+      <LandingDemo onGetStarted={onGetStarted} />
 
       {/* ── WHY CHILDREN COME BACK ───────────────────────────────────────────── */}
       <section className="px-4 pb-16 md:px-8">
