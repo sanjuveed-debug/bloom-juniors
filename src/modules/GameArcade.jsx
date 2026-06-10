@@ -5,6 +5,7 @@ import confetti from 'canvas-confetti'
 import { THEMES } from '../themes'
 import { useSpeech } from '../hooks/useSpeech'
 import { STUDY_MODULES, getArcadeUnlockStatus } from '../utils/arcadeUnlock'
+import { formatLocalDate } from '../utils/date.js'
 
 const ARCADE_GAMES = [
   {
@@ -40,6 +41,21 @@ const ARCADE_GAMES = [
     reward: 'Up to 5 stars',
   },
 ]
+
+// Daily rotation: 2 featured games per day (date-seeded, same approach as the
+// adventure picker), one of which is the Daily Special worth double stars.
+// The rest "rest" until tomorrow so the arcade feels fresh every day.
+function getDailyArcade() {
+  const dateStr = formatLocalDate()
+  let seed = dateStr.split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7)
+  const pool = [...ARCADE_GAMES]
+  for (let i = pool.length - 1; i > 0; i--) {
+    seed = (seed * 1664525 + 1013904223) >>> 0
+    const j = seed % (i + 1)
+    ;[pool[i], pool[j]] = [pool[j], pool[i]]
+  }
+  return { featured: pool.slice(0, 2), resting: pool.slice(2), specialId: pool[0].id }
+}
 
 const SLICE_FRUITS = [
   { emoji: '🍉', color: '#22C55E' },
@@ -477,7 +493,7 @@ function StudyLockScreen({ theme, status, onBack, onNavigate }) {
   )
 }
 
-function GameCard({ game, onSelect }) {
+function GameCard({ game, onSelect, special }) {
   return (
     <motion.button
       whileTap={{ scale: 0.97 }}
@@ -487,6 +503,16 @@ function GameCard({ game, onSelect }) {
     >
       <div className="absolute inset-0 bg-white/5" />
       <div className="relative z-10">
+        {special && (
+          <motion.div
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 1.4, repeat: Infinity }}
+            className="mb-3 inline-flex items-center gap-1 rounded-full px-3 py-1 font-bubble text-xs"
+            style={{ background: 'linear-gradient(135deg, #FDE68A, #F59E0B)', color: '#78350F' }}
+          >
+            ⭐ Daily Special · 2× stars today!
+          </motion.div>
+        )}
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="font-bubble text-2xl text-white">{game.emoji} {game.title}</p>
@@ -523,7 +549,29 @@ function GameCard({ game, onSelect }) {
   )
 }
 
+function RestingGameCard({ game }) {
+  return (
+    <div className="relative overflow-hidden rounded-[26px] p-4"
+      style={{ background: 'rgba(15,23,42,0.06)', border: '1.5px dashed rgba(15,23,42,0.2)' }}>
+      <div className="flex items-center gap-3">
+        <span style={{ fontSize: 30, filter: 'grayscale(0.6)', opacity: 0.7 }}>{game.emoji}</span>
+        <div className="flex-1 min-w-0">
+          <p className="font-bubble text-lg" style={{ color: '#475569' }}>{game.title}</p>
+          <p className="font-round text-xs font-bold" style={{ color: '#64748B' }}>
+            Resting today — back in the rotation tomorrow!
+          </p>
+        </div>
+        <span className="shrink-0 rounded-full px-3 py-1 font-round text-xs font-bold"
+          style={{ background: 'rgba(15,23,42,0.08)', color: '#475569' }}>
+          🌙 Tomorrow
+        </span>
+      </div>
+    </div>
+  )
+}
+
 function ArcadeLobby({ theme, profileName, progress, onBack, onSelect }) {
+  const daily = getDailyArcade()
   return (
     <div className="min-h-screen overflow-y-auto pb-safe"
       style={{ background: `linear-gradient(160deg, ${theme.bg}, white 42%, ${theme.card})` }}>
@@ -556,17 +604,36 @@ function ArcadeLobby({ theme, profileName, progress, onBack, onSelect }) {
               <p className="font-round text-xs font-bold text-white/65">Arcade stars earned</p>
             </div>
             <div className="rounded-[22px] bg-white/12 p-3 backdrop-blur">
-              <p className="font-bubble text-xl text-white">{ARCADE_GAMES.length}</p>
-              <p className="font-round text-xs font-bold text-white/65">Games inside today</p>
+              <p className="font-bubble text-xl text-white">{daily.featured.length}</p>
+              <p className="font-round text-xs font-bold text-white/65">Today's games — fresh picks tomorrow</p>
             </div>
           </div>
         </motion.div>
 
-        <div className="mt-5 grid gap-4">
-          {ARCADE_GAMES.map(game => (
-            <GameCard key={game.id} game={game} onSelect={onSelect} />
+        <p className="mt-6 mb-3 font-round text-xs font-black uppercase tracking-[0.18em]"
+          style={{ color: theme.text, opacity: 0.55 }}>
+          🎮 Today's Games
+        </p>
+        <div className="grid gap-4">
+          {daily.featured.map(game => (
+            <GameCard key={game.id} game={game} onSelect={onSelect}
+              special={game.id === daily.specialId} />
           ))}
         </div>
+
+        {daily.resting.length > 0 && (
+          <>
+            <p className="mt-6 mb-3 font-round text-xs font-black uppercase tracking-[0.18em]"
+              style={{ color: theme.text, opacity: 0.55 }}>
+              🌙 Back Tomorrow
+            </p>
+            <div className="grid gap-3">
+              {daily.resting.map(game => (
+                <RestingGameCard key={game.id} game={game} />
+              ))}
+            </div>
+          </>
+        )}
 
         <motion.button
           whileTap={{ scale: 0.97 }}
@@ -1900,14 +1967,19 @@ export default function GameArcade({ avatar, progress, profileName, onAddStars, 
   }, [activeGame, speak, status.unlocked])
 
   const handleGameComplete = useCallback((payload) => {
-    onAddStars('arcade', payload.stars, {
+    const isSpecial = getDailyArcade().specialId === activeGame
+    const stars = isSpecial ? payload.stars * 2 : payload.stars
+    if (isSpecial && payload.stars > 0) {
+      speak('Daily special bonus! Double stars!', { mood: 'celebrate' })
+    }
+    onAddStars('arcade', stars, {
       total: payload.total,
       correct: payload.correct,
       struggles: payload.struggles || [],
       stayOnModule: true,
     })
     setActiveGame(null)
-  }, [onAddStars])
+  }, [onAddStars, activeGame, speak])
 
   if (!status.unlocked) {
     return (
@@ -1974,7 +2046,9 @@ export default function GameArcade({ avatar, progress, profileName, onAddStars, 
       profileName={profileName}
       progress={progress}
       onBack={onBack}
-      onSelect={setActiveGame}
+      onSelect={(id) => {
+        if (getDailyArcade().featured.some(g => g.id === id)) setActiveGame(id)
+      }}
     />
   )
 }
