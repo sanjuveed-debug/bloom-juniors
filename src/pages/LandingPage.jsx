@@ -551,10 +551,10 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
       <section className="px-4 pb-16 md:px-8">
         <div className="mx-auto max-w-5xl">
           <h2 className="font-bubble text-white text-3xl md:text-4xl text-center mb-2">
-            This is the actual app
+            Inside the app
           </h2>
           <p className="font-round text-white/50 text-sm text-center mb-10">
-            Not mockups — real screens from Bloom Juniors, exactly as your child sees them.
+            Real screens, exactly as your child sees them.
           </p>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {[
@@ -745,7 +745,18 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
           >
             <DeveloperVideo />
             <div className="flex-1 text-center md:text-left">
-              <p className="font-round text-purple-400 text-xs font-bold uppercase tracking-widest mb-3">From the founder</p>
+              <div className="flex items-center gap-3 justify-center md:justify-start mb-4">
+                <img
+                  src="/founder.jpg"
+                  alt="Sanju, founder of Bloom Juniors"
+                  width={64}
+                  height={64}
+                  loading="lazy"
+                  className="w-16 h-16 rounded-full object-cover shadow-lg"
+                  style={{ border: '2.5px solid rgba(139,0,255,0.5)' }}
+                />
+                <p className="font-round text-purple-400 text-xs font-bold uppercase tracking-widest">From the founder</p>
+              </div>
               <p className="font-bubble text-white text-xl md:text-2xl leading-snug mb-3">
                 "I built Bloom Juniors for my own child — to make learning something they genuinely enjoy, not just tasks to complete."
               </p>
