@@ -141,6 +141,20 @@ export async function loadPremiumStatus() {
   return data?.premium_status || null
 }
 
+// Opens the Stripe customer portal (manage/cancel subscription).
+export async function openBillingPortal() {
+  const userId = await getCloudUserId()
+  if (!userId) throw new Error('Sign in required')
+  const resp = await fetch('/api/stripe-portal', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId }),
+  })
+  const data = await resp.json().catch(() => ({}))
+  if (!resp.ok || !data.url) throw new Error(data.error || 'Could not open billing portal')
+  window.location.assign(data.url)
+}
+
 // Starts a Stripe Checkout subscription and redirects the browser to it.
 export async function startPremiumCheckout(email) {
   const userId = await getCloudUserId()

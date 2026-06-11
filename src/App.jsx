@@ -10,6 +10,9 @@ import { triggerHaptic } from './hooks/useHaptic'
 import { THEMES, applyTheme } from './themes'
 import { logSessionStart } from './utils/analytics'
 import { STUDY_MODULES, getArcadeUnlockStatus, getTodayStudySessions, getTodayAdventureModules } from './utils/arcadeUnlock'
+import { PREMIUM_GATING_ENABLED, PREMIUM_FS2_MODULES } from './config/premiumContent.js'
+import { usePremium } from './hooks/usePremium'
+import PremiumLockModal from './components/PremiumLockModal'
 import { formatLocalDate, formatYesterdayLocalDate } from './utils/date.js'
 import { shouldSendAutoDigest, markDigestSent, buildDigestPayload, sendDigestEmail, sendNudgeEmail } from './utils/weeklyDigest.js'
 import { getClassroomLesson, setClassroomLesson } from './utils/classroomLesson.js'
@@ -61,10 +64,10 @@ const GAME_SCREENS = [
   'davinci', 'anatomy', 'science', 'worldgk', 'exercise', 'planets', 'arcade', 'sacred', 'piggybank',
 ]
 
-function getDailyGate(progress = {}, classroomLesson = null) {
+function getDailyGate(progress = {}, classroomLesson = null, premium = true) {
   const arcadeStatus = getArcadeUnlockStatus(progress)
   const todayIds = new Set(getTodayStudySessions(progress.sessions || []).map(session => session.module))
-  const [focusId, secondId] = getTodayAdventureModules(progress, classroomLesson)
+  const [focusId, secondId] = getTodayAdventureModules(progress, classroomLesson, premium)
   const rewardId = arcadeStatus.unlocked ? 'arcade' : 'davinci'
   const steps = [focusId, secondId, rewardId]
   const studyIds = STUDY_MODULES.map(module => module.id)
@@ -268,8 +271,15 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
   const [lockPinInput, setLockPinInput] = useState('')
   const [lockPinError, setLockPinError] = useState(false)
   const [sessionTimerKey, setSessionTimerKey] = useState(0)
+  const [lockedModule, setLockedModule] = useState(null)
   const { speak } = useSpeech()
   const { resume } = useSound()
+  const { premium } = usePremium()
+  // During beta (PREMIUM_GATING_ENABLED=false) everyone has full access.
+  // Classroom/school accounts always have full access (school licence).
+  const hasAllAccess = !PREMIUM_GATING_ENABLED || classroomMode || premium
+  const hasAllAccessRef = useRef(hasAllAccess)
+  useEffect(() => { hasAllAccessRef.current = hasAllAccess }, [hasAllAccess])
   const theme = THEMES[progress.avatar] || THEMES.rumi
   const screenEntryRef      = useRef(null)
   const progressRef         = useRef(progress)
@@ -421,8 +431,13 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
     resume()
     triggerHaptic('tap')
     if (sessionLocked && GAME_SCREENS.includes(to)) return
+    // Premium gate (no-op while PREMIUM_GATING_ENABLED is false / beta)
+    if (!hasAllAccessRef.current && PREMIUM_FS2_MODULES.has(to)) {
+      setLockedModule(to)
+      return
+    }
     if (GAME_SCREENS.includes(to) && !GATE_FREE_SCREENS.has(to)) {
-      const gate = getDailyGate(progress, classroomLessonRef.current)
+      const gate = getDailyGate(progress, classroomLessonRef.current, hasAllAccessRef.current)
       if (!gate.availableIds.has(to)) {
         setScreen(gate.nextId || 'home')
         return
@@ -521,7 +536,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
     }
     if (!stayOnModule) {
       // Adventure bridge — guide child from step 1 to step 2 without returning to the menu
-      const [focusId, secondId] = getTodayAdventureModules(latest, classroomLessonRef.current)
+      const [focusId, secondId] = getTodayAdventureModules(latest, classroomLessonRef.current, hasAllAccessRef.current)
       const doneIds = new Set(getTodayStudySessions(latest.sessions || []).map(s => s.module))
       if (module === focusId && !doneIds.has(secondId)) {
         const nextMod = STUDY_MODULES.find(m => m.id === secondId)
@@ -806,6 +821,14 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
           />
         )}
       </AnimatePresence>
+
+      <PremiumLockModal
+        show={Boolean(lockedModule)}
+        moduleLabel={STUDY_MODULES.find(m => m.id === lockedModule)?.label}
+        theme={theme}
+        onClose={() => setLockedModule(null)}
+        onParentZone={() => { setLockedModule(null); navigate('parent') }}
+      />
 
       {showTimer && (
         <SessionTimer

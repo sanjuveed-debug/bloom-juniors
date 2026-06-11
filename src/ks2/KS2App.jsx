@@ -22,6 +22,9 @@ import SpiritualityModule from './modules/SpiritualityModule'
 import GamesModule       from './modules/GamesModule'
 import PiggyBankGame     from '../modules/PiggyBankGame'
 import { VoiceContext }  from '../contexts/VoiceContext'
+import { PREMIUM_GATING_ENABLED, PREMIUM_KS2_MODULES } from '../config/premiumContent.js'
+import { usePremium } from '../hooks/usePremium'
+import PremiumLockModal from '../components/PremiumLockModal'
 
 // ── Themes ────────────────────────────────────────────────────────────────────
 const KS2_THEMES = {
@@ -107,8 +110,9 @@ const DAILY_STUDY_MODULES = [
 ]
 const DAILY_UNLOCK_TARGET = 2
 
-function getKS2DailyMission(progress = {}, todayKey, classroomLesson = null) {
+function getKS2DailyMission(progress = {}, todayKey, classroomLesson = null, fullAccess = true) {
   const allModules = SECTIONS.flatMap(section => section.modules).filter(module => module.id !== 'games')
+  const allowed = (modules) => fullAccess ? modules : modules.filter(m => !PREMIUM_KS2_MODULES.has(m.id))
 
   let picks
   if (classroomLesson && classroomLesson.length >= 2) {
@@ -120,9 +124,9 @@ function getKS2DailyMission(progress = {}, todayKey, classroomLesson = null) {
 
   if (!picks || picks.length < 2) {
     const seed = new Date().getDate()
-    const maths   = SECTIONS.find(s => s.id === 'maths')?.modules   || []
-    const english = SECTIONS.find(s => s.id === 'english')?.modules || []
-    const explore = SECTIONS.find(s => s.id === 'explore')?.modules || []
+    const maths   = allowed(SECTIONS.find(s => s.id === 'maths')?.modules   || [])
+    const english = allowed(SECTIONS.find(s => s.id === 'english')?.modules || [])
+    const explore = allowed(SECTIONS.find(s => s.id === 'explore')?.modules || [])
     picks = [
       maths[seed % maths.length],
       english[(seed + 1) % english.length],
@@ -338,11 +342,11 @@ function KS2AvatarSelector({ onSelect }) {
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
-function KS2Dashboard({ theme, profileName, progress, todayKey, gamesUnlocked, studyDoneCount, onNavigate, onSwitchProfiles, profileId, onParent, classroomLesson }) {
+function KS2Dashboard({ theme, profileName, progress, todayKey, gamesUnlocked, studyDoneCount, onNavigate, onSwitchProfiles, profileId, onParent, classroomLesson, fullAccess = true }) {
   const xp = progress.ks2Xp || 0
   const level = getLevel(xp)
   const levelPct = getLevelPct(xp)
-  const dailyMission = getKS2DailyMission(progress, todayKey, classroomLesson)
+  const dailyMission = getKS2DailyMission(progress, todayKey, classroomLesson, fullAccess)
 
   return (
     <div className="min-h-screen pb-32 overflow-y-auto" style={{ background: theme.bg }}>
@@ -566,6 +570,14 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
   const moodLoggedToday = moodLog.some(entry => entry.date === todayKey)
   const [screen, setScreen] = useState(classroomMode || moodLoggedToday ? 'home' : 'mood')
   const [rewardInfo, setRewardInfo] = useState(null)
+  const [lockedModule, setLockedModule] = useState(null)
+  const { premium } = usePremium()
+  // Beta: PREMIUM_GATING_ENABLED=false means everyone has full access
+  const hasAllAccess = !PREMIUM_GATING_ENABLED || classroomMode || premium
+  const gatedNavigate = useCallback((to) => {
+    if (!hasAllAccess && PREMIUM_KS2_MODULES.has(to)) { setLockedModule(to); return }
+    setScreen(to)
+  }, [hasAllAccess])
   // Per-session idempotency guard: moduleId:date → only one completion per module per day
   const completedModulesRef = useRef(new Set())
 
@@ -727,11 +739,19 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
         todayKey={todayKey}
         gamesUnlocked={gamesUnlocked}
         studyDoneCount={studyDoneCount}
-        onNavigate={setScreen}
+        onNavigate={gatedNavigate}
         onSwitchProfiles={onSwitchProfiles}
         profileId={profileId}
         onParent={parentPin ? () => setScreen('parent') : undefined}
         classroomLesson={classroomLesson}
+        fullAccess={hasAllAccess}
+      />
+      <PremiumLockModal
+        show={Boolean(lockedModule)}
+        moduleLabel={SECTIONS.flatMap(s => s.modules).find(m => m.id === lockedModule)?.label}
+        theme={theme}
+        onClose={() => setLockedModule(null)}
+        onParentZone={parentPin ? () => { setLockedModule(null); setScreen('parent') } : undefined}
       />
       <AnimatePresence>
         {rewardInfo && (

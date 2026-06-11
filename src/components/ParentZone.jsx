@@ -2,7 +2,8 @@ import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { THEMES } from '../themes'
 import { isDigestOptedIn, setDigestOptIn, buildDigestPayload, sendDigestEmail, markDigestSent } from '../utils/weeklyDigest.js'
-import { loadPremiumStatus, startPremiumCheckout } from '../services/cloudStore.js'
+import { loadPremiumStatus, startPremiumCheckout, openBillingPortal } from '../services/cloudStore.js'
+import { PREMIUM_GATING_ENABLED } from '../config/premiumContent.js'
 
 const PREMIUM_PRICE_LABEL = 'AED 19/month'
 
@@ -89,17 +90,27 @@ function PremiumCard({ theme, guardianEmail }) {
 
   if (status === 'loading') return null
 
+  // Beta: everything is free, so hide the upsell — but existing subscribers
+  // still see their active state and can manage/cancel.
+  if (!PREMIUM_GATING_ENABLED && status !== 'active') return null
+
   if (status === 'active') {
     return (
       <div className="mx-4 mb-3 p-4 rounded-3xl flex items-center gap-3"
         style={{ background: 'rgba(34,197,94,0.12)', border: '1.5px solid rgba(34,197,94,0.35)' }}>
         <span className="text-2xl">⭐</span>
-        <div>
+        <div className="flex-1 min-w-0">
           <p className="font-bubble text-base" style={{ color: theme.text }}>Premium active</p>
           <p className="font-round text-xs opacity-60" style={{ color: theme.text }}>
             Thank you for supporting Bloom Juniors!
           </p>
         </div>
+        <button
+          onClick={() => openBillingPortal().catch(() => {})}
+          className="shrink-0 rounded-2xl px-3 py-2 font-round text-xs font-bold"
+          style={{ background: 'rgba(34,197,94,0.15)', color: '#15803D', border: '1px solid rgba(34,197,94,0.35)' }}>
+          Manage
+        </button>
       </div>
     )
   }

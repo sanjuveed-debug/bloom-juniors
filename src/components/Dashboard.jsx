@@ -4,6 +4,8 @@ import { THEMES } from '../themes'
 import { getAssistant } from '../assistants'
 import { MONSTERS, MonsterCollection } from './MonsterReward'
 import { STUDY_MODULES, getArcadeUnlockStatus, getTodayStudySessions, getTodayAdventureModules } from '../utils/arcadeUnlock'
+import { PREMIUM_GATING_ENABLED } from '../config/premiumContent.js'
+import { usePremium } from '../hooks/usePremium'
 import RetentionPanel, { YaagviRoom } from './RetentionWidgets'
 import { useSpeech } from '../hooks/useSpeech'
 import PhonicsMap from './PhonicsMap'
@@ -750,9 +752,9 @@ function getTodayIndex(count) {
   return seed % count
 }
 
-function buildDailyAdventure(progress, challenges, arcadeStatus) {
+function buildDailyAdventure(progress, challenges, arcadeStatus, fullAccess = true) {
   const todayIds = new Set(getTodayStudySessions(progress.sessions || []).map(s => s.module))
-  const [focusId, secondId] = getTodayAdventureModules(progress)
+  const [focusId, secondId] = getTodayAdventureModules(progress, null, fullAccess)
   const focusModule = MODULE_MAP[focusId]
   const secondModule = MODULE_MAP[secondId]
   const rewardModule = arcadeStatus.unlocked ? MODULE_MAP.arcade : MODULE_MAP.davinci
@@ -1027,6 +1029,8 @@ function ForYouFeed({ theme, progress, challenges, arcadeStatus, dailyAdventure,
 }
 
 export default function Dashboard({ avatar, progress, onNavigate, onLongPress, onSwitchProfiles, onQuickSwitch, profiles, activeProfileId, profileName }) {
+  const { premium } = usePremium()
+  const fullAccess = !PREMIUM_GATING_ENABLED || premium
   const theme    = THEMES[avatar] || THEMES.rumi
   const assistant = getAssistant(avatar)
   const longRef  = useRef(null)
@@ -1052,7 +1056,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
   const challenges       = autoChallenge.challenges || []
   const doneCount        = challenges.filter(c => c.completed).length
   const challengeStreak  = progress.challengeStreak || 0
-  const dailyAdventure   = buildDailyAdventure(progress, challenges, arcadeStatus)
+  const dailyAdventure   = buildDailyAdventure(progress, challenges, arcadeStatus, fullAccess)
   const dailyAccess      = getAdventureAccess(dailyAdventure)
   const handleGatedNavigate = (to) => {
     const mod = MODULE_MAP[to]

@@ -25,3 +25,4 @@ eDUaPP*.txt
 smoke-test.cjs
 scripts/live-commercial-audit.cjs
 .playwright-audit/
+stripe.key

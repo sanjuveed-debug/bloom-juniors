@@ -1,4 +1,5 @@
 import { formatLocalDate } from './date.js'
+import { FREE_STUDY_MODULE_IDS } from '../config/premiumContent.js'
 
 export const STUDY_PATH_TARGET = 2
 
@@ -15,14 +16,16 @@ const STUDY_MODULE_IDS = new Set(STUDY_MODULES.map(module => module.id))
 
 // Returns the two study-module IDs assigned for today.
 // classroomLesson (string[]) overrides the date seed when set by a teacher.
-export function getTodayAdventureModules(progress = {}, classroomLesson = null) {
+// premium=false restricts the pool to the free-forever study modules.
+export function getTodayAdventureModules(progress = {}, classroomLesson = null, premium = true) {
   if (classroomLesson && classroomLesson.length >= 2) {
     const valid = classroomLesson.filter(id => STUDY_MODULES.some(m => m.id === id))
     if (valid.length >= 2) return [valid[0], valid[1]]
   }
   const dateStr = formatLocalDate()
   let seed = dateStr.split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 1)
-  const pool = [...STUDY_MODULES]
+  const basePool = premium ? STUDY_MODULES : STUDY_MODULES.filter(m => FREE_STUDY_MODULE_IDS.has(m.id))
+  const pool = [...basePool]
   for (let i = pool.length - 1; i > 0; i--) {
     seed = (seed * 1664525 + 1013904223) >>> 0
     const j = seed % (i + 1)
