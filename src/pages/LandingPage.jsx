@@ -747,13 +747,13 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
             <div className="flex-1 text-center md:text-left">
               <p className="font-round text-purple-400 text-xs font-bold uppercase tracking-widest mb-3">From the founder</p>
               <p className="font-bubble text-white text-xl md:text-2xl leading-snug mb-3">
-                "I built Bloom Juniors for my own children — to help them genuinely enjoy learning, not just complete tasks."
+                "I built Bloom Juniors for my own child — to make learning something they genuinely enjoy, not just tasks to complete."
               </p>
               <p className="font-round text-white/55 text-sm leading-relaxed mb-3">
-                No ads, no dark patterns, no app store required. Every activity is hand-built around the British curriculum — from RWI phonics Sets 1–3 to times tables 2–12 — and tested daily by the toughest critics I know: my kids.
+                No ads, no dark patterns, no app store required. Every activity is hand-built around the British curriculum — from RWI phonics Sets 1–3 to times tables 2–12 — and tested daily by the toughest critic I know: my own little one.
               </p>
               <p className="font-round text-purple-300 text-sm font-bold">
-                — Sanju, founder &amp; dad of two
+                — Sanju, founder &amp; dad of one
               </p>
             </div>
           </motion.div>
