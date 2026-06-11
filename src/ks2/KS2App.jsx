@@ -9,6 +9,7 @@ import HeroAvatar from './HeroAvatar'
 import { formatLocalDate } from '../utils/date.js'
 import { shouldSendAutoDigest, markDigestSent, buildDigestPayload, sendDigestEmail, sendNudgeEmail } from '../utils/weeklyDigest.js'
 import { getClassroomLesson } from '../utils/classroomLesson.js'
+import { trackActivityComplete } from '../utils/analytics.js'
 
 import TimesTablesModule from './modules/TimesTablesModule'
 import FractionsModule   from './modules/FractionsModule'
@@ -631,6 +632,7 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
     const completionKey = `${moduleId}:${todayKey}`
     if (completedModulesRef.current.has(completionKey)) return
     completedModulesRef.current.add(completionKey)
+    trackActivityComplete(moduleId, 'junior')
 
     const total = Math.max(1, Number.isFinite(Number(rawTotal)) ? Number(rawTotal) : 1)
     const correct = Math.min(total, Math.max(0, Number.isFinite(Number(rawCorrect)) ? Number(rawCorrect) : 0))

@@ -40,6 +40,22 @@ const ARCADE_GAMES = [
     accent: '#8B5CF6',
     reward: 'Up to 5 stars',
   },
+  {
+    id: 'shadow',
+    emoji: '🔦',
+    title: 'Shadow Match',
+    desc: 'Match each friend to its mystery shadow across 3 rounds.',
+    accent: '#6366F1',
+    reward: 'Up to 5 stars',
+  },
+  {
+    id: 'rocket',
+    emoji: '🚀',
+    title: 'Rocket Count',
+    desc: 'Load exactly the right number of stars and blast off!',
+    accent: '#F43F5E',
+    reward: 'Up to 5 stars',
+  },
 ]
 
 // Daily rotation: 2 featured games per day (date-seeded, same approach as the
@@ -284,6 +300,8 @@ function getGameGradient(gameId) {
   if (gameId === 'memory') return 'linear-gradient(145deg, #FB7185, #F59E0B, #7C3AED)'
   if (gameId === 'balloon') return 'linear-gradient(145deg, #0EA5E9, #14B8A6, #22C55E)'
   if (gameId === 'builder') return 'linear-gradient(145deg, #312E81, #8B5CF6, #22C55E)'
+  if (gameId === 'shadow') return 'linear-gradient(145deg, #1E1B4B, #6366F1, #A78BFA)'
+  if (gameId === 'rocket') return 'linear-gradient(145deg, #881337, #F43F5E, #FB923C)'
   return 'linear-gradient(145deg, #F97316, #FACC15, #FB7185)'
 }
 
@@ -291,6 +309,8 @@ function getGamePreview(gameId) {
   if (gameId === 'memory') return ['🐝', '🐬', '🚀']
   if (gameId === 'balloon') return ['🎈', '⭐', '5']
   if (gameId === 'builder') return ['🚀', '🧱', '⭐']
+  if (gameId === 'shadow') return ['🦋', '🔦', '🐘']
+  if (gameId === 'rocket') return ['🚀', '⭐', '7']
   return ['🍉', '🍓', '💣']
 }
 
@@ -298,6 +318,8 @@ function getGameNote(gameId) {
   if (gameId === 'memory') return '3 rounds of bigger boards'
   if (gameId === 'balloon') return '4 waves with accuracy bonus'
   if (gameId === 'builder') return 'snap parts + launch'
+  if (gameId === 'shadow') return '3 rounds of mystery shadows'
+  if (gameId === 'rocket') return '5 launches, count to fuel up'
   return '30 second slicing rush'
 }
 
@@ -1946,6 +1968,266 @@ function InventorBlocks({ theme, profileName, speak, onBack, onComplete }) {
   )
 }
 
+// ── Shadow Match ──────────────────────────────────────────────────────────────
+const SHADOW_POOL = ['🦋', '🐘', '🦒', '🐙', '🦀', '🐢', '🦜', '🐳', '🦔', '🐊', '🦓', '🐝']
+const SHADOW_ROUNDS = [3, 4, 4]
+
+function buildShadowRound(pairCount) {
+  const pool = [...SHADOW_POOL].sort(() => Math.random() - 0.5).slice(0, pairCount)
+  const shuffle = (a) => [...a].sort(() => Math.random() - 0.5)
+  return {
+    animals: shuffle(pool.map(e => ({ id: e, emoji: e }))),
+    shadows: shuffle(pool.map(e => ({ id: e, emoji: e }))),
+  }
+}
+
+function ShadowMatch({ theme, profileName, speak, onBack, onComplete }) {
+  const [roundIdx, setRoundIdx] = useState(0)
+  const [board, setBoard] = useState(() => buildShadowRound(SHADOW_ROUNDS[0]))
+  const [matched, setMatched] = useState(new Set())
+  const [selAnimal, setSelAnimal] = useState(null)
+  const [selShadow, setSelShadow] = useState(null)
+  const [wrong, setWrong] = useState(null)
+  const [misses, setMisses] = useState(0)
+  const [finished, setFinished] = useState(false)
+  const totalPairs = SHADOW_ROUNDS.reduce((a, b) => a + b, 0)
+
+  useEffect(() => {
+    const t = setTimeout(() => speak(`Round ${roundIdx + 1}. Tap an animal, then find its shadow!`, { mood: 'instruct' }), 350)
+    return () => clearTimeout(t)
+  }, [roundIdx, speak])
+
+  const tryMatch = (aId, sId) => {
+    if (aId === sId) {
+      confetti({ particleCount: 25, spread: 55, origin: { y: 0.5 } })
+      const next = new Set(matched).add(aId)
+      setMatched(next)
+      setSelAnimal(null); setSelShadow(null)
+      if (next.size === SHADOW_ROUNDS[roundIdx]) {
+        if (roundIdx + 1 >= SHADOW_ROUNDS.length) {
+          speak(`Amazing shadow spotting, ${profileName || 'superstar'}!`, { mood: 'celebrate' })
+          setTimeout(() => setFinished(true), 900)
+        } else {
+          speak('Round complete! Here comes a trickier one!', { mood: 'celebrate' })
+          setTimeout(() => {
+            setRoundIdx(r => r + 1)
+            setBoard(buildShadowRound(SHADOW_ROUNDS[roundIdx + 1]))
+            setMatched(new Set())
+          }, 1200)
+        }
+      }
+    } else {
+      setMisses(m => m + 1)
+      setWrong({ aId, sId })
+      setTimeout(() => { setWrong(null); setSelAnimal(null); setSelShadow(null) }, 550)
+    }
+  }
+
+  const pickAnimal = (id) => {
+    if (matched.has(id) || wrong) return
+    if (selShadow != null) tryMatch(id, selShadow)
+    else setSelAnimal(id)
+  }
+  const pickShadow = (id) => {
+    if (matched.has(id) || wrong) return
+    if (selAnimal != null) tryMatch(selAnimal, id)
+    else setSelShadow(id)
+  }
+
+  if (finished) {
+    const stars = Math.max(1, 5 - misses)
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center"
+        style={{ background: `linear-gradient(160deg, ${theme.bg}, ${theme.card})` }}>
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 280 }}>
+          <div className="text-8xl mb-3">🔦</div>
+          <h2 className="font-bubble text-4xl shimmer-text mb-1">Shadow Master!</h2>
+          <p className="font-round text-base opacity-70 mb-5" style={{ color: theme.text }}>
+            {misses === 0 ? 'Perfect — not a single miss!' : `All matched with ${misses} ${misses === 1 ? 'slip' : 'slips'}.`}
+          </p>
+          <motion.button whileTap={{ scale: 0.95 }}
+            onClick={() => onComplete({ stars, total: totalPairs, correct: Math.max(0, totalPairs - misses), struggles: [] })}
+            className="bubble-btn px-8 py-4 text-lg"
+            style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}>
+            Collect {stars} ⭐
+          </motion.button>
+        </motion.div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen overflow-y-auto pb-safe"
+      style={{ background: 'linear-gradient(160deg, #1E1B4B, #312E81 55%, #1E1B4B)' }}>
+      <ArcadeHeader theme={{ ...theme, card: 'rgba(255,255,255,0.12)', text: 'white' }}
+        title="Shadow Match" subtitle={`Round ${roundIdx + 1} of ${SHADOW_ROUNDS.length}`} onBack={onBack}
+        badge={`${matched.size}/${SHADOW_ROUNDS[roundIdx]}`} />
+
+      <div className="px-5 pt-2 grid grid-cols-2 gap-5">
+        <div className="flex flex-col gap-3">
+          {board.animals.map(a => (
+            <motion.button key={a.id} whileTap={{ scale: 0.92 }}
+              animate={wrong?.aId === a.id ? { x: [0, -8, 8, 0] } : {}}
+              onClick={() => pickAnimal(a.id)}
+              className="rounded-3xl py-4 flex items-center justify-center"
+              style={{
+                background: matched.has(a.id) ? 'rgba(34,197,94,0.25)' : selAnimal === a.id ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.12)',
+                border: `2.5px solid ${matched.has(a.id) ? '#22C55E' : selAnimal === a.id ? 'white' : 'rgba(255,255,255,0.25)'}`,
+                opacity: matched.has(a.id) ? 0.5 : 1,
+              }}>
+              <span style={{ fontSize: 44 }}>{a.emoji}</span>
+            </motion.button>
+          ))}
+        </div>
+        <div className="flex flex-col gap-3">
+          {board.shadows.map(s => (
+            <motion.button key={s.id} whileTap={{ scale: 0.92 }}
+              animate={wrong?.sId === s.id ? { x: [0, 8, -8, 0] } : {}}
+              onClick={() => pickShadow(s.id)}
+              className="rounded-3xl py-4 flex items-center justify-center"
+              style={{
+                background: matched.has(s.id) ? 'rgba(34,197,94,0.25)' : selShadow === s.id ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)',
+                border: `2.5px solid ${matched.has(s.id) ? '#22C55E' : selShadow === s.id ? 'white' : 'rgba(255,255,255,0.18)'}`,
+                opacity: matched.has(s.id) ? 0.5 : 1,
+              }}>
+              <span style={{
+                fontSize: 44,
+                filter: matched.has(s.id) ? 'none' : 'brightness(0) opacity(0.85)',
+                transition: 'filter 0.4s ease',
+              }}>{s.emoji}</span>
+            </motion.button>
+          ))}
+        </div>
+      </div>
+      <p className="font-round text-center text-white/55 text-xs font-bold mt-5 px-6">
+        Tap an animal on the left, then its shadow on the right!
+      </p>
+    </div>
+  )
+}
+
+// ── Rocket Count ──────────────────────────────────────────────────────────────
+const ROCKET_ROUNDS = 5
+
+function RocketCount({ theme, profileName, speak, onBack, onComplete }) {
+  const [round, setRound] = useState(1)
+  const [target, setTarget] = useState(() => Math.floor(Math.random() * 4) + 3) // 3-6 first
+  const [loaded, setLoaded] = useState(new Set())
+  const [phase, setPhase] = useState('count') // count | launching | done
+  const [correctRounds, setCorrectRounds] = useState(0)
+  const [feedback, setFeedback] = useState(null)
+
+  useEffect(() => {
+    const t = setTimeout(() => speak(`Load exactly ${target} stars into the rocket, then press launch!`, { mood: 'instruct' }), 400)
+    return () => clearTimeout(t)
+  }, [target, speak])
+
+  const toggleStar = (i) => {
+    if (phase !== 'count') return
+    setFeedback(null)
+    setLoaded(prev => {
+      const next = new Set(prev)
+      if (next.has(i)) next.delete(i)
+      else next.add(i)
+      return next
+    })
+  }
+
+  const launch = () => {
+    if (phase !== 'count') return
+    const ok = loaded.size === target
+    if (ok) {
+      setCorrectRounds(c => c + 1)
+      setPhase('launching')
+      confetti({ particleCount: 70, spread: 90, origin: { y: 0.55 } })
+      speak(`${target} stars loaded. Blast off!`, { mood: 'celebrate' })
+      setTimeout(() => {
+        if (round >= ROCKET_ROUNDS) setPhase('done')
+        else {
+          setRound(r => r + 1)
+          setTarget(Math.floor(Math.random() * (4 + round)) + 3)
+          setLoaded(new Set())
+          setPhase('count')
+        }
+      }, 1700)
+    } else {
+      setFeedback(loaded.size > target ? 'Too many stars! Count again.' : 'Not enough stars yet! Count again.')
+      speak(loaded.size > target ? 'Oops, too many stars. Count again!' : 'Not enough stars yet. Count again!', { mood: 'instruct' })
+    }
+  }
+
+  if (phase === 'done') {
+    const stars = correctRounds
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center"
+        style={{ background: `linear-gradient(160deg, ${theme.bg}, ${theme.card})` }}>
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 280 }}>
+          <div className="text-8xl mb-3">🚀</div>
+          <h2 className="font-bubble text-4xl shimmer-text mb-1">Mission Complete!</h2>
+          <p className="font-round text-base opacity-70 mb-5" style={{ color: theme.text }}>
+            {correctRounds}/{ROCKET_ROUNDS} perfect launches, {profileName || 'captain'}!
+          </p>
+          <motion.button whileTap={{ scale: 0.95 }}
+            onClick={() => onComplete({ stars, total: ROCKET_ROUNDS, correct: correctRounds, struggles: [] })}
+            className="bubble-btn px-8 py-4 text-lg"
+            style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}>
+            Collect {stars} ⭐
+          </motion.button>
+        </motion.div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen overflow-y-auto pb-safe"
+      style={{ background: 'linear-gradient(160deg, #0F172A, #1E293B 50%, #312E81)' }}>
+      <ArcadeHeader theme={{ ...theme, card: 'rgba(255,255,255,0.12)', text: 'white' }}
+        title="Rocket Count" subtitle={`Launch ${round} of ${ROCKET_ROUNDS}`} onBack={onBack}
+        badge={`⭐ ${loaded.size}`} />
+
+      <div className="text-center px-6 mt-1">
+        <p className="font-bubble text-white text-2xl">Load exactly <span style={{ color: '#FACC15' }}>{target}</span> stars!</p>
+        <p className="font-round text-white/55 text-xs font-bold mt-1">Tap stars to load them — tap again to unload.</p>
+      </div>
+
+      <motion.div
+        className="mx-auto mt-4 text-center"
+        animate={phase === 'launching' ? { y: -600, scale: 0.7 } : { y: [0, -6, 0] }}
+        transition={phase === 'launching' ? { duration: 1.4, ease: 'easeIn' } : { duration: 2.4, repeat: Infinity }}
+      >
+        <span style={{ fontSize: 86, lineHeight: 1 }}>🚀</span>
+        <div className="font-bubble text-white/80 text-sm mt-1">{loaded.size} / {target} loaded</div>
+      </motion.div>
+
+      <div className="grid grid-cols-4 gap-3 px-8 mt-5 max-w-xs mx-auto">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <motion.button key={i} whileTap={{ scale: 0.8 }}
+            onClick={() => toggleStar(i)}
+            className="rounded-2xl py-3 flex items-center justify-center"
+            style={{
+              background: loaded.has(i) ? 'rgba(250,204,21,0.3)' : 'rgba(255,255,255,0.08)',
+              border: `2px solid ${loaded.has(i) ? '#FACC15' : 'rgba(255,255,255,0.15)'}`,
+            }}>
+            <span style={{ fontSize: 26, filter: loaded.has(i) ? 'none' : 'grayscale(1) opacity(0.5)' }}>⭐</span>
+          </motion.button>
+        ))}
+      </div>
+
+      {feedback && (
+        <p className="font-round text-center text-amber-300 text-sm font-bold mt-4">{feedback}</p>
+      )}
+
+      <div className="px-8 mt-5 max-w-xs mx-auto">
+        <motion.button whileTap={{ scale: 0.96 }} onClick={launch}
+          className="w-full py-4 rounded-3xl font-bubble text-white text-xl shadow-xl"
+          style={{ background: 'linear-gradient(135deg, #F43F5E, #FB923C)' }}>
+          🚀 LAUNCH!
+        </motion.button>
+      </div>
+    </div>
+  )
+}
+
 export default function GameArcade({ avatar, progress, profileName, onAddStars, onBack, onNavigate }) {
   const theme = THEMES[avatar] || THEMES.rumi
   const { speak } = useSpeech()
@@ -2031,6 +2313,30 @@ export default function GameArcade({ avatar, progress, profileName, onAddStars, 
   if (activeGame === 'builder') {
     return (
       <InventorBlocks
+        theme={theme}
+        profileName={profileName}
+        speak={speak}
+        onBack={() => setActiveGame(null)}
+        onComplete={handleGameComplete}
+      />
+    )
+  }
+
+  if (activeGame === 'shadow') {
+    return (
+      <ShadowMatch
+        theme={theme}
+        profileName={profileName}
+        speak={speak}
+        onBack={() => setActiveGame(null)}
+        onComplete={handleGameComplete}
+      />
+    )
+  }
+
+  if (activeGame === 'rocket') {
+    return (
+      <RocketCount
         theme={theme}
         profileName={profileName}
         speak={speak}

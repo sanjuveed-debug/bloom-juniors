@@ -8,7 +8,7 @@ import { useSpeech } from './hooks/useSpeech'
 import { useSound } from './hooks/useSound'
 import { triggerHaptic } from './hooks/useHaptic'
 import { THEMES, applyTheme } from './themes'
-import { logSessionStart } from './utils/analytics'
+import { logSessionStart, trackActivityComplete } from './utils/analytics'
 import { STUDY_MODULES, getArcadeUnlockStatus, getTodayStudySessions, getTodayAdventureModules } from './utils/arcadeUnlock'
 import { PREMIUM_GATING_ENABLED, PREMIUM_FS2_MODULES } from './config/premiumContent.js'
 import { usePremium } from './hooks/usePremium'
@@ -451,6 +451,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
     const count = Math.max(0, Number(rawCount) || 0)
     addStars(module, count)
     if (count > 0) triggerHaptic('star')
+    trackActivityComplete(module, 'early')
     const { total = 0, correct = 0, struggles = [], stayOnModule = false } = sessionData
     const duration = screenEntryRef.current
       ? Math.round((Date.now() - screenEntryRef.current) / 1000)

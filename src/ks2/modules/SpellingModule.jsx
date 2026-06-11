@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { dailySeedFor, seededShuffle } from '../../utils/seededRandom'
 import { useSpeech } from '../../hooks/useSpeech'
+import MatchingActivity from '../../components/MatchingActivity'
 
 // Y3-4 and Y5-6 statutory word lists (NC England)
 const WORD_SETS = {
@@ -189,6 +190,7 @@ export default function SpellingModule({ theme, onDone, onBack, played = 0 }) {
   const [feedback, setFeedback] = useState(null)
   const [hint, setHint] = useState(false)
   const [result, setResult] = useState(null)
+  const [matchPairs, setMatchPairs] = useState(null)
   const lockedRef = useRef(false)
   const timersRef = useRef([])
 
@@ -264,6 +266,35 @@ export default function SpellingModule({ theme, onDone, onBack, played = 0 }) {
     )
   }
 
+  if (matchPairs) return (
+    <div className="min-h-screen flex flex-col" style={{ background: theme.bg }}>
+      <div className="flex items-center gap-3 px-5 pt-safe pt-4 pb-4" style={{ background: theme.headerBg }}>
+        <motion.button whileTap={{ scale: 0.9 }} onClick={() => setMatchPairs(null)} className="font-round text-white/60 text-sm">← Back</motion.button>
+        <p className="font-bubble text-white text-lg">🎯 Word Match</p>
+      </div>
+      <p className="font-round text-white/55 text-xs text-center font-bold mt-3 px-6">
+        Match each clue to its word!
+      </p>
+      <div className="flex-1 pt-4 pb-10 overflow-y-auto">
+        <MatchingActivity
+          pairs={matchPairs}
+          colour="#34D399"
+          tileTextClass="text-sm"
+          onSpeak={(text) => speak(String(text), { mood: 'instruct' })}
+          onComplete={(misses, total) => {
+            if (lockedRef.current) return
+            lockedRef.current = true
+            const correct = Math.max(0, total - misses)
+            confetti({ particleCount: 90, spread: 100, origin: { y: 0.5 } })
+            speak('All words matched! Brilliant!', { mood: 'celebrate' })
+            setMatchPairs(null)
+            setResult({ score: correct, total })
+          }}
+        />
+      </div>
+    </div>
+  )
+
   if (!level) return (
     <div className="min-h-screen flex flex-col" style={{ background: theme.bg }}>
       <div className="flex items-center gap-3 px-5 pt-safe pt-4 pb-4" style={{ background: theme.headerBg }}>
@@ -294,6 +325,25 @@ export default function SpellingModule({ theme, onDone, onBack, played = 0 }) {
             </motion.button>
           )
         })}
+
+        <motion.button
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => {
+            lockedRef.current = false
+            const pool = seededShuffle(WORD_SETS[autoLevel], Date.now() % 100000).slice(0, 5)
+            setMatchPairs(pool.map((w, i) => ({ id: `w${i}`, question: w.hint, answer: w.word })))
+            speak('Word Match! Read each clue and tap its matching word.', { mood: 'instruct' })
+          }}
+          className="w-full max-w-sm rounded-2xl px-5 py-4 flex items-center gap-3"
+          style={{ background: 'linear-gradient(135deg, #34D399, #059669)' }}
+        >
+          <span className="text-3xl">🎯</span>
+          <span className="text-left flex-1">
+            <span className="font-bubble text-white text-lg block leading-tight">Word Match</span>
+            <span className="font-round text-white/80 text-xs">Match clues to words — a gentler way to learn them</span>
+          </span>
+        </motion.button>
       </div>
     </div>
   )

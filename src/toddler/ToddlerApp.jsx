@@ -10,6 +10,7 @@ import { formatLocalDate } from '../utils/date.js'
 import { shouldSendAutoDigest, markDigestSent, buildDigestPayload, sendDigestEmail, sendNudgeEmail } from '../utils/weeklyDigest.js'
 import { useSpeech } from '../hooks/useSpeech'
 import { VoiceContext } from '../contexts/VoiceContext'
+import { trackActivityComplete } from '../utils/analytics.js'
 
 // ── Toddler themes (3–4 year olds) ───────────────────────────────────────────
 const TODDLER_THEMES = {
@@ -63,8 +64,7 @@ const TODDLER_MODULES = [
   { id: 'animals',    label: 'Animals',     emoji: '🐘', desc: 'Animal sounds!',    bg: '#22C55E', comingSoon: false },
   { id: 'fruits',     label: 'Fruits',      emoji: '🍎', desc: 'Name the fruits!',  bg: '#FF9A3C', comingSoon: false },
   { id: 'bodyparts',  label: 'My Body',     emoji: '🖐️', desc: 'Head to toe!',     bg: '#E879F9', comingSoon: false },
-  { id: 'alphabet',   label: 'A B C',       emoji: '🔤', desc: 'Learn letters!',    bg: '#F59E0B', comingSoon: true  },
-  { id: 'songs',      label: 'Songs',       emoji: '🎵', desc: 'Sing along!',       bg: '#E21C1C', comingSoon: true  },
+  { id: 'alphabet',   label: 'A B C',       emoji: '🔤', desc: 'Learn letters!',    bg: '#F59E0B', comingSoon: false },
 ]
 
 // ── Session helper: shuffled subset so repeat plays differ ────────────────────
@@ -757,6 +757,135 @@ function BodyPartsModule({ theme, onDone, onBack }) {
   )
 }
 
+// ── Alphabet module ───────────────────────────────────────────────────────────
+// Letter recognition with pure phonics sounds (RWI-style "a says a as in apple")
+const LETTER_QUESTIONS = [
+  { letter: 'A', sound: 'a',  word: 'apple',    emoji: '🍎' },
+  { letter: 'B', sound: 'b',  word: 'ball',     emoji: '⚽' },
+  { letter: 'C', sound: 'c',  word: 'cat',      emoji: '🐱' },
+  { letter: 'D', sound: 'd',  word: 'dog',      emoji: '🐶' },
+  { letter: 'E', sound: 'e',  word: 'egg',      emoji: '🥚' },
+  { letter: 'F', sound: 'f',  word: 'fish',     emoji: '🐟' },
+  { letter: 'G', sound: 'g',  word: 'goat',     emoji: '🐐' },
+  { letter: 'H', sound: 'h',  word: 'hat',      emoji: '🎩' },
+  { letter: 'I', sound: 'i',  word: 'insect',   emoji: '🐞' },
+  { letter: 'J', sound: 'j',  word: 'jam',      emoji: '🍓' },
+  { letter: 'K', sound: 'k',  word: 'kite',     emoji: '🪁' },
+  { letter: 'L', sound: 'l',  word: 'lion',     emoji: '🦁' },
+  { letter: 'M', sound: 'm',  word: 'moon',     emoji: '🌙' },
+  { letter: 'N', sound: 'n',  word: 'nest',     emoji: '🪺' },
+  { letter: 'O', sound: 'o',  word: 'orange',   emoji: '🍊' },
+  { letter: 'P', sound: 'p',  word: 'pig',      emoji: '🐷' },
+  { letter: 'Q', sound: 'qu', word: 'queen',    emoji: '👑' },
+  { letter: 'R', sound: 'r',  word: 'rainbow',  emoji: '🌈' },
+  { letter: 'S', sound: 's',  word: 'sun',      emoji: '☀️' },
+  { letter: 'T', sound: 't',  word: 'tree',     emoji: '🌳' },
+  { letter: 'U', sound: 'u',  word: 'umbrella', emoji: '☂️' },
+  { letter: 'V', sound: 'v',  word: 'van',      emoji: '🚐' },
+  { letter: 'W', sound: 'w',  word: 'water',    emoji: '💧' },
+  { letter: 'X', sound: 'x',  word: 'box',      emoji: '📦' },
+  { letter: 'Y', sound: 'y',  word: 'yoyo',     emoji: '🪀' },
+  { letter: 'Z', sound: 'z',  word: 'zebra',    emoji: '🦓' },
+].map(l => ({ ...l, options: [] }))
+
+function makeLetterSession(n = 6) {
+  const picked = shuffleArr(LETTER_QUESTIONS).slice(0, n)
+  return picked.map(q => {
+    const others = shuffleArr(LETTER_QUESTIONS.filter(l => l.letter !== q.letter)).slice(0, 2)
+    return { ...q, options: shuffleArr([q.letter, ...others.map(o => o.letter)]) }
+  })
+}
+
+function AlphabetModule({ theme, onDone, onBack }) {
+  const [questions] = useState(() => makeLetterSession())
+  const [q, setQ] = useState(0)
+  const [score, setScore] = useState(0)
+  const [feedback, setFeedback] = useState(null)
+  const lockedRef = useRef(false)
+  const completedRef = useRef(false)
+  const timersRef = useRef([])
+  const spokenQ = useRef(-1)
+  const { speak } = useSpeech()
+
+  useEffect(() => () => timersRef.current.forEach(t => clearTimeout(t)), [])
+
+  useEffect(() => {
+    speak(`Let's learn letters! Look at the big letter and tap its name!`, { mood: 'instruct', rate: 0.8 })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const current = questions[q]
+
+  useEffect(() => {
+    if (spokenQ.current === q) return
+    spokenQ.current = q
+    speak(`Which letter is this?`, { mood: 'question', rate: 0.8, queue: true })
+  }, [q, speak])
+
+  const handleAnswer = (answer) => {
+    if (lockedRef.current || completedRef.current) return
+    lockedRef.current = true
+    const correct = answer === current.letter
+    const nextScore = score + (correct ? 1 : 0)
+    if (correct) {
+      setScore(nextScore)
+      confetti({ particleCount: 60, spread: 80, origin: { x: 0.5, y: 0.4 } })
+      speak(`Yes! ${current.letter}! ${current.letter} is for ${current.word}! Wonderful!`, { mood: 'celebrate', rate: 0.8 })
+    } else {
+      speak(`This is the letter ${current.letter}. ${current.letter} is for ${current.word}!`, { mood: 'instruct', rate: 0.8 })
+    }
+    setFeedback(correct ? 'correct' : 'wrong')
+    const id = window.setTimeout(() => {
+      timersRef.current = timersRef.current.filter(t => t !== id)
+      setFeedback(null)
+      if (q + 1 >= questions.length) {
+        completedRef.current = true
+        onDone(nextScore)
+      } else {
+        setQ(v => v + 1)
+        lockedRef.current = false
+      }
+    }, 2800)
+    timersRef.current.push(id)
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: theme.bg }}>
+      <motion.button whileTap={{ scale: 0.9 }} onClick={onBack} className="absolute top-safe left-4 mt-3 font-round text-white/70 text-sm">← Back</motion.button>
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl mb-4"
+          style={{ background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.35)' }}>
+          <span>🎯</span>
+          <p className="font-round text-white text-sm font-bold">Look at the big letter — tap its name!</p>
+        </div>
+        <motion.div
+          key={current.letter}
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+          className="mx-auto mb-4 w-44 h-44 rounded-[36px] bg-white/95 shadow-2xl flex items-center justify-center"
+        >
+          <span className="font-bubble" style={{ fontSize: 84, color: theme.primary, lineHeight: 1 }}>
+            {current.letter}{current.letter.toLowerCase()}
+          </span>
+        </motion.div>
+        <p className="font-bubble text-white text-2xl">Which letter is this?</p>
+        <p className="font-round text-white/70 text-base mt-1">{current.emoji} {current.letter.toLowerCase()} is for {current.word}</p>
+      </div>
+      <div className="grid grid-cols-3 gap-4 w-full max-w-xs">
+        {current.options.map(opt => (
+          <motion.button key={opt} whileTap={{ scale: 0.85 }} onClick={() => handleAnswer(opt)}
+            className="py-4 rounded-2xl font-bubble text-white text-3xl shadow-lg"
+            style={{ background: feedback && opt === current.letter ? '#22C55E' : 'rgba(255,255,255,0.25)', border: '3px solid rgba(255,255,255,0.4)' }}>
+            {opt}
+          </motion.button>
+        ))}
+      </div>
+      <p className="font-round text-white/70 text-sm mt-8">{q + 1} / {questions.length}</p>
+    </div>
+  )
+}
+
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 function ToddlerDashboard({ theme, profileId, profileName, progress, onNavigate, onSwitchProfiles, onParent }) {
   const totalStars = TODDLER_MODULES.reduce((acc, m) => acc + (progress[m.id]?.stars || 0), 0)
@@ -1071,6 +1200,7 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
   }, [update, todayKey])
 
   const handleModuleDone = useCallback((moduleId, stars) => {
+    trackActivityComplete(moduleId, 'toddler')
     const firstTreasureToday = progress[moduleId]?.lastPlayedDate !== todayStamp()
     update(p => {
       const today = todayStamp()
@@ -1132,8 +1262,7 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
     animals:   <AnimalsModule   theme={theme} onDone={(s) => handleModuleDone('animals', s)}   onBack={() => setScreen('home')} />,
     fruits:    <FruitsModule    theme={theme} onDone={(s) => handleModuleDone('fruits', s)}    onBack={() => setScreen('home')} />,
     bodyparts: <BodyPartsModule theme={theme} onDone={(s) => handleModuleDone('bodyparts', s)} onBack={() => setScreen('home')} />,
-    alphabet:  <ComingSoonModule theme={theme} onBack={() => setScreen('home')} />,
-    songs:     <ComingSoonModule theme={theme} onBack={() => setScreen('home')} />,
+    alphabet:  <AlphabetModule theme={theme} onDone={(s) => handleModuleDone('alphabet', s)} onBack={() => setScreen('home')} />,
   }
 
   if (moduleMap[screen]) {

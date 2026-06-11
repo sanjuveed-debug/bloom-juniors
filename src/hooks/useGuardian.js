@@ -5,6 +5,7 @@ import {
 } from '../utils/guardian'
 import { isSupabaseConfigured, supabase } from '../lib/supabase.js'
 import { ensureCloudClass, loadCloudGuardian, saveCloudGuardian } from '../services/cloudStore.js'
+import { trackEvent } from '../utils/analytics.js'
 
 const APP_ORIGIN =
   import.meta.env.VITE_APP_ORIGIN ||
@@ -113,6 +114,7 @@ export function useGuardian() {
 
     saveGuardian(next)
     setGuardian(next)
+    trackEvent('sign_up', { method: 'guardian' })
     return next
   }, [])
 

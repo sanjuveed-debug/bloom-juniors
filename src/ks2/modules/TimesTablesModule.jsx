@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { dailySeedFor, seededShuffle } from '../../utils/seededRandom'
 import { useSpeech } from '../../hooks/useSpeech'
+import MatchingActivity from '../../components/MatchingActivity'
 
 const STARTER_TABLES = [2,3,4,5,10]
 const ALL_TABLES = [2,3,4,5,6,7,8,9,10,11,12]
@@ -36,7 +37,8 @@ export default function TimesTablesModule({ theme, onDone, onBack, played = 0 })
   const [manualUnlock, setManualUnlock] = useState(false)
   const availableTables = (manualUnlock || played >= 3) ? ALL_TABLES : getAvailableTables(played)
   const timerMax = getTimerSeconds(played)
-  const [phase, setPhase] = useState('pick') // pick | quiz | result
+  const [phase, setPhase] = useState('pick') // pick | quiz | match | result
+  const [matchPairs, setMatchPairs] = useState([])
   const [table, setTable] = useState(null)
   const [questions, setQuestions] = useState([])
   const [q, setQ] = useState(0)
@@ -117,6 +119,45 @@ export default function TimesTablesModule({ theme, onDone, onBack, played = 0 })
     timersRef.current.push(id)
   }
 
+  const startMatch = () => {
+    const t = availableTables[Math.floor(Math.random() * availableTables.length)]
+    const facts = buildQuestions(t).slice(0, 6)
+    completedRef.current = false
+    setTable(t)
+    setMatchPairs(facts.map((f, i) => ({ id: `m${i}`, question: `${f.a} × ${f.b}`, answer: String(f.ans) })))
+    setPhase('match')
+    speak(`Match Up! Pair each ${t} times table fact with its answer.`, { mood: 'instruct' })
+  }
+
+  const handleMatchComplete = (misses, total) => {
+    if (completedRef.current) return
+    completedRef.current = true
+    const correct = Math.max(0, total - misses)
+    confetti({ particleCount: 80, spread: 100, origin: { y: 0.5 } })
+    speak('All matched! Great work!', { mood: 'celebrate' })
+    setScore(correct)
+    setQuestions(Array.from({ length: total }, () => ({})))
+    setPhase('result')
+    onDone(correct, total)
+  }
+
+  if (phase === 'match') return (
+    <div className="min-h-screen flex flex-col" style={{ background: theme.bg }}>
+      <div className="flex items-center gap-3 px-5 pt-safe pt-4 pb-4" style={{ background: theme.headerBg }}>
+        <motion.button whileTap={{ scale: 0.9 }} onClick={() => setPhase('pick')} className="font-round text-white/60 text-sm">← Back</motion.button>
+        <p className="font-bubble text-white text-lg">🎯 Match Up — {table}× table</p>
+      </div>
+      <div className="flex-1 pt-5 pb-10 overflow-y-auto">
+        <MatchingActivity
+          pairs={matchPairs}
+          colour="#FACC15"
+          onSpeak={(text) => speak(String(text), { mood: 'instruct' })}
+          onComplete={handleMatchComplete}
+        />
+      </div>
+    </div>
+  )
+
   if (phase === 'pick') return (
     <div className="min-h-screen flex flex-col" style={{ background: theme.bg }}>
       <div className="flex items-center gap-3 px-5 pt-safe pt-4 pb-4" style={{ background: theme.headerBg }}>
@@ -164,6 +205,19 @@ export default function TimesTablesModule({ theme, onDone, onBack, played = 0 })
         <p className="font-round text-white/30 text-xs text-center mt-2">
           10 questions · {timerMax} seconds each
         </p>
+
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={startMatch}
+          className="mt-5 w-full rounded-3xl px-5 py-4 flex items-center gap-3 shadow-xl"
+          style={{ background: 'linear-gradient(135deg, #FACC15, #F59E0B)' }}
+        >
+          <span className="text-3xl">🎯</span>
+          <span className="text-left flex-1">
+            <span className="font-bubble text-white text-lg block leading-tight">Match Up</span>
+            <span className="font-round text-white/80 text-xs">Pair the facts with their answers — no timer!</span>
+          </span>
+        </motion.button>
       </div>
     </div>
   )

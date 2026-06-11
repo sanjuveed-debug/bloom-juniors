@@ -95,6 +95,31 @@ function getGuardianDetails() {
   }
 }
 
+// ── GA funnel events ──────────────────────────────────────────────────────────
+// Silent funnel tracking via gtag (no user interaction needed). Key events:
+//   sign_up            — guardian account created
+//   first_activity     — first ever completed activity on this device
+//   activity_complete  — every completed learning activity
+//   demo_complete      — landing-page demo finished
+
+const FIRST_ACTIVITY_KEY = 'eduapp_first_activity_done_v1'
+
+export function trackEvent(name, params = {}) {
+  try {
+    if (typeof window.gtag === 'function') window.gtag('event', name, params)
+  } catch {}
+}
+
+export function trackActivityComplete(moduleId, ageGroup) {
+  trackEvent('activity_complete', { module: moduleId, age_group: ageGroup })
+  try {
+    if (!localStorage.getItem(FIRST_ACTIVITY_KEY)) {
+      localStorage.setItem(FIRST_ACTIVITY_KEY, new Date().toISOString())
+      trackEvent('first_activity', { module: moduleId, age_group: ageGroup })
+    }
+  } catch {}
+}
+
 export function logSessionStart({ profileName, avatar }) {
   try {
     if (hasNotifiedToday(profileName)) return

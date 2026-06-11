@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import MatchingActivity from './MatchingActivity'
 import { useSpeech } from '../hooks/useSpeech'
+import { trackEvent } from '../utils/analytics.js'
 
 const DEMO_COLOUR = '#8B5CF6'
 const DEMO_EMOJIS = ['🦋', '🍎', '⭐', '🐠', '🎈', '🐞', '🌸', '🐧']
@@ -42,6 +43,7 @@ export default function LandingDemo({ onGetStarted }) {
     setDone(true)
     confetti({ particleCount: 90, spread: 110, origin: { y: 0.6 } })
     speak('Brilliant! You matched them all!', { mood: 'celebrate' })
+    trackEvent('demo_complete', { misses, total })
   }, [speak])
 
   const playAgain = useCallback(() => {
