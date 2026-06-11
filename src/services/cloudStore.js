@@ -128,6 +128,33 @@ export async function loadCloudGuardian() {
   }
 }
 
+// ── Premium (Stripe) ──────────────────────────────────────────────────────────
+
+export async function loadPremiumStatus() {
+  const userId = await getCloudUserId()
+  if (!userId) return null
+  const { data } = await supabase
+    .from('guardian_profiles')
+    .select('premium_status')
+    .eq('user_id', userId)
+    .maybeSingle()
+  return data?.premium_status || null
+}
+
+// Starts a Stripe Checkout subscription and redirects the browser to it.
+export async function startPremiumCheckout(email) {
+  const userId = await getCloudUserId()
+  if (!userId) throw new Error('Sign in required')
+  const resp = await fetch('/api/stripe-checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, email }),
+  })
+  const data = await resp.json().catch(() => ({}))
+  if (!resp.ok || !data.url) throw new Error(data.error || 'Could not start checkout')
+  window.location.assign(data.url)
+}
+
 export async function saveCloudGuardian(guardian) {
   const userId = await getCloudUserId()
   if (!userId) return null

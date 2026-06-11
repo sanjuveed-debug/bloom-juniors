@@ -14,7 +14,7 @@ function shuffle(arr) {
 // Reusable tap-to-pair matching activity.
 // pairs: [{ id, question, answer }] — question/answer can be strings or short JSX.
 // onComplete(misses, total) is called once every pair has been matched.
-export default function MatchingActivity({ pairs, colour = '#4D96FF', onSpeak, onComplete }) {
+export default function MatchingActivity({ pairs, colour = '#4D96FF', onSpeak, onComplete, tileTextClass = 'text-xl' }) {
   const questions = useMemo(() => shuffle(pairs.map(p => ({ id: p.id, text: p.question }))), [pairs])
   const answers   = useMemo(() => shuffle(pairs.map(p => ({ id: p.id, text: p.answer }))), [pairs])
 
@@ -85,7 +85,7 @@ export default function MatchingActivity({ pairs, colour = '#4D96FF', onSpeak, o
               whileTap={!isMatched ? { scale: 0.95 } : {}}
               onClick={() => handleSelectQ(q.id, q.text)}
               disabled={isMatched}
-              className="rounded-2xl py-4 px-2 font-bubble text-xl text-center shadow-md"
+              className={`rounded-2xl py-4 px-2 font-bubble ${tileTextClass} text-center shadow-md`}
               style={tileStyle(q.id, selectedQ === q.id, wrongPair?.qId === q.id, isMatched)}
             >
               {q.text} {isMatched && '✅'}
@@ -104,7 +104,7 @@ export default function MatchingActivity({ pairs, colour = '#4D96FF', onSpeak, o
               whileTap={!isMatched ? { scale: 0.95 } : {}}
               onClick={() => handleSelectA(a.id, a.text)}
               disabled={isMatched}
-              className="rounded-2xl py-4 px-2 font-bubble text-xl text-center shadow-md"
+              className={`rounded-2xl py-4 px-2 font-bubble ${tileTextClass} text-center shadow-md`}
               style={tileStyle(a.id, selectedA === a.id, wrongPair?.aId === a.id, isMatched)}
             >
               {a.text} {isMatched && '✅'}

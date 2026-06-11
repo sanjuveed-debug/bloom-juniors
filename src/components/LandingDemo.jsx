@@ -5,24 +5,30 @@ import MatchingActivity from './MatchingActivity'
 import { useSpeech } from '../hooks/useSpeech'
 
 const DEMO_COLOUR = '#8B5CF6'
+const DEMO_EMOJIS = ['🦋', '🍎', '⭐', '🐠', '🎈', '🐞', '🌸', '🐧']
 
+// "Count the animals" pairs: question tile shows N emojis, answer tile the number.
 function makeDemoPairs() {
-  const sums = []
-  const used = new Set()
-  while (sums.length < 4) {
-    const add = Math.random() < 0.5
-    const a = Math.floor(Math.random() * 5) + 1
-    const b = Math.floor(Math.random() * (add ? 5 : a)) + (add ? 1 : 0)
-    const answer = add ? a + b : a - b
-    if (answer < 1 || used.has(answer)) continue
-    used.add(answer)
-    sums.push({
-      id: `d${sums.length}`,
-      question: add ? `${a} + ${b}` : `${a} − ${b}`,
-      answer: String(answer),
-    })
+  const counts = []
+  while (counts.length < 4) {
+    const n = Math.floor(Math.random() * 5) + 1 // 1-5
+    if (!counts.includes(n)) counts.push(n)
   }
-  return sums
+  const emojis = [...DEMO_EMOJIS].sort(() => Math.random() - 0.5)
+  return counts.map((n, i) => ({
+    id: `d${i}`,
+    question: emojis[i].repeat(n),
+    answer: String(n),
+  }))
+}
+
+// Count graphemes (emoji are multi-code-unit, so use Array.from / segmentation)
+function emojiCount(text) {
+  try {
+    return [...new Intl.Segmenter().segment(text)].length
+  } catch {
+    return Array.from(text).length
+  }
 }
 
 export default function LandingDemo({ onGetStarted }) {
@@ -51,7 +57,7 @@ export default function LandingDemo({ onGetStarted }) {
           Try it yourself — right now
         </h2>
         <p className="font-round text-white/50 text-sm text-center mb-8">
-          This is a real activity from Number World. No signup, no download — tap a sum, then tap its answer.
+          A real activity, right here. No signup, no download — count the animals, then tap the matching number. Yaagvi counts along with you.
         </p>
 
         <div className="rounded-[28px] p-5 md:p-7"
@@ -64,14 +70,14 @@ export default function LandingDemo({ onGetStarted }) {
                 transition={{ duration: 2, repeat: Infinity }}
                 className="text-6xl mb-4"
               >🎯</motion.div>
-              <p className="font-bubble text-white text-2xl mb-2">Match Up</p>
+              <p className="font-bubble text-white text-2xl mb-2">Count &amp; Match</p>
               <p className="font-round text-white/55 text-sm mb-6">
-                Pair each sum with its answer — with Yaagvi cheering along.
+                Count each group of animals and match it to the right number — Yaagvi counts out loud with you.
               </p>
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 whileHover={{ scale: 1.04 }}
-                onClick={() => { setStarted(true); speak('Tap a sum, then tap its matching answer!', { mood: 'instruct' }) }}
+                onClick={() => { setStarted(true); speak('Count the animals, then tap the matching number!', { mood: 'instruct' }) }}
                 className="font-bubble text-lg text-white px-8 py-4 rounded-2xl shadow-xl"
                 style={{ background: `linear-gradient(135deg, ${DEMO_COLOUR}, #FF1D8E)` }}
               >
@@ -88,7 +94,17 @@ export default function LandingDemo({ onGetStarted }) {
                     <MatchingActivity
                       pairs={pairs}
                       colour={DEMO_COLOUR}
-                      onSpeak={(text) => speak(String(text), { mood: 'instruct' })}
+                      tileTextClass="text-3xl"
+                      onSpeak={(text) => {
+                        const t = String(text)
+                        if (/^\d+$/.test(t)) {
+                          speak(t, { mood: 'instruct' })
+                        } else {
+                          // count the emojis aloud: "1, 2, 3!"
+                          const n = emojiCount(t)
+                          speak(Array.from({ length: n }, (_, i) => i + 1).join(', ') + '!', { mood: 'celebrate' })
+                        }
+                      }}
                       onComplete={handleComplete}
                     />
                   </motion.div>

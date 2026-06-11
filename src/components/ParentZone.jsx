@@ -2,6 +2,9 @@ import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { THEMES } from '../themes'
 import { isDigestOptedIn, setDigestOptIn, buildDigestPayload, sendDigestEmail, markDigestSent } from '../utils/weeklyDigest.js'
+import { loadPremiumStatus, startPremiumCheckout } from '../services/cloudStore.js'
+
+const PREMIUM_PRICE_LABEL = 'AED 19/month'
 
 const MAX_PIN_ATTEMPTS = 5
 const PIN_LOCKOUT_MS = 5 * 60 * 1000
@@ -59,6 +62,78 @@ function AccuracyRing({ accuracy, color, size = 56 }) {
         style={{ transition: 'stroke-dashoffset 0.8s ease' }}
       />
     </svg>
+  )
+}
+
+function PremiumCard({ theme, guardianEmail }) {
+  const [status, setStatus] = useState('loading') // loading | none | active | past_due | starting | error
+  const [errorMsg, setErrorMsg] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    loadPremiumStatus()
+      .then(s => { if (!cancelled) setStatus(s === 'active' ? 'active' : s === 'past_due' ? 'past_due' : 'none') })
+      .catch(() => { if (!cancelled) setStatus('none') })
+    return () => { cancelled = true }
+  }, [])
+
+  const handleUpgrade = useCallback(async () => {
+    setStatus('starting')
+    try {
+      await startPremiumCheckout(guardianEmail || '')
+    } catch (e) {
+      setErrorMsg(String(e.message || 'Could not start checkout'))
+      setStatus('error')
+    }
+  }, [guardianEmail])
+
+  if (status === 'loading') return null
+
+  if (status === 'active') {
+    return (
+      <div className="mx-4 mb-3 p-4 rounded-3xl flex items-center gap-3"
+        style={{ background: 'rgba(34,197,94,0.12)', border: '1.5px solid rgba(34,197,94,0.35)' }}>
+        <span className="text-2xl">⭐</span>
+        <div>
+          <p className="font-bubble text-base" style={{ color: theme.text }}>Premium active</p>
+          <p className="font-round text-xs opacity-60" style={{ color: theme.text }}>
+            Thank you for supporting Bloom Juniors!
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mx-4 mb-3 p-4 rounded-3xl"
+      style={{ background: 'linear-gradient(135deg, #FDE68A30, #F59E0B20)', border: '1.5px solid #F59E0B50' }}>
+      <div className="flex items-center gap-3">
+        <span className="text-3xl">👑</span>
+        <div className="flex-1 min-w-0">
+          <p className="font-bubble text-base leading-tight" style={{ color: theme.text }}>
+            Bloom Premium — {PREMIUM_PRICE_LABEL}
+          </p>
+          <p className="font-round text-xs opacity-65 mt-0.5" style={{ color: theme.text }}>
+            Unlocks all premium modules as they launch · cancel anytime
+          </p>
+          {status === 'past_due' && (
+            <p className="font-round text-xs mt-1" style={{ color: '#DC2626' }}>
+              Payment issue — please update your card via the checkout below.
+            </p>
+          )}
+          {status === 'error' && (
+            <p className="font-round text-xs mt-1" style={{ color: '#DC2626' }}>{errorMsg}</p>
+          )}
+        </div>
+        <motion.button whileTap={{ scale: 0.95 }}
+          onClick={handleUpgrade}
+          disabled={status === 'starting'}
+          className="shrink-0 rounded-2xl px-4 py-2.5 font-bubble text-sm text-white shadow disabled:opacity-60"
+          style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)' }}>
+          {status === 'starting' ? 'Opening…' : 'Go Premium'}
+        </motion.button>
+      </div>
+    </div>
   )
 }
 
@@ -309,6 +384,9 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
           </div>
         </div>
       </div>
+
+      {/* Premium upgrade (parents only — schools have their own licence) */}
+      {!classroomMode && <PremiumCard theme={theme} guardianEmail={guardianEmail} />}
 
       {/* Tabs */}
       <div className="flex gap-1.5 px-4 mb-4 overflow-x-auto pb-1">
