@@ -439,7 +439,7 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
             </h1>
 
             <p className="font-round text-white/70 text-lg md:text-xl max-w-xl leading-relaxed mb-6">
-              Bloom Juniors helps children aged 3–9 build phonics, maths and reading confidence with Yaagvi — a companion who responds to effort, lights up progress on a Mastery Map, and helps children proudly share their wins with you.
+              From first phonics sounds to times tables and reading — Bloom Juniors gives children aged 3–9 a guided daily path with Yaagvi, a companion who talks to them, notices their effort, and unlocks games only after the learning is done.
             </p>
 
             {/* Trust badges */}
@@ -546,6 +546,50 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
 
       {/* ── INTERACTIVE DEMO ─────────────────────────────────────────────────── */}
       <LandingDemo onGetStarted={onGetStarted} />
+
+      {/* ── REAL APP SCREENS ─────────────────────────────────────────────────── */}
+      <section className="px-4 pb-16 md:px-8">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="font-bubble text-white text-3xl md:text-4xl text-center mb-2">
+            This is the actual app
+          </h2>
+          <p className="font-round text-white/50 text-sm text-center mb-10">
+            Not mockups — real screens from Bloom Juniors, exactly as your child sees them.
+          </p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            {[
+              { src: '/screens/app-toddler.png', alt: 'Tiny Stars dashboard for ages 3-4', caption: 'Tiny Stars (3–4): two tiny games a day', color: '#FF9A3C' },
+              { src: '/screens/app-activity.png', alt: 'Fruits learning activity', caption: 'Tap-to-learn activities with voice guidance', color: '#F59E0B' },
+              { src: '/screens/app-matchup.png', alt: 'Match Up maths activity with Yaagvi mascot', caption: 'Yaagvi cheers along every activity', color: '#FF6B9D' },
+              { src: '/screens/app-arcade.png', alt: 'Game Arcade reward screen', caption: 'Finish the path → the arcade opens', color: '#8B5CF6' },
+            ].map((shot, i) => (
+              <motion.figure
+                key={shot.src}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08, type: 'spring', stiffness: 220 }}
+                className="flex flex-col items-center"
+              >
+                <div className="rounded-[28px] overflow-hidden shadow-2xl w-full"
+                  style={{ border: `2.5px solid ${shot.color}60`, background: '#0a0a2e' }}>
+                  <img
+                    src={shot.src}
+                    alt={shot.alt}
+                    width={390}
+                    height={844}
+                    loading="lazy"
+                    className="w-full h-auto block"
+                  />
+                </div>
+                <figcaption className="font-round text-white/55 text-xs text-center mt-3 leading-snug px-1">
+                  {shot.caption}
+                </figcaption>
+              </motion.figure>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ── WHY CHILDREN COME BACK ───────────────────────────────────────────── */}
       <section className="px-4 pb-16 md:px-8">
@@ -701,12 +745,15 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
           >
             <DeveloperVideo />
             <div className="flex-1 text-center md:text-left">
-              <p className="font-round text-purple-400 text-xs font-bold uppercase tracking-widest mb-3">About Bloom Juniors</p>
+              <p className="font-round text-purple-400 text-xs font-bold uppercase tracking-widest mb-3">From the founder</p>
               <p className="font-bubble text-white text-xl md:text-2xl leading-snug mb-3">
-                "Built to help children genuinely enjoy learning — not just complete tasks."
+                "I built Bloom Juniors for my own children — to help them genuinely enjoy learning, not just complete tasks."
               </p>
-              <p className="font-round text-white/55 text-sm leading-relaxed">
-                No ads, no dark patterns, no app store required. Works on any device, syncs across screens, and is designed around the British curriculum.
+              <p className="font-round text-white/55 text-sm leading-relaxed mb-3">
+                No ads, no dark patterns, no app store required. Every activity is hand-built around the British curriculum — from RWI phonics Sets 1–3 to times tables 2–12 — and tested daily by the toughest critics I know: my kids.
+              </p>
+              <p className="font-round text-purple-300 text-sm font-bold">
+                — Sanju, founder &amp; dad of two
               </p>
             </div>
           </motion.div>
