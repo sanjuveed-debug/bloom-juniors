@@ -756,6 +756,64 @@ function getSoundDisplay(key) {
   return SOUND_BANK[key]?.display || key
 }
 
+// ── Sound Buttons Blending (Reception-style oral blending) ───────────────────
+// Each word is segmented into the phoneme keys above so every button tap plays
+// the pure sound via PHONEME_IPA. Tier 0 = CVC with Set 0 sounds; Tier 1 adds
+// Special Friends / vowel digraphs once the child has played a few sessions.
+const BLEND_WORDS_T0 = [
+  { word: 'sun', emoji: '☀️', sounds: ['s', 'u', 'n'] },
+  { word: 'cat', emoji: '🐱', sounds: ['c', 'a', 't'] },
+  { word: 'dog', emoji: '🐶', sounds: ['d', 'o', 'g'] },
+  { word: 'pig', emoji: '🐷', sounds: ['p', 'i', 'g'] },
+  { word: 'hat', emoji: '🎩', sounds: ['h', 'a', 't'] },
+  { word: 'cup', emoji: '🥤', sounds: ['c', 'u', 'p'] },
+  { word: 'bed', emoji: '🛏️', sounds: ['b', 'e', 'd'] },
+  { word: 'bus', emoji: '🚌', sounds: ['b', 'u', 's'] },
+  { word: 'fox', emoji: '🦊', sounds: ['f', 'o', 'x'] },
+  { word: 'map', emoji: '🗺️', sounds: ['m', 'a', 'p'] },
+  { word: 'leg', emoji: '🦵', sounds: ['l', 'e', 'g'] },
+  { word: 'web', emoji: '🕸️', sounds: ['w', 'e', 'b'] },
+  { word: 'van', emoji: '🚐', sounds: ['v', 'a', 'n'] },
+  { word: 'ten', emoji: '🔟', sounds: ['t', 'e', 'n'] },
+  { word: 'mug', emoji: '☕', sounds: ['m', 'u', 'g'] },
+  { word: 'pen', emoji: '🖊️', sounds: ['p', 'e', 'n'] },
+  { word: 'bug', emoji: '🐛', sounds: ['b', 'u', 'g'] },
+  { word: 'nut', emoji: '🥜', sounds: ['n', 'u', 't'] },
+  { word: 'pan', emoji: '🍳', sounds: ['p', 'a', 'n'] },
+  { word: 'jet', emoji: '✈️', sounds: ['j', 'e', 't'] },
+]
+const BLEND_WORDS_T1 = [
+  { word: 'ship',  emoji: '🚢', sounds: ['sh', 'i', 'p'] },
+  { word: 'fish',  emoji: '🐟', sounds: ['f', 'i', 'sh'] },
+  { word: 'moon',  emoji: '🌙', sounds: ['m', 'oo', 'n'] },
+  { word: 'rain',  emoji: '🌧️', sounds: ['r', 'ai', 'n'] },
+  { word: 'boat',  emoji: '⛵', sounds: ['b', 'oa', 't'] },
+  { word: 'sheep', emoji: '🐑', sounds: ['sh', 'ee', 'p'] },
+  { word: 'chip',  emoji: '🍟', sounds: ['ch', 'i', 'p'] },
+  { word: 'star',  emoji: '⭐', sounds: ['s', 't', 'ar'] },
+  { word: 'coin',  emoji: '🪙', sounds: ['c', 'oi', 'n'] },
+  { word: 'tree',  emoji: '🌳', sounds: ['t', 'r', 'ee'] },
+  { word: 'feet',  emoji: '🦶', sounds: ['f', 'ee', 't'] },
+  { word: 'shark', emoji: '🦈', sounds: ['sh', 'ar', 'k'] },
+]
+
+function getBlendPool(sessionsPlayed) {
+  return sessionsPlayed >= 3 ? [...BLEND_WORDS_T0, ...BLEND_WORDS_T1] : BLEND_WORDS_T0
+}
+
+function buildBlendSSML(sounds, word) {
+  // Slow segmented sounds with gaps, then the whole word — classic oral blending
+  const parts = sounds.map(k =>
+    `<prosody rate="-25%"><phoneme alphabet="ipa" ph="${PHONEME_IPA[k]}">${getSoundDisplay(k)}</phoneme></prosody>`
+  )
+  return `${parts.join('<break time="400ms"/>')}<break time="600ms"/>${word}!`
+}
+
+function makeBlendOptions(target, pool) {
+  const others = shuffle(pool.filter(w => w.word !== target.word)).slice(0, 2)
+  return shuffle([target, ...others])
+}
+
 // ── Avatar-specific themes ─────────────────────────────────────────────────────
 const AVATAR_THEMES = {
   yaagvi: {
@@ -825,6 +883,8 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
   const activeSoundKeys = useRef(getActiveSoundKeys(sessionsPlayed)).current
   const soundSetLevel = getSoundSetLevel(sessionsPlayed)
 
+  const [mode, setMode] = useState(null) // null = chooser | 'pop' | 'blend'
+
   const [question,    setQuestion]    = useState(null)
   const [selected,    setSelected]    = useState(null)
   const [score,            setScore]            = useState(0)
@@ -866,10 +926,105 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
   }, [pickNextSound])
 
   useEffect(() => {
-    nextRound(pickNextSound())
-    speak(avatarTheme.intro + ' Listen for the sound and tap the right word!', { mood: 'instruct', voice: 'gb' })
+    speak(avatarTheme.intro + ' Choose your game!', { mood: 'instruct', voice: 'gb' })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const startPop = () => {
+    setMode('pop')
+    nextRound(pickNextSound())
+    speak('Listen for the sound and tap the right word!', { mood: 'instruct', voice: 'gb' })
+  }
+
+  // ── Sound Buttons Blending state ──
+  const BLEND_ROUNDS = 6
+  const blendPoolRef = useRef([])
+  const blendSessionRef = useRef([])
+  const [blendRound,   setBlendRound]   = useState(0)
+  const [blendWord,    setBlendWord]    = useState(null)
+  const [blendTapped,  setBlendTapped]  = useState(0)
+  const [blendPhase,   setBlendPhase]   = useState('tap') // tap | blend | pick | reveal
+  const [blendOptions, setBlendOptions] = useState([])
+  const [blendPicked,  setBlendPicked]  = useState(null)
+  const [blendScore,   setBlendScore]   = useState(0)
+  const [blendDone,    setBlendDone]    = useState(false)
+
+  const startBlend = () => {
+    const pool = getBlendPool(sessionsPlayed)
+    blendPoolRef.current = pool
+    blendSessionRef.current = shuffle(pool).slice(0, BLEND_ROUNDS)
+    setMode('blend')
+    setBlendRound(0)
+    setBlendScore(0)
+    setBlendWord(blendSessionRef.current[0])
+    setBlendTapped(0)
+    setBlendPicked(null)
+    setBlendPhase('tap')
+    speak('Sound buttons! Tap each sound button, then squash them together to make a word!', { mood: 'instruct', voice: 'gb' })
+  }
+
+  const handleSoundTap = (i) => {
+    if (blendPhase !== 'tap' || !blendWord) return
+    const key = blendWord.sounds[i]
+    speak(getSoundDisplay(key), { mood: 'phonics', voice: 'gb', ssmlInner: buildPhonemeOnlySSML(key) })
+    if (i === blendTapped) {
+      const done = i + 1 === blendWord.sounds.length
+      setBlendTapped(i + 1)
+      if (done) buddy.onCorrect()
+    }
+  }
+
+  const handleBlend = () => {
+    if (!blendWord) return
+    setBlendPhase('blend')
+    speak(
+      `${blendWord.sounds.map(getSoundDisplay).join(', ')}, ${blendWord.word}!`,
+      { mood: 'phonics', voice: 'gb', ssmlInner: buildBlendSSML(blendWord.sounds, blendWord.word) }
+    )
+    const wait = blendWord.sounds.length * 850 + 1500
+    defer(() => {
+      setBlendOptions(makeBlendOptions(blendWord, blendPoolRef.current))
+      setBlendPhase('pick')
+    }, wait)
+  }
+
+  const handleBlendPick = (opt) => {
+    if (blendPhase !== 'pick' || blendPicked !== null || !blendWord) return
+    setBlendPicked(opt.word)
+    if (opt.word === blendWord.word) {
+      const newScore = blendScore + 1
+      setBlendScore(newScore)
+      confetti({ particleCount: 70, spread: 90, origin: { x: 0.5, y: 0.5 }, colors: ['#FFD700', '#34D399', '#38BDF8'] })
+      speak(`Yes! ${blendWord.word}! You blended it!`, { mood: 'celebrate', voice: 'gb' })
+      buddy.onWow()
+      setBlendPhase('reveal')
+      defer(() => {
+        const next = blendRound + 1
+        if (next >= BLEND_ROUNDS) {
+          setBlendDone(true)
+          const completion = buildSoundPopCompletion({
+            totalRounds: BLEND_ROUNDS,
+            correctAnswers: newScore,
+            bonusStars: newScore,
+            wrongSounds: [],
+          })
+          speak(`Amazing ${profileName || 'superstar'}! You blended ${newScore} words! You are a blending champion!`, { mood: 'celebrate' })
+          onAddStars('phonics', completion.stars, completion.sessionData)
+          buddy.onGameEnd()
+        } else {
+          setBlendRound(next)
+          setBlendWord(blendSessionRef.current[next])
+          setBlendTapped(0)
+          setBlendPicked(null)
+          setBlendPhase('tap')
+        }
+      }, 2300)
+    } else {
+      speak('Not quite. Listen again!', { mood: 'phonics', voice: 'gb', ssmlInner: `Not quite.<break time="300ms"/>${buildBlendSSML(blendWord.sounds, blendWord.word)}` })
+      buddy.onWrong(false)
+      defer(() => setBlendPicked(null), 1500)
+    }
+  }
 
   useEffect(() => {
     if (!question) return
@@ -951,7 +1106,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
     speak(getSoundDisplay(question.targetKey), { voice: 'gb', ssmlInner: buildPhonemeOnlySSML(question.targetKey) })
   }
 
-  if (round > totalRounds) {
+  if (round > totalRounds || blendDone) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6"
         style={{ background: `linear-gradient(160deg, ${theme.bg}, ${theme.card})` }}>
@@ -965,7 +1120,9 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
             {profileName ? `Amazing ${profileName}!` : 'Amazing!'}
           </h2>
           <p className="font-round text-xl mb-4" style={{ color: theme.text }}>
-            You scored <span className="font-bold text-yellow-500">{score} ⭐</span> stars!
+            {blendDone
+              ? <>You blended <span className="font-bold text-yellow-500">{blendScore} words ⭐</span>!</>
+              : <>You scored <span className="font-bold text-yellow-500">{score} ⭐</span> stars!</>}
           </p>
           <motion.button
             whileTap={{ scale: 0.9 }}
@@ -976,6 +1133,199 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
             Back to Home 🏠
           </motion.button>
         </motion.div>
+      </div>
+    )
+  }
+
+  // ── Mode chooser ──
+  if (mode === null) {
+    return (
+      <div className="min-h-screen flex flex-col" style={{ background: `linear-gradient(160deg, ${theme.bg}, ${theme.card})` }}>
+        <div className="flex items-center px-4 pt-safe pb-2">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={onBack}
+            className="w-10 h-10 rounded-full flex items-center justify-center shadow"
+            style={{ background: theme.card, color: theme.text }}>
+            ←
+          </motion.button>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center px-6 pb-16">
+          <div className="text-6xl mb-2">🎤</div>
+          <h2 className="font-bubble text-3xl mb-6 text-center" style={{ color: theme.text }}>Sound Pop</h2>
+          <div className="w-full max-w-sm space-y-4">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={startPop}
+              className="w-full rounded-3xl p-5 text-left shadow-lg flex items-center gap-4"
+              style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}
+            >
+              <span className="text-5xl">👂</span>
+              <span>
+                <span className="font-bubble text-2xl text-white block">Sound Pop</span>
+                <span className="font-round text-sm text-white/80">Listen and find the word!</span>
+              </span>
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={startBlend}
+              className="w-full rounded-3xl p-5 text-left shadow-lg flex items-center gap-4"
+              style={{ background: 'linear-gradient(135deg, #10B981, #0D9488)' }}
+            >
+              <span className="text-5xl">🔗</span>
+              <span>
+                <span className="font-bubble text-2xl text-white block">Sound Buttons</span>
+                <span className="font-round text-sm text-white/80">Tap the sounds, blend the word!</span>
+              </span>
+            </motion.button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Sound Buttons Blending screen ──
+  if (mode === 'blend') {
+    if (!blendWord) return null
+    const allTapped = blendTapped >= blendWord.sounds.length
+    return (
+      <div className="min-h-screen flex flex-col" style={{ background: `linear-gradient(160deg, ${theme.bg}, ${theme.card})` }}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 pt-safe pb-2">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={onBack}
+            className="w-10 h-10 rounded-full flex items-center justify-center shadow"
+            style={{ background: theme.card, color: theme.text }}>
+            ←
+          </motion.button>
+          <div className="text-center">
+            <p className="font-round text-xs font-bold opacity-60" style={{ color: theme.text }}>
+              Word {blendRound + 1}/{BLEND_ROUNDS}
+            </p>
+            <div className="flex gap-1 justify-center mt-1">
+              {Array.from({ length: blendScore }).map((_, i) => (
+                <motion.span key={i} initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-sm">⭐</motion.span>
+              ))}
+            </div>
+          </div>
+          <div className="font-bubble text-2xl">🔗</div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto scroll-ios pb-32">
+          {/* Instruction */}
+          <motion.div
+            key={`blend-card-${blendRound}`}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mx-4 mt-1 rounded-3xl p-5 text-center shadow-lg"
+            style={{ background: 'linear-gradient(135deg, #10B981, #0D9488)' }}
+          >
+            <p className="font-round text-white text-sm font-bold">
+              {blendPhase === 'tap' && (allTapped ? '🧲 Now squash the sounds together!' : '👆 Tap each sound button in order')}
+              {blendPhase === 'blend' && '👂 Listen... what word do they make?'}
+              {blendPhase === 'pick' && `🔍 Which picture is "${blendWord.word}"?`}
+              {blendPhase === 'reveal' && `🎉 ${blendWord.word.toUpperCase()}! You blended it!`}
+            </p>
+
+            {/* Sound buttons */}
+            <div
+              className="flex items-center justify-center mt-4 mb-2 transition-all duration-700"
+              style={{ gap: blendPhase === 'tap' ? 12 : 2 }}
+            >
+              {blendWord.sounds.map((key, i) => {
+                const isTapped = i < blendTapped
+                const isNext   = i === blendTapped && blendPhase === 'tap'
+                return (
+                  <motion.button
+                    key={`${blendRound}-${i}`}
+                    whileTap={{ scale: 0.85 }}
+                    onClick={() => handleSoundTap(i)}
+                    disabled={blendPhase !== 'tap'}
+                    animate={isNext ? { scale: [1, 1.08, 1] } : { scale: 1 }}
+                    transition={isNext ? { repeat: Infinity, duration: 1.2 } : {}}
+                    className="rounded-2xl flex flex-col items-center justify-center font-bubble shadow-md"
+                    style={{
+                      minWidth: 64, minHeight: 64, padding: '0 10px',
+                      fontSize: getSoundDisplay(key).length > 2 ? 22 : 30,
+                      background: isTapped ? 'white' : 'rgba(255,255,255,0.25)',
+                      color: isTapped ? '#0D9488' : 'white',
+                      border: `3px solid ${isNext ? '#FFD700' : 'rgba(255,255,255,0.5)'}`,
+                      transition: 'background 0.3s, color 0.3s, border-color 0.3s',
+                    }}
+                  >
+                    {getSoundDisplay(key)}
+                    <span className="text-xs leading-none mt-0.5" style={{ opacity: isTapped ? 1 : 0.6 }}>
+                      {isTapped ? '🔊' : '•'}
+                    </span>
+                  </motion.button>
+                )
+              })}
+            </div>
+
+            {/* Blend button */}
+            {blendPhase === 'tap' && allTapped && (
+              <motion.button
+                initial={{ scale: 0 }}
+                animate={{ scale: [1, 1.06, 1] }}
+                transition={{ repeat: Infinity, duration: 1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={handleBlend}
+                className="mt-3 px-8 py-3 rounded-full font-bubble text-xl shadow-lg"
+                style={{ background: 'white', color: '#0D9488' }}
+              >
+                🧲 Blend it!
+              </motion.button>
+            )}
+            {blendPhase === 'blend' && (
+              <motion.div
+                animate={{ scale: [1, 1.15, 1] }}
+                transition={{ repeat: Infinity, duration: 0.8 }}
+                className="text-4xl mt-2"
+              >👂</motion.div>
+            )}
+          </motion.div>
+
+          {/* Picture options */}
+          {(blendPhase === 'pick' || blendPhase === 'reveal') && (
+            <div className="grid grid-cols-3 gap-3 px-4 mt-5 max-w-sm mx-auto">
+              {blendOptions.map(opt => {
+                const isPicked  = blendPicked === opt.word
+                const isCorrect = opt.word === blendWord.word
+                const showWin   = blendPhase === 'reveal' && isCorrect
+                return (
+                  <motion.button
+                    key={`${blendRound}-${opt.word}`}
+                    initial={{ scale: 0 }}
+                    animate={showWin ? { scale: [1, 1.25, 1.1] } : { scale: 1 }}
+                    whileTap={{ scale: blendPhase === 'pick' ? 0.9 : 1 }}
+                    onClick={() => handleBlendPick(opt)}
+                    disabled={blendPhase !== 'pick'}
+                    className="rounded-3xl flex flex-col items-center justify-center shadow-lg py-4"
+                    style={{
+                      background: showWin ? '#22C55E' : isPicked && !isCorrect ? '#EF4444' : theme.card,
+                      border: `3px solid ${showWin ? '#16A34A' : isPicked && !isCorrect ? '#DC2626' : theme.secondary}`,
+                      opacity: blendPhase === 'reveal' && !isCorrect ? 0.35 : 1,
+                      transition: 'background 0.25s, opacity 0.25s',
+                    }}
+                  >
+                    <span style={{ fontSize: 44 }}>{opt.emoji}</span>
+                    {showWin && <span className="font-bubble text-white text-lg mt-1">{blendWord.word}</span>}
+                    {isPicked && !isCorrect && <span className="text-xl mt-1">❌</span>}
+                  </motion.button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Avatar buddy */}
+        <div className="fixed bottom-safe-buddy left-2 z-30 pointer-events-none">
+          <BuddyCompanion
+            avatar={avatar}
+            mood={buddy.mood}
+            speak={buddy.speak}
+            size={80}
+            side="right"
+            autoSpeak
+          />
+        </div>
       </div>
     )
   }
