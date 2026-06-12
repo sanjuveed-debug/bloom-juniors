@@ -6,6 +6,7 @@ import { THEMES } from '../themes'
 import SkillHint, { getHint } from '../components/SkillHint'
 import BuddyCompanion, { useBuddyMood } from '../components/BuddyCompanion'
 import MatchingActivity from '../components/MatchingActivity'
+import SubitisingFlash from '../components/SubitisingFlash'
 
 // ── Avatar object sets ────────────────────────────────────────────────────────
 const OBJECT_SETS = {
@@ -538,6 +539,9 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
 
   const [matchPairs,  setMatchPairs]  = useState([])
   const [matchResult, setMatchResult] = useState(null)
+  const [flashResult, setFlashResult] = useState(null)
+  const [flashKey,    setFlashKey]    = useState(0)
+  const flashAwardedRef = useRef(false)
 
   const opPlayed = progress?.math?.opPlayed || {}
   const buddy = useBuddyMood()
@@ -614,6 +618,25 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
     speak(`${MATCH_CONFIG.label}! ${MATCH_CONFIG.desc}`, { mood: 'instruct' })
     buddy.onGameStart()
   }, [opPlayed, speak, buddy])
+
+  const handleFlashSelect = useCallback(() => {
+    flashAwardedRef.current = false
+    setFlashResult(null)
+    setFlashKey(k => k + 1)
+    setSelectedOp('flash')
+    speak('Flash Count! Watch closely — the objects vanish fast. How many did you see?', { mood: 'instruct' })
+    buddy.onGameStart()
+  }, [speak, buddy])
+
+  const handleFlashComplete = useCallback((correct, total) => {
+    if (flashAwardedRef.current) return
+    flashAwardedRef.current = true
+    buddy.onGameEnd()
+    confetti({ particleCount: 80, spread: 100, origin: { y: 0.5 } })
+    speak(`Super speedy eyes, ${profileName || 'superstar'}!`, { mood: 'celebrate' })
+    onAddStars('math', correct, { total, correct, struggles: [], op: 'flash' })
+    setFlashResult({ correct, total })
+  }, [buddy, onAddStars, profileName, speak])
 
   const handleMatchComplete = useCallback((misses, total) => {
     if (matchAwardedRef.current) return
@@ -700,6 +723,83 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
             <p className="font-round text-white/80 text-xs">{MATCH_CONFIG.desc}</p>
           </div>
         </motion.button>
+
+        <motion.button
+          initial={{ opacity: 0, y: 20, scale: 0.85 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: Object.keys(OPS).length * 0.07 + 0.07, type: 'spring', stiffness: 280 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={handleFlashSelect}
+          className="relative rounded-3xl overflow-hidden flex items-center gap-3 shadow-xl mx-4 mt-3 px-5 py-4"
+          style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)' }}
+        >
+          <div className="text-3xl">⚡</div>
+          <div className="text-left flex-1">
+            <p className="font-bubble text-white text-lg leading-tight">Flash Count</p>
+            <p className="font-round text-white/80 text-xs">Quick! Count them before they vanish!</p>
+          </div>
+        </motion.button>
+      </div>
+    )
+  }
+
+  // ── Flash Count (subitising) screen ─────────────────────────────────────────
+  if (selectedOp === 'flash') {
+    return (
+      <div className="min-h-screen flex flex-col overflow-hidden"
+        style={{ background: `linear-gradient(160deg, ${theme.bg} 0%, white 60%, ${theme.bg} 100%)` }}>
+        <div className="flex items-center justify-between px-4 pb-2 pt-safe shrink-0">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => setSelectedOp(null)}
+            className="w-11 h-11 rounded-full flex items-center justify-center shadow"
+            style={{ background: theme.card, color: theme.text }}>←</motion.button>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xl">⚡</span>
+            <p className="font-bubble text-base" style={{ color: '#D97706' }}>Flash Count</p>
+          </div>
+          <div className="w-11 h-11" />
+        </div>
+
+        <div className="flex-1 overflow-y-auto scroll-ios pb-32 pt-2">
+          {!flashResult ? (
+            <SubitisingFlash
+              key={flashKey}
+              colour="#F59E0B"
+              emoji={objects.a}
+              onSpeak={(text) => speak(String(text), { mood: 'instruct' })}
+              onComplete={handleFlashComplete}
+            />
+          ) : (
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 16 }}
+              className="flex flex-col items-center justify-center text-center pt-10 px-6">
+              <motion.div className="text-8xl mb-3"
+                animate={{ rotate: [0, 20, -20, 0], scale: [1, 1.2, 1] }}
+                transition={{ duration: 1, repeat: Infinity, repeatDelay: 2 }}>
+                {flashResult.correct === flashResult.total ? '🏆' : '⚡'}
+              </motion.div>
+              <h2 className="font-bubble text-4xl shimmer-text mb-1">Speedy Eyes!</h2>
+              <p className="font-bubble text-5xl mb-1" style={{ color: '#D97706' }}>
+                {flashResult.correct}/{flashResult.total}
+              </p>
+              <div className="flex gap-3 justify-center mt-5">
+                <motion.button whileTap={{ scale: 0.9 }} onClick={handleFlashSelect}
+                  className="bubble-btn px-6 py-3 text-base"
+                  style={{ background: `linear-gradient(135deg, ${theme.secondary}, ${theme.primary})` }}>
+                  Try Another
+                </motion.button>
+                <motion.button whileTap={{ scale: 0.9 }} onClick={onBack}
+                  className="bubble-btn px-6 py-3 text-base"
+                  style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}>
+                  Home 🏠
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </div>
+
+        <div className="fixed bottom-safe-buddy left-2 z-30 pointer-events-none">
+          <BuddyCompanion avatar={avatar} mood={buddy.mood} speak={buddy.speak} size={80} side="right" autoSpeak />
+        </div>
       </div>
     )
   }

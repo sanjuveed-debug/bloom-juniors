@@ -6,6 +6,7 @@ import { MONSTERS, MonsterCollection } from './MonsterReward'
 import { STUDY_MODULES, getArcadeUnlockStatus, getTodayStudySessions, getTodayAdventureModules } from '../utils/arcadeUnlock'
 import { PREMIUM_GATING_ENABLED } from '../config/premiumContent.js'
 import { usePremium } from '../hooks/usePremium'
+import { getTodayWorldEvent, isEventBonusCollected, WORLD_EVENT_BONUS } from '../utils/worldEvent.js'
 import RetentionPanel, { YaagviRoom } from './RetentionWidgets'
 import { useSpeech } from '../hooks/useSpeech'
 import PhonicsMap from './PhonicsMap'
@@ -744,6 +745,57 @@ function FS2AdventureMap({ progress, dailyAdventure, onNavigate }) {
   )
 }
 
+// ── Daily World Event ─────────────────────────────────────────────────────────
+function WorldEventCard({ progress, profileId, fullAccess, theme, onNavigate }) {
+  const event = getTodayWorldEvent(fullAccess)
+  const todayIds = new Set(getTodayStudySessions(progress.sessions || []).map(s => s.module))
+  const done = todayIds.has(event.moduleId) || isEventBonusCollected(profileId)
+
+  return (
+    <section className="mx-auto mt-4 max-w-6xl px-4 md:px-6 xl:px-8">
+      <motion.button
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        whileTap={!done ? { scale: 0.98 } : {}}
+        onClick={() => !done && onNavigate(event.moduleId)}
+        className="relative w-full overflow-hidden rounded-[26px] p-4 text-left"
+        style={{
+          background: done
+            ? 'linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.05))'
+            : 'linear-gradient(135deg, rgba(251,146,60,0.18), rgba(236,72,153,0.12))',
+          border: `1.5px solid ${done ? 'rgba(34,197,94,0.4)' : 'rgba(251,146,60,0.45)'}`,
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <motion.span
+            animate={done ? {} : { rotate: [0, -8, 8, 0], scale: [1, 1.08, 1] }}
+            transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 1 }}
+            style={{ fontSize: 40 }}
+          >{done ? '✅' : event.emoji}</motion.span>
+          <div className="min-w-0 flex-1">
+            <p className="font-round text-xs font-black uppercase tracking-[0.16em]"
+              style={{ color: `${theme.text}77` }}>
+              ⚡ Today's World Event
+            </p>
+            <p className="font-bubble mt-0.5 text-lg leading-tight" style={{ color: theme.text }}>
+              {done ? `${event.title.replace('!', '')} — done!` : event.title}
+            </p>
+            <p className="font-round mt-0.5 text-xs font-bold leading-4" style={{ color: `${theme.text}66` }}>
+              {done ? `Bonus stars collected. New event tomorrow!` : event.desc}
+            </p>
+          </div>
+          {!done && (
+            <span className="shrink-0 rounded-full px-3 py-1.5 font-bubble text-sm"
+              style={{ background: 'rgba(250,204,21,0.25)', color: '#B45309', border: '1px solid rgba(250,204,21,0.6)' }}>
+              +{WORLD_EVENT_BONUS} ⭐
+            </span>
+          )}
+        </div>
+      </motion.button>
+    </section>
+  )
+}
+
 // ── Main Dashboard ────────────────────────────────────────────────────────────
 function getTodayIndex(count) {
   if (!count) return 0
@@ -1375,6 +1427,14 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
           </AnimatePresence>
         </>
       )}
+
+      <WorldEventCard
+        progress={progress}
+        profileId={activeProfileId}
+        fullAccess={fullAccess}
+        theme={theme}
+        onNavigate={handleGatedNavigate}
+      />
 
       <ParentHandoff
         progress={progress}

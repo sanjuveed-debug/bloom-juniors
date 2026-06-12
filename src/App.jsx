@@ -17,6 +17,7 @@ import InstallNudge from './components/InstallNudge'
 import { formatLocalDate, formatYesterdayLocalDate } from './utils/date.js'
 import { shouldSendAutoDigest, markDigestSent, buildDigestPayload, sendDigestEmail, sendNudgeEmail } from './utils/weeklyDigest.js'
 import { getClassroomLesson, setClassroomLesson } from './utils/classroomLesson.js'
+import { getTodayWorldEvent, isEventBonusCollected, markEventBonusCollected, WORLD_EVENT_BONUS } from './utils/worldEvent.js'
 import { CLASS_SESSION_KEY, loadCloudClassLesson } from './services/cloudStore.js'
 import { getAssistant } from './assistants'
 
@@ -453,6 +454,13 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
     addStars(module, count)
     if (count > 0) triggerHaptic('star')
     trackActivityComplete(module, 'early')
+    // Daily world event bonus (once per day, on the featured module)
+    const event = getTodayWorldEvent(hasAllAccessRef.current)
+    if (module === event.moduleId && !isEventBonusCollected(profileId)) {
+      markEventBonusCollected(profileId)
+      addStars('event', WORLD_EVENT_BONUS)
+      speak(`${event.title.replace('!', '')} complete! ${WORLD_EVENT_BONUS} bonus stars!`, { mood: 'celebrate', queue: true })
+    }
     const { total = 0, correct = 0, struggles = [], stayOnModule = false } = sessionData
     const duration = screenEntryRef.current
       ? Math.round((Date.now() - screenEntryRef.current) / 1000)

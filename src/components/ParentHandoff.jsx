@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSpeech } from '../hooks/useSpeech'
+import { shareSuccessCard } from '../utils/successCardImage.js'
+import { trackEvent } from '../utils/analytics.js'
 
 const MODULE_LABELS = {
   phonics: { label: 'Sound Pop', emoji: '🎤', subject: 'phonics' },
@@ -89,6 +91,29 @@ function buildAchievementData(progress, profileName, arcadeStatus) {
   }
 }
 
+function ShareButton({ data }) {
+  const [busy, setBusy] = useState(false)
+  const handleShare = async () => {
+    if (busy) return
+    setBusy(true)
+    trackEvent('share_card', { module: data.mod?.id })
+    try { await shareSuccessCard({ ...data, emoji: data.mod?.emoji }) } catch {}
+    setBusy(false)
+  }
+  return (
+    <motion.button
+      whileTap={{ scale: 0.96 }}
+      onClick={handleShare}
+      disabled={busy}
+      className="relative z-10 mt-4 flex w-full items-center justify-center gap-2 rounded-[18px] py-3.5 font-bubble text-base text-white shadow-lg disabled:opacity-60"
+      style={{ background: 'linear-gradient(135deg, #25D366, #128C7E)', boxShadow: '0 8px 20px rgba(37,211,102,0.35)' }}
+    >
+      <span style={{ fontSize: 20 }}>💬</span>
+      {busy ? 'Preparing…' : 'Share the win'}
+    </motion.button>
+  )
+}
+
 function ShareCard({ data, profileName, onClose }) {
   return (
     <motion.div
@@ -168,6 +193,8 @@ function ShareCard({ data, profileName, onClose }) {
           )}
 
           <p className="mt-4 font-round text-xs text-white/35">bloomjuniors.com · EYFS aligned</p>
+
+          <ShareButton data={data} />
         </div>
 
         <button
