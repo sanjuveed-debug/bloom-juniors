@@ -744,7 +744,8 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
         <GameArcade avatar={progress.avatar} progress={progress}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')}
-          onNavigate={navigate} />
+          onNavigate={navigate}
+          onUpdateProgress={handleUpdateProgress} />
       </Screen>
 
       <Screen id="sacred" current={screen}>

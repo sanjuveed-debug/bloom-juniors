@@ -58,6 +58,17 @@ const ARCADE_GAMES = [
   },
 ]
 
+// ── Per-game levels ───────────────────────────────────────────────────────────
+// Games level up (max 5) when a run scores 80%+ — each level raises difficulty.
+// Balloon (fixed learning waves) and Builder (creative sandbox) don't level.
+const LEVELED_GAMES = new Set(['memory', 'slice', 'shadow', 'rocket'])
+const MAX_ARCADE_LEVEL = 5
+
+function getArcadeLevel(progress, gameId) {
+  const raw = progress?.arcadeLevels?.[gameId] || 1
+  return Math.min(MAX_ARCADE_LEVEL, Math.max(1, raw))
+}
+
 // Daily rotation: 2 featured games per day (date-seeded, same approach as the
 // adventure picker), one of which is the Daily Special worth double stars.
 // The rest "rest" until tomorrow so the arcade feels fresh every day.
@@ -515,7 +526,7 @@ function StudyLockScreen({ theme, status, onBack, onNavigate }) {
   )
 }
 
-function GameCard({ game, onSelect, special }) {
+function GameCard({ game, onSelect, special, level = 0 }) {
   return (
     <motion.button
       whileTap={{ scale: 0.97 }}
@@ -537,7 +548,15 @@ function GameCard({ game, onSelect, special }) {
         )}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="font-bubble text-2xl text-white">{game.emoji} {game.title}</p>
+            <p className="font-bubble text-2xl text-white">
+              {game.emoji} {game.title}
+              {level > 0 && (
+                <span className="ml-2 align-middle rounded-full px-2 py-0.5 font-bubble text-xs"
+                  style={{ background: 'rgba(250,204,21,0.25)', color: '#FDE68A', border: '1px solid rgba(250,204,21,0.5)' }}>
+                  Lv.{level}
+                </span>
+              )}
+            </p>
             <p className="font-round mt-1 text-sm font-semibold text-white/80">{game.desc}</p>
           </div>
           <div
@@ -639,7 +658,8 @@ function ArcadeLobby({ theme, profileName, progress, onBack, onSelect }) {
         <div className="grid gap-4">
           {daily.featured.map(game => (
             <GameCard key={game.id} game={game} onSelect={onSelect}
-              special={game.id === daily.specialId} />
+              special={game.id === daily.specialId}
+              level={LEVELED_GAMES.has(game.id) ? getArcadeLevel(progress, game.id) : 0} />
           ))}
         </div>
 
@@ -670,9 +690,25 @@ function ArcadeLobby({ theme, profileName, progress, onBack, onSelect }) {
   )
 }
 
-function MemoryMission({ theme, profileName, speak, onBack, onComplete }) {
+// Higher levels add extra pairs to the boards (cumulatively per round)
+const MEMORY_BONUS_PAIRS = {
+  garden: [{ id: 'butterfly', emoji: '🦋', label: 'Butterfly' }, { id: 'snail', emoji: '🐌', label: 'Snail' }],
+  ocean: [{ id: 'crab', emoji: '🦀', label: 'Crab' }, { id: 'octopus', emoji: '🐙', label: 'Octopus' }],
+  space: [{ id: 'satellite', emoji: '🛰️', label: 'Satellite' }, { id: 'telescope', emoji: '🔭', label: 'Telescope' }],
+}
+
+function buildMemoryRounds(level = 1) {
+  const extra = Math.max(0, Math.min(2, level - 1 >= 4 ? 2 : level >= 2 ? 1 : 0))
+  return MEMORY_ROUNDS.map(round => ({
+    ...round,
+    pairs: [...round.pairs, ...(MEMORY_BONUS_PAIRS[round.id] || []).slice(0, extra)],
+  }))
+}
+
+function MemoryMission({ theme, profileName, speak, onBack, onComplete, level = 1 }) {
+  const [rounds] = useState(() => buildMemoryRounds(level))
   const [roundIndex, setRoundIndex] = useState(0)
-  const [deck, setDeck] = useState(() => buildMemoryDeck(MEMORY_ROUNDS[0]))
+  const [deck, setDeck] = useState(() => buildMemoryDeck(buildMemoryRounds(level)[0]))
   const [flippedIds, setFlippedIds] = useState([])
   const [matchedIds, setMatchedIds] = useState([])
   const [turnLocked, setTurnLocked] = useState(false)
@@ -680,8 +716,8 @@ function MemoryMission({ theme, profileName, speak, onBack, onComplete }) {
   const [totalMoves, setTotalMoves] = useState(0)
   const [mistakesByRound, setMistakesByRound] = useState({})
   const [roundComplete, setRoundComplete] = useState(false)
-  const currentRound = MEMORY_ROUNDS[roundIndex]
-  const totalPairs = MEMORY_ROUNDS.reduce((sum, round) => sum + round.pairs.length, 0)
+  const currentRound = rounds[roundIndex]
+  const totalPairs = rounds.reduce((sum, round) => sum + round.pairs.length, 0)
 
   useEffect(() => {
     setDeck(buildMemoryDeck(currentRound))
@@ -703,7 +739,7 @@ function MemoryMission({ theme, profileName, speak, onBack, onComplete }) {
 
     confetti({ particleCount: 80, spread: 80, origin: { y: 0.65 }, colors: ['#FDE68A', '#FB7185', '#60A5FA'] })
 
-    if (roundIndex === MEMORY_ROUNDS.length - 1) {
+    if (roundIndex === rounds.length - 1) {
       speak(`Amazing ${profileName || 'superstar'}! You cleared every memory world!`, { mood: 'celebrate' })
     } else {
       speak('Round clear! One more world is ready.', { mood: 'celebrate' })
@@ -750,12 +786,12 @@ function MemoryMission({ theme, profileName, speak, onBack, onComplete }) {
   }, [currentRound.id, deck, flippedIds, matchedIds, roundComplete, speak, turnLocked])
 
   const totalMistakes = Object.values(mistakesByRound).reduce((sum, value) => sum + value, 0)
-  const finishedAllRounds = roundIndex === MEMORY_ROUNDS.length - 1 && matchedIds.length === deck.length
+  const finishedAllRounds = roundIndex === rounds.length - 1 && matchedIds.length === deck.length
 
   if (finishedAllRounds) {
     const stars = getMemoryReward(totalMistakes)
     const totalAttempts = totalPairs + totalMistakes
-    const struggles = MEMORY_ROUNDS
+    const struggles = rounds
       .filter(round => (mistakesByRound[round.id] || 0) >= 3)
       .map(round => round.title)
 
@@ -827,7 +863,7 @@ function MemoryMission({ theme, profileName, speak, onBack, onComplete }) {
         title="Magic Memory"
         subtitle={currentRound.subtitle}
         onBack={onBack}
-        badge={`${roundIndex + 1}/${MEMORY_ROUNDS.length}`}
+        badge={`${roundIndex + 1}/${rounds.length}`}
       />
 
       <div className="px-4">
@@ -1184,7 +1220,9 @@ function BalloonBurst({ theme, profileName, speak, onBack, onComplete }) {
   )
 }
 
-function FruitSliceFrenzy({ theme, profileName, speak, onBack, onComplete }) {
+function FruitSliceFrenzy({ theme, profileName, speak, onBack, onComplete, level = 1 }) {
+  // Higher levels spawn fruit faster
+  const spawnGap = Math.max(220, 450 - (level - 1) * 55)
   const arenaRef = useRef(null)
   const itemsRef = useRef([])
   const draggingRef = useRef(false)
@@ -1304,7 +1342,7 @@ function FruitSliceFrenzy({ theme, profileName, speak, onBack, onComplete }) {
             itemIdRef.current += 1
             next.push(makeSliceItem(sizeRef.current, itemIdRef.current))
           }
-          spawnAtRef.current = now + 450 + Math.random() * 350
+          spawnAtRef.current = now + spawnGap + Math.random() * 350
         }
 
         itemsRef.current = next
@@ -1981,16 +2019,18 @@ function buildShadowRound(pairCount) {
   }
 }
 
-function ShadowMatch({ theme, profileName, speak, onBack, onComplete }) {
+function ShadowMatch({ theme, profileName, speak, onBack, onComplete, level = 1 }) {
+  // Higher levels add more pairs per round (capped at 6 per column)
+  const [rounds] = useState(() => SHADOW_ROUNDS.map(n => Math.min(6, n + Math.min(2, level - 1))))
   const [roundIdx, setRoundIdx] = useState(0)
-  const [board, setBoard] = useState(() => buildShadowRound(SHADOW_ROUNDS[0]))
+  const [board, setBoard] = useState(() => buildShadowRound(Math.min(6, SHADOW_ROUNDS[0] + Math.min(2, level - 1))))
   const [matched, setMatched] = useState(new Set())
   const [selAnimal, setSelAnimal] = useState(null)
   const [selShadow, setSelShadow] = useState(null)
   const [wrong, setWrong] = useState(null)
   const [misses, setMisses] = useState(0)
   const [finished, setFinished] = useState(false)
-  const totalPairs = SHADOW_ROUNDS.reduce((a, b) => a + b, 0)
+  const totalPairs = rounds.reduce((a, b) => a + b, 0)
 
   useEffect(() => {
     const t = setTimeout(() => speak(`Round ${roundIdx + 1}. Tap an animal, then find its shadow!`, { mood: 'instruct' }), 350)
@@ -2003,15 +2043,15 @@ function ShadowMatch({ theme, profileName, speak, onBack, onComplete }) {
       const next = new Set(matched).add(aId)
       setMatched(next)
       setSelAnimal(null); setSelShadow(null)
-      if (next.size === SHADOW_ROUNDS[roundIdx]) {
-        if (roundIdx + 1 >= SHADOW_ROUNDS.length) {
+      if (next.size === rounds[roundIdx]) {
+        if (roundIdx + 1 >= rounds.length) {
           speak(`Amazing shadow spotting, ${profileName || 'superstar'}!`, { mood: 'celebrate' })
           setTimeout(() => setFinished(true), 900)
         } else {
           speak('Round complete! Here comes a trickier one!', { mood: 'celebrate' })
           setTimeout(() => {
             setRoundIdx(r => r + 1)
-            setBoard(buildShadowRound(SHADOW_ROUNDS[roundIdx + 1]))
+            setBoard(buildShadowRound(rounds[roundIdx + 1]))
             setMatched(new Set())
           }, 1200)
         }
@@ -2060,8 +2100,8 @@ function ShadowMatch({ theme, profileName, speak, onBack, onComplete }) {
     <div className="min-h-screen overflow-y-auto pb-safe"
       style={{ background: 'linear-gradient(160deg, #1E1B4B, #312E81 55%, #1E1B4B)' }}>
       <ArcadeHeader theme={{ ...theme, card: 'rgba(255,255,255,0.12)', text: 'white' }}
-        title="Shadow Match" subtitle={`Round ${roundIdx + 1} of ${SHADOW_ROUNDS.length}`} onBack={onBack}
-        badge={`${matched.size}/${SHADOW_ROUNDS[roundIdx]}`} />
+        title="Shadow Match" subtitle={`Round ${roundIdx + 1} of ${rounds.length}`} onBack={onBack}
+        badge={`${matched.size}/${rounds[roundIdx]}`} />
 
       <div className="px-5 pt-2 grid grid-cols-2 gap-5">
         <div className="flex flex-col gap-3">
@@ -2109,9 +2149,11 @@ function ShadowMatch({ theme, profileName, speak, onBack, onComplete }) {
 // ── Rocket Count ──────────────────────────────────────────────────────────────
 const ROCKET_ROUNDS = 5
 
-function RocketCount({ theme, profileName, speak, onBack, onComplete }) {
+function RocketCount({ theme, profileName, speak, onBack, onComplete, level = 1 }) {
+  // Higher levels ask for bigger counts (never above the 12-star grid)
+  const levelBoost = Math.min(3, level - 1)
   const [round, setRound] = useState(1)
-  const [target, setTarget] = useState(() => Math.floor(Math.random() * 4) + 3) // 3-6 first
+  const [target, setTarget] = useState(() => Math.floor(Math.random() * (4 + Math.min(3, level - 1))) + 3)
   const [loaded, setLoaded] = useState(new Set())
   const [phase, setPhase] = useState('count') // count | launching | done
   const [correctRounds, setCorrectRounds] = useState(0)
@@ -2145,7 +2187,7 @@ function RocketCount({ theme, profileName, speak, onBack, onComplete }) {
         if (round >= ROCKET_ROUNDS) setPhase('done')
         else {
           setRound(r => r + 1)
-          setTarget(Math.floor(Math.random() * (4 + round)) + 3)
+          setTarget(Math.floor(Math.random() * Math.min(4 + round + levelBoost, 10)) + 3)
           setLoaded(new Set())
           setPhase('count')
         }
@@ -2228,11 +2270,12 @@ function RocketCount({ theme, profileName, speak, onBack, onComplete }) {
   )
 }
 
-export default function GameArcade({ avatar, progress, profileName, onAddStars, onBack, onNavigate }) {
+export default function GameArcade({ avatar, progress, profileName, onAddStars, onBack, onNavigate, onUpdateProgress }) {
   const theme = THEMES[avatar] || THEMES.rumi
   const { speak } = useSpeech()
   const status = getArcadeUnlockStatus(progress)
   const [activeGame, setActiveGame] = useState(null)
+  const [levelUp, setLevelUp] = useState(null)
 
   useEffect(() => {
     if (activeGame) return
@@ -2254,6 +2297,19 @@ export default function GameArcade({ avatar, progress, profileName, onAddStars, 
     if (isSpecial && payload.stars > 0) {
       speak('Daily special bonus! Double stars!', { mood: 'celebrate' })
     }
+    // Level up on a strong run (80%+) for leveled games
+    if (LEVELED_GAMES.has(activeGame) && onUpdateProgress) {
+      const pct = payload.total > 0 ? payload.correct / payload.total : 0
+      const current = getArcadeLevel(progress, activeGame)
+      if (pct >= 0.8 && current < MAX_ARCADE_LEVEL) {
+        const nextLevel = current + 1
+        onUpdateProgress({ arcadeLevels: { ...(progress.arcadeLevels || {}), [activeGame]: nextLevel } })
+        const game = ARCADE_GAMES.find(g => g.id === activeGame)
+        setLevelUp({ title: game?.title || 'Game', emoji: game?.emoji || '🎮', level: nextLevel })
+        speak(`Level up! ${game?.title || 'Your game'} is now level ${nextLevel}!`, { mood: 'celebrate', queue: true })
+        setTimeout(() => setLevelUp(null), 4000)
+      }
+    }
     onAddStars('arcade', stars, {
       total: payload.total,
       correct: payload.correct,
@@ -2261,7 +2317,7 @@ export default function GameArcade({ avatar, progress, profileName, onAddStars, 
       stayOnModule: true,
     })
     setActiveGame(null)
-  }, [onAddStars, activeGame, speak])
+  }, [onAddStars, activeGame, speak, progress, onUpdateProgress])
 
   if (!status.unlocked) {
     return (
@@ -2280,6 +2336,7 @@ export default function GameArcade({ avatar, progress, profileName, onAddStars, 
         theme={theme}
         profileName={profileName}
         speak={speak}
+        level={getArcadeLevel(progress, 'memory')}
         onBack={() => setActiveGame(null)}
         onComplete={handleGameComplete}
       />
@@ -2304,6 +2361,7 @@ export default function GameArcade({ avatar, progress, profileName, onAddStars, 
         theme={theme}
         profileName={profileName}
         speak={speak}
+        level={getArcadeLevel(progress, 'slice')}
         onBack={() => setActiveGame(null)}
         onComplete={handleGameComplete}
       />
@@ -2328,6 +2386,7 @@ export default function GameArcade({ avatar, progress, profileName, onAddStars, 
         theme={theme}
         profileName={profileName}
         speak={speak}
+        level={getArcadeLevel(progress, 'shadow')}
         onBack={() => setActiveGame(null)}
         onComplete={handleGameComplete}
       />
@@ -2340,6 +2399,7 @@ export default function GameArcade({ avatar, progress, profileName, onAddStars, 
         theme={theme}
         profileName={profileName}
         speak={speak}
+        level={getArcadeLevel(progress, 'rocket')}
         onBack={() => setActiveGame(null)}
         onComplete={handleGameComplete}
       />
@@ -2347,14 +2407,46 @@ export default function GameArcade({ avatar, progress, profileName, onAddStars, 
   }
 
   return (
-    <ArcadeLobby
-      theme={theme}
-      profileName={profileName}
-      progress={progress}
-      onBack={onBack}
-      onSelect={(id) => {
-        if (getDailyArcade().featured.some(g => g.id === id)) setActiveGame(id)
-      }}
-    />
+    <>
+      <ArcadeLobby
+        theme={theme}
+        profileName={profileName}
+        progress={progress}
+        onBack={onBack}
+        onSelect={(id) => {
+          if (getDailyArcade().featured.some(g => g.id === id)) setActiveGame(id)
+        }}
+      />
+      <AnimatePresence>
+        {levelUp && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[180] flex items-center justify-center bg-black/65 p-6"
+            onClick={() => setLevelUp(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.5, y: 40 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 1.1, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+              className="rounded-[32px] p-8 text-center max-w-xs w-full shadow-2xl"
+              style={{ background: 'linear-gradient(150deg, #312E81, #7C3AED)' }}
+            >
+              <motion.div
+                animate={{ y: [0, -10, 0], rotate: [0, -8, 8, 0] }}
+                transition={{ duration: 1, repeat: Infinity }}
+                className="text-7xl mb-3"
+              >{levelUp.emoji}</motion.div>
+              <p className="font-bubble text-yellow-300 text-3xl mb-1">LEVEL UP!</p>
+              <p className="font-bubble text-white text-xl mb-2">{levelUp.title}</p>
+              <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5"
+                style={{ background: 'rgba(250,204,21,0.2)', border: '1.5px solid rgba(250,204,21,0.5)' }}>
+                <span className="font-bubble text-yellow-200 text-lg">Level {levelUp.level}</span>
+                <span className="font-round text-white/60 text-xs">of {MAX_ARCADE_LEVEL}</span>
+              </div>
+              <p className="font-round text-white/60 text-xs mt-3">It just got a little trickier — you earned it!</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   )
 }
