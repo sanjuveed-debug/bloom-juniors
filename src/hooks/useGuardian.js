@@ -115,6 +115,13 @@ export function useGuardian() {
     saveGuardian(next)
     setGuardian(next)
     trackEvent('sign_up', { method: 'guardian' })
+    // Fire-and-forget welcome email
+    fetch('/api/welcome-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: next.email, name: next.guardianName }),
+      keepalive: true,
+    }).catch(() => {})
     return next
   }, [])
 
