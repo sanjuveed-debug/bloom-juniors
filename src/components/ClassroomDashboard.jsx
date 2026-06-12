@@ -5,6 +5,8 @@ import { formatLocalDate } from '../utils/date'
 import { MODULES_BY_AGE, getClassroomLesson, setClassroomLesson, clearClassroomLesson } from '../utils/classroomLesson'
 import { clearCloudClassLesson, loadCloudClassLesson, loadCloudProgress, regenerateCloudClassCode, saveCloudClassLesson } from '../services/cloudStore'
 import SchoolInviteModal from './SchoolInviteModal'
+import TermlyReport from './TermlyReport'
+import { buildCohortInsights } from '../utils/cohortInsights'
 
 const KS2_MODULE_IDS = ['timestables','fractions','wordproblems','reading','spelling','grammar','science','worldmap','spirituality']
 
@@ -384,7 +386,8 @@ export default function ClassroomDashboard({ profiles, guardian, onSelectStudent
   const [showInvite,   setShowInvite]   = useState(false)
   const [showBulkImport, setShowBulkImport] = useState(false)
   const [lessonVersion, setLessonVersion] = useState(0)
-  const [view,         setView]         = useState('today') // 'today' | 'week'
+  const [view,         setView]         = useState('today') // 'today' | 'week' | 'insights'
+  const [showReport,   setShowReport]   = useState(false)
   const [cloudProgressById, setCloudProgressById] = useState({})
   const [classCodeStatus, setClassCodeStatus] = useState('')
   const [regeneratingCode, setRegeneratingCode] = useState(false)
@@ -477,6 +480,15 @@ export default function ClassroomDashboard({ profiles, guardian, onSelectStudent
     })
   }, [profiles, todayKey, cloudProgressById])
 
+  const insights = useMemo(() =>
+    buildCohortInsights(profiles.map(p => ({
+      ageGroup: p.ageGroup,
+      progress: cloudProgressById[p.id] || loadProfileProgress(p.id),
+    }))), [profiles, cloudProgressById])
+
+  const supportCount = useMemo(() =>
+    studentsWithStatus.filter(s => s.weekly.needsSupport).length, [studentsWithStatus])
+
   const searchTerm = search.trim().toLowerCase()
   const filtered = studentsWithStatus
     .filter(s => filter === 'all' || s.status === filter)
@@ -546,6 +558,18 @@ export default function ClassroomDashboard({ profiles, guardian, onSelectStudent
         student.weekly.struggles.map(([skill, count]) => `${skill}:${count}`).join(' | '),
       ]),
     ])
+  }
+
+  if (showReport) {
+    return (
+      <TermlyReport
+        insights={insights}
+        schoolName={schoolName}
+        className={className}
+        supportCount={supportCount}
+        onClose={() => setShowReport(false)}
+      />
+    )
   }
 
   return (
@@ -671,7 +695,7 @@ export default function ClassroomDashboard({ profiles, guardian, onSelectStudent
 
         {/* View toggle — Today / This Week */}
         <div className="flex gap-2 mt-3">
-          {[{ key: 'today', label: '📅 Today' }, { key: 'week', label: '📊 This Week' }].map(v => (
+          {[{ key: 'today', label: '📅 Today' }, { key: 'week', label: '📊 This Week' }, { key: 'insights', label: '💡 Insights' }].map(v => (
             <button key={v.key} onClick={() => setView(v.key)}
               className="font-round text-xs px-4 py-1.5 rounded-full whitespace-nowrap transition-all font-bold"
               style={{
@@ -697,10 +721,10 @@ export default function ClassroomDashboard({ profiles, guardian, onSelectStudent
             style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.08)' }}>
             Export CSV
           </button>
-          <button onClick={() => window.print()}
+          <button onClick={() => setShowReport(true)}
             className="font-round text-xs px-3 py-1.5 rounded-full whitespace-nowrap transition-all"
-            style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            Print report
+            style={{ background: 'rgba(99,102,241,0.15)', color: '#A5B4FC', border: '1px solid rgba(99,102,241,0.3)' }}>
+            📋 Termly report
           </button>
         </div>
 
@@ -893,6 +917,132 @@ export default function ClassroomDashboard({ profiles, guardian, onSelectStudent
                     )
                   })}
               </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── INSIGHTS VIEW — anonymised cohort analytics ─────────────────────── */}
+      {view === 'insights' && (
+        <div className="px-4 pt-4 pb-28">
+          {profiles.length === 0 ? (
+            <p className="text-center font-round text-white/30 text-sm py-16">No pupils added yet</p>
+          ) : (
+            <>
+              {/* Headline week-over-week */}
+              <div className="rounded-2xl p-4 mb-4"
+                style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)' }}>
+                <p className="font-round text-white/50 text-xs uppercase tracking-wider mb-2">This week vs last week</p>
+                <div className="flex gap-5 flex-wrap">
+                  <div>
+                    <p className="font-bubble text-2xl text-white">
+                      {insights.weeks[3].sessions}
+                      {insights.weekDelta.sessions !== 0 && (
+                        <span className="font-round text-sm ml-1" style={{ color: insights.weekDelta.sessions > 0 ? '#34D399' : '#FB923C' }}>
+                          {insights.weekDelta.sessions > 0 ? '▲' : '▼'}{Math.abs(insights.weekDelta.sessions)}
+                        </span>
+                      )}
+                    </p>
+                    <p className="font-round text-white/40 text-xs">sessions</p>
+                  </div>
+                  <div>
+                    <p className="font-bubble text-2xl text-white">
+                      {insights.weeks[3].activePupils}<span className="font-round text-white/40 text-sm">/{profiles.length}</span>
+                      {insights.weekDelta.activePupils !== 0 && (
+                        <span className="font-round text-sm ml-1" style={{ color: insights.weekDelta.activePupils > 0 ? '#34D399' : '#FB923C' }}>
+                          {insights.weekDelta.activePupils > 0 ? '▲' : '▼'}{Math.abs(insights.weekDelta.activePupils)}
+                        </span>
+                      )}
+                    </p>
+                    <p className="font-round text-white/40 text-xs">pupils active</p>
+                  </div>
+                  <div>
+                    <p className="font-bubble text-2xl text-emerald-300">{insights.accuracy28 !== null ? `${insights.accuracy28}%` : '—'}</p>
+                    <p className="font-round text-white/40 text-xs">accuracy (4 wks)</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Phonics phase distribution */}
+              <div className="rounded-2xl p-4 mb-4"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <p className="font-round text-white/50 text-xs uppercase tracking-wider mb-1">🎤 Phonics phases</p>
+                <p className="font-round text-white/30 text-xs mb-3">Where the class is on the RWI sound progression</p>
+                <div className="flex flex-col gap-2.5">
+                  {insights.phaseDistribution.map(p => (
+                    <div key={p.phase} className="flex items-center gap-3">
+                      <span className="font-round text-white/60 text-xs w-28 flex-shrink-0">{p.short}</span>
+                      <div className="flex-1 rounded-full h-3 overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                        <div className="h-full rounded-full" style={{
+                          width: `${insights.pupils ? (p.count / insights.pupils) * 100 : 0}%`,
+                          background: 'linear-gradient(90deg, #6366F1, #8B5CF6)',
+                        }} />
+                      </div>
+                      <span className="font-bubble text-white text-sm w-6 text-right">{p.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* EYFS area coverage */}
+              <div className="rounded-2xl p-4 mb-4"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <p className="font-round text-white/50 text-xs uppercase tracking-wider mb-3">📚 EYFS area coverage · last 4 weeks</p>
+                <div className="flex flex-col gap-2">
+                  {insights.areas.map(a => (
+                    <div key={a.id} className="flex items-center gap-3">
+                      <span className="font-round text-white/70 text-xs flex-1 truncate">{a.emoji} {a.label}</span>
+                      <span className="font-round text-white/40 text-xs">{a.pupilsEngaged}/{insights.pupils} pupils</span>
+                      <span className="font-bubble text-indigo-300 text-sm w-16 text-right">{a.sessions} sess</span>
+                      <span className="font-round text-xs w-10 text-right" style={{ color: a.accuracy !== null && a.accuracy >= 75 ? '#34D399' : 'rgba(255,255,255,0.4)' }}>
+                        {a.accuracy !== null ? `${a.accuracy}%` : '—'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Weekly trend */}
+              <div className="rounded-2xl p-4 mb-4"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <p className="font-round text-white/50 text-xs uppercase tracking-wider mb-3">📈 Sessions per week</p>
+                <div className="flex flex-col gap-2">
+                  {insights.weeks.map(w => {
+                    const max = Math.max(1, ...insights.weeks.map(x => x.sessions))
+                    return (
+                      <div key={w.label} className="flex items-center gap-3">
+                        <span className="font-round text-xs w-20 flex-shrink-0" style={{ color: w.isCurrent ? 'white' : 'rgba(255,255,255,0.35)' }}>{w.label}</span>
+                        <div className="flex-1 rounded-full h-3 overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                          <div className="h-full rounded-full" style={{
+                            width: `${(w.sessions / max) * 100}%`,
+                            background: w.isCurrent ? 'linear-gradient(90deg, #10B981, #34D399)' : 'rgba(148,163,184,0.5)',
+                          }} />
+                        </div>
+                        <span className="font-bubble text-white/70 text-xs w-8 text-right">{w.sessions}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Support flag + report CTA */}
+              {supportCount > 0 && (
+                <div className="rounded-2xl px-4 py-3 mb-4 flex items-center gap-3"
+                  style={{ background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.3)' }}>
+                  <span className="text-xl">⚠️</span>
+                  <p className="font-round text-orange-300 text-sm font-bold">
+                    {supportCount} pupil{supportCount === 1 ? '' : 's'} flagged for extra support — see This Week tab
+                  </p>
+                </div>
+              )}
+              <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowReport(true)}
+                className="w-full py-4 rounded-2xl font-bubble text-white text-base"
+                style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', boxShadow: '0 4px 20px rgba(99,102,241,0.4)' }}>
+                📋 Open printable termly report →
+              </motion.button>
+              <p className="font-round text-white/25 text-xs text-center mt-2">
+                Anonymised · EYFS-mapped · print or save as PDF for parents, leadership or KHDA visits
+              </p>
             </>
           )}
         </div>
