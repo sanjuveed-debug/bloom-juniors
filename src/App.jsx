@@ -13,6 +13,7 @@ import { STUDY_MODULES, getArcadeUnlockStatus, getTodayStudySessions, getTodayAd
 import { PREMIUM_GATING_ENABLED, PREMIUM_FS2_MODULES } from './config/premiumContent.js'
 import { usePremium } from './hooks/usePremium'
 import PremiumLockModal from './components/PremiumLockModal'
+import InstallNudge from './components/InstallNudge'
 import { formatLocalDate, formatYesterdayLocalDate } from './utils/date.js'
 import { shouldSendAutoDigest, markDigestSent, buildDigestPayload, sendDigestEmail, sendNudgeEmail } from './utils/weeklyDigest.js'
 import { getClassroomLesson, setClassroomLesson } from './utils/classroomLesson.js'
@@ -1475,6 +1476,7 @@ export default function App() {
           />
         </React.Suspense>
         {classroomPinModal}
+        <InstallNudge profileName={activeProfile?.name} />
       </>
     )
   }
@@ -1503,6 +1505,7 @@ export default function App() {
           />
         </React.Suspense>
         {classroomPinModal}
+        <InstallNudge profileName={activeProfile?.name} />
       </>
     )
   }
@@ -1531,6 +1534,7 @@ export default function App() {
         className={guardian?.className || ''}
       />
       {classroomPinModal}
+      <InstallNudge profileName={activeProfile?.name} />
     </>
   )
 }

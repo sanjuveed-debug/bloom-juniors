@@ -3,7 +3,10 @@ import ReactDOM from 'react-dom/client'
 import { registerSW } from 'virtual:pwa-register'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
+import { initErrorMonitor } from './utils/errorMonitor.js'
 import './index.css'
+
+initErrorMonitor()
 
 // Auto-reload when a new service worker takes over.
 // hadController = false means first install (no old SW) — skip reload to avoid a flash.
