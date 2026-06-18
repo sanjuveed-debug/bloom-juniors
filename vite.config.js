@@ -33,6 +33,16 @@ export default defineConfig({
             urlPattern: /\.(?:png|jpg|jpeg|svg|webp|gif|ico)$/i,
             handler: 'CacheFirst',
             options: { cacheName: 'images', expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 } }
+          },
+          {
+            // Audio files — CacheFirst so phonics sounds work offline on classroom tablets.
+            urlPattern: /\.(?:mp3|wav|ogg|m4a|aac)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'bloom-audio',
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 90 },
+              cacheableResponse: { statuses: [200] },
+            }
           }
         ]
       },

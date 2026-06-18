@@ -1,6 +1,7 @@
 import { formatLocalDate } from './date.js'
 
 const INSTALL_ID_KEY = 'eduapp_installation_id_v1'
+const UTM_KEY = 'eduapp_utm_v1'
 const FIRST_SEEN_AT_KEY = 'eduapp_first_seen_at_v1'
 const DAILY_NOTIFY_PREFIX = 'eduapp_usage_notify_v1'
 const GUARDIAN_KEY = 'eduapp_guardian_v1'
@@ -95,6 +96,40 @@ function getGuardianDetails() {
   }
 }
 
+// ── UTM attribution ───────────────────────────────────────────────────────────
+// Captures UTM params on first landing and persists them for the session so
+// B2B campaign attribution (e.g. Arcadia school outreach) survives navigation.
+function captureAndGetUtm() {
+  try {
+    const params = new URLSearchParams(globalThis.location?.search || '')
+    const source   = params.get('utm_source')
+    const medium   = params.get('utm_medium')
+    const campaign = params.get('utm_campaign')
+    const content  = params.get('utm_content')
+    const term     = params.get('utm_term')
+
+    if (source || medium || campaign) {
+      const utm = { source, medium, campaign, content, term, capturedAt: new Date().toISOString() }
+      localStorage.setItem(UTM_KEY, JSON.stringify(utm))
+      return utm
+    }
+
+    const persisted = localStorage.getItem(UTM_KEY)
+    return persisted ? JSON.parse(persisted) : {}
+  } catch {
+    return {}
+  }
+}
+
+export function getStoredUtm() {
+  try {
+    const raw = localStorage.getItem(UTM_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
 // ── GA funnel events ──────────────────────────────────────────────────────────
 // Silent funnel tracking via gtag (no user interaction needed). Key events:
 //   sign_up            — guardian account created
@@ -106,7 +141,13 @@ const FIRST_ACTIVITY_KEY = 'eduapp_first_activity_done_v1'
 
 export function trackEvent(name, params = {}) {
   try {
-    if (typeof window.gtag === 'function') window.gtag('event', name, params)
+    const utm = getStoredUtm()
+    const utmParams = utm.source ? {
+      utm_source: utm.source,
+      utm_medium: utm.medium,
+      utm_campaign: utm.campaign,
+    } : {}
+    if (typeof window.gtag === 'function') window.gtag('event', name, { ...utmParams, ...params })
   } catch {}
 }
 
@@ -125,6 +166,7 @@ export function logSessionStart({ profileName, avatar }) {
     if (hasNotifiedToday(profileName)) return
 
     const { firstSeenAt, isNewInstall } = getFirstSeenAt()
+    const utm = captureAndGetUtm()
     const body = {
       profileName: profileName || 'Unknown',
       avatar: avatar || 'none',
@@ -140,6 +182,9 @@ export function logSessionStart({ profileName, avatar }) {
         timeStyle: 'short',
       }),
       userAgent: navigator.userAgent || 'unknown',
+      utmSource: utm.source || null,
+      utmMedium: utm.medium || null,
+      utmCampaign: utm.campaign || null,
       ...getGuardianDetails(),
     }
 
