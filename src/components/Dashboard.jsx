@@ -14,6 +14,8 @@ import BloomGarden from './BloomGarden'
 import ParentHandoff from './ParentHandoff'
 import DailyBloomPath from './DailyBloomPath'
 import CelebrationScreen from './CelebrationScreen'
+import InviteFriendsCard from './InviteFriendsCard'
+import FeedbackPrompt, { shouldShowFeedback } from './FeedbackPrompt'
 
 // ── Module registry ───────────────────────────────────────────────────────────
 const PREMIUM_IDS = new Set(['worldgk','science','planets','anatomy','sacred','shapes','shop','logic'])
@@ -1092,6 +1094,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
   const [celebrationSeen, setCelebrationSeen] = useState(
     () => sessionStorage.getItem('bloomCelebration') === 'true'
   )
+  const [showFeedback, setShowFeedback] = useState(() => shouldShowFeedback(progress))
   const arcadeStatus = getArcadeUnlockStatus(progress)
 
   const startLong = () => { longRef.current = setTimeout(() => onLongPress?.(), 1200) }
@@ -1110,21 +1113,21 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
   const challengeStreak  = progress.challengeStreak || 0
   const dailyAdventure   = buildDailyAdventure(progress, challenges, arcadeStatus, fullAccess)
   const dailyAccess      = getAdventureAccess(dailyAdventure)
+  const isDailyPathDone = arcadeStatus?.unlocked === true ||
+    (dailyAdventure?.steps?.length > 0 && dailyAdventure.steps.every(s => s.done))
   const handleGatedNavigate = (to) => {
     const mod = MODULE_MAP[to]
-    if (mod?.premium) {
+    if (mod?.premium && !fullAccess) {
       setPremiumMod(mod)
       return
     }
-    if (!mod || dailyAccess.availableIds.has(to)) {
+    if (!mod || isDailyPathDone || dailyAccess.availableIds.has(to)) {
       onNavigate(to)
       return
     }
     onNavigate(dailyAccess.nextId || 'phonics')
   }
 
-  const isDailyPathDone = arcadeStatus?.unlocked === true ||
-    (dailyAdventure?.steps?.length > 0 && dailyAdventure.steps.every(s => s.done))
   const showCelebration = isDailyPathDone && !celebrationSeen
   const handleCelebrationDismiss = (goTo) => {
     sessionStorage.setItem('bloomCelebration', 'true')
@@ -1371,6 +1374,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
                   </motion.div>
                 )}
                 <PiggyBankFeature onNavigate={onNavigate} />
+                <InviteFriendsCard theme={theme} profileName={profileName} />
               </motion.div>
             )}
 
@@ -1481,6 +1485,16 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
       <AnimatePresence>
         {premiumMod && (
           <PremiumModal mod={premiumMod} theme={theme} onClose={() => setPremiumMod(null)} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showFeedback && (
+          <FeedbackPrompt
+            profileName={profileName}
+            theme={theme}
+            onClose={() => setShowFeedback(false)}
+          />
         )}
       </AnimatePresence>
     </div>
