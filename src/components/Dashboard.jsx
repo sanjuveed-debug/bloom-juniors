@@ -352,7 +352,7 @@ function PremiumModal({ mod, theme, onClose }) {
         onClick={e => e.stopPropagation()}
       >
         <div className="absolute inset-x-0 top-0 h-32 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 0%,rgba(139,0,255,0.35),transparent)' }} />
+          style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 0%,rgba(194,65,12,0.30),transparent)' }} />
 
         <motion.div
           className="text-5xl mb-3"
@@ -396,7 +396,7 @@ function PremiumModal({ mod, theme, onClose }) {
               onClick={handleJoin}
               disabled={status === 'sending'}
               className="rounded-2xl px-4 py-3 font-bubble text-sm text-white shrink-0"
-              style={{ background: 'linear-gradient(135deg,#8B00FF,#D1147E)', opacity: status === 'sending' ? 0.7 : 1 }}
+              style={{ background: '#C2410C', opacity: status === 'sending' ? 0.7 : 1 }}
             >
               {status === 'sending' ? '...' : 'Join'}
             </motion.button>

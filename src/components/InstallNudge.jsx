@@ -47,38 +47,38 @@ export default function InstallNudge({ profileName }) {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 120, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 260, damping: 24 }}
-          className="fixed bottom-4 left-4 right-4 z-[150] mx-auto max-w-md rounded-3xl p-4 shadow-2xl"
-          style={{ background: 'linear-gradient(135deg, #1A1550, #2D1B69)', border: '1.5px solid rgba(139,92,246,0.5)' }}
+          className="fixed bottom-4 left-4 right-4 z-[150] mx-auto max-w-md rounded-3xl p-4 shadow-xl"
+          style={{ background: '#FFFFFF', border: '1.5px solid rgba(66,32,6,0.12)' }}
         >
           <div className="flex items-start gap-3">
             <img src="/yaagvi-mascot-single.webp" alt="" width={48} height={48}
               className="w-12 h-12 rounded-2xl object-cover shrink-0"
               onError={(e) => { e.currentTarget.style.display = 'none' }} />
             <div className="flex-1 min-w-0">
-              <p className="font-bubble text-white text-base leading-tight">
+              <p className="font-bubble text-base leading-tight" style={{ color: '#422006' }}>
                 Add Bloom Juniors to your home screen
               </p>
-              <p className="font-round text-white/60 text-xs mt-1 leading-relaxed">
+              <p className="font-round text-xs mt-1 leading-relaxed" style={{ color: 'rgba(66,32,6,0.6)' }}>
                 {ios
-                  ? <>Tap the <span className="font-bold text-white/85">Share</span> button <span aria-hidden>⎋</span> below, then <span className="font-bold text-white/85">"Add to Home Screen"</span> — so {profileName || 'your child'} can start anytime with one tap.</>
+                  ? <>Tap the <span className="font-bold" style={{ color: '#422006' }}>Share</span> button <span aria-hidden>⎋</span> below, then <span className="font-bold" style={{ color: '#422006' }}>"Add to Home Screen"</span> — so {profileName || 'your child'} can start anytime with one tap.</>
                   : <>One tap and {profileName || 'your child'} can start learning anytime — no browser needed.</>}
               </p>
               <div className="flex gap-2 mt-3">
                 {!ios && (
                   <motion.button whileTap={{ scale: 0.95 }} onClick={install}
                     className="rounded-xl px-4 py-2 font-bubble text-sm text-white"
-                    style={{ background: 'linear-gradient(135deg, #8B00FF, #D1147E)' }}>
+                    style={{ background: '#C2410C' }}>
                     Install ⤓
                   </motion.button>
                 )}
                 <button onClick={dismiss}
-                  className="rounded-xl px-3 py-2 font-round text-xs font-bold text-white/50">
+                  className="rounded-xl px-3 py-2 font-round text-xs font-bold" style={{ color: 'rgba(66,32,6,0.45)' }}>
                   {ios ? 'Got it' : 'Not now'}
                 </button>
               </div>
             </div>
             <button onClick={dismiss} aria-label="Dismiss"
-              className="text-white/40 text-lg leading-none shrink-0">✕</button>
+              className="text-lg leading-none shrink-0" style={{ color: 'rgba(66,32,6,0.35)' }}>✕</button>
           </div>
         </motion.div>
       )}

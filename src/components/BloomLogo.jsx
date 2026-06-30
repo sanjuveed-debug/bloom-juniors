@@ -18,19 +18,19 @@ export default function BloomLogo({ size = 'md', className = '' }) {
     >
       <defs>
         <linearGradient id="bj-title" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="100%" stopColor="#E9D5FF" />
+          <stop offset="0%" stopColor="#9A3412" />
+          <stop offset="100%" stopColor="#EA580C" />
         </linearGradient>
       </defs>
 
       {/* Flower icon — 5 petals + centre */}
       <g transform="translate(18,20)">
-        <ellipse cx="0" cy="-10" rx="4.5" ry="7.5" fill="#C084FC" opacity="0.92" transform="rotate(0)" />
-        <ellipse cx="0" cy="-10" rx="4.5" ry="7.5" fill="#A855F7" opacity="0.88" transform="rotate(72)" />
-        <ellipse cx="0" cy="-10" rx="4.5" ry="7.5" fill="#9333EA" opacity="0.92" transform="rotate(144)" />
-        <ellipse cx="0" cy="-10" rx="4.5" ry="7.5" fill="#A855F7" opacity="0.88" transform="rotate(216)" />
-        <ellipse cx="0" cy="-10" rx="4.5" ry="7.5" fill="#C084FC" opacity="0.92" transform="rotate(288)" />
-        <circle cx="0" cy="0" r="6"   fill="#F59E0B" />
+        <ellipse cx="0" cy="-10" rx="4.5" ry="7.5" fill="#FB923C" opacity="0.92" transform="rotate(0)" />
+        <ellipse cx="0" cy="-10" rx="4.5" ry="7.5" fill="#FB7185" opacity="0.88" transform="rotate(72)" />
+        <ellipse cx="0" cy="-10" rx="4.5" ry="7.5" fill="#F97316" opacity="0.92" transform="rotate(144)" />
+        <ellipse cx="0" cy="-10" rx="4.5" ry="7.5" fill="#FB7185" opacity="0.88" transform="rotate(216)" />
+        <ellipse cx="0" cy="-10" rx="4.5" ry="7.5" fill="#FB923C" opacity="0.92" transform="rotate(288)" />
+        <circle cx="0" cy="0" r="6"   fill="#0F766E" />
         <circle cx="0" cy="0" r="3.5" fill="#FCD34D" />
       </g>
 
@@ -52,7 +52,7 @@ export default function BloomLogo({ size = 'md', className = '' }) {
         fontFamily="'Nunito','Arial',sans-serif"
         fontSize="9"
         fontWeight="900"
-        fill="#C084FC"
+        fill="#0F766E"
         letterSpacing="1.5"
       >
         JUNIORS
