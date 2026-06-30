@@ -6,9 +6,9 @@ import { PROFILE_COLORS } from '../hooks/useProfiles'
 const EMOJI_OPTIONS = ['⭐', '🦄', '🌈', '🎵', '🌸', '🎮', '🚀', '🦋', '🎨', '🌟', '🐬', '🦊']
 
 const AGE_GROUP_META = {
-  toddler: { label: 'Tiny Stars', range: '3-4', emoji: '🧸', color: '#FF9A3C' },
-  early:   { label: 'Little Stars', range: '4-6', emoji: '🌟', color: '#8B00FF' },
-  junior:  { label: 'Super Kids', range: '7-9', emoji: '🚀', color: '#E21C1C' },
+  toddler: { label: 'Tiny Stars', range: '3-4', emoji: '🧸', color: '#F97316' },
+  early:   { label: 'Little Stars', range: '4-6', emoji: '🌟', color: '#0F766E' },
+  junior:  { label: 'Super Kids', range: '7-9', emoji: '🚀', color: '#DC2626' },
 }
 
 export default function ProfileSelector({
@@ -101,14 +101,14 @@ export default function ProfileSelector({
 
   return (
     <div className="min-h-screen overflow-y-auto scroll-ios flex flex-col"
-      style={{ background: 'linear-gradient(160deg, #1a0533 0%, #2d0a5e 50%, #0a1a3d 100%)' }}>
+      style={{ background: 'linear-gradient(160deg, #FFF7ED 0%, #FFEDD5 50%, #FFF7ED 100%)' }}>
 
-      {Array.from({ length: 16 }).map((_, i) => (
-        <motion.div key={i} className="fixed text-sm pointer-events-none select-none"
+      {Array.from({ length: 10 }).map((_, i) => (
+        <motion.div key={i} className="fixed text-sm pointer-events-none select-none opacity-60"
           style={{ left: `${(i * 13 + 3) % 95}%`, top: `${(i * 7 + 2) % 90}%`, zIndex: 0 }}
-          animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
+          animate={{ opacity: [0.15, 0.5, 0.15], scale: [0.8, 1.2, 0.8] }}
           transition={{ duration: 1.5 + (i % 4) * 0.5, repeat: Infinity, delay: i * 0.2 }}>
-          {['✨', '⭐', '💫', '🌟'][i % 4]}
+          {['✨', '⭐', '🌟'][i % 3]}
         </motion.div>
       ))}
 
@@ -119,7 +119,8 @@ export default function ProfileSelector({
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={onBack}
-              className="absolute left-4 top-safe font-round text-white/60 text-sm flex items-center gap-1 mt-3"
+              className="absolute left-4 top-safe font-round text-sm flex items-center gap-1 mt-3"
+              style={{ color: 'rgba(66,32,6,0.55)' }}
             >
               ← Back
             </motion.button>
@@ -128,7 +129,8 @@ export default function ProfileSelector({
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => setLogoutTarget(true)}
-              className="absolute right-4 top-safe mt-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-2 font-round text-xs font-bold text-white/70 shadow-lg"
+              className="absolute right-4 top-safe mt-3 rounded-2xl px-4 py-2 font-round text-xs font-bold shadow-sm"
+              style={{ border: '1px solid rgba(66,32,6,0.14)', background: '#FFFFFF', color: 'rgba(66,32,6,0.6)' }}
             >
               Log out
             </motion.button>
@@ -148,29 +150,28 @@ export default function ProfileSelector({
               transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             />
             <motion.div
-              className="relative z-10 order-first mb-2 max-w-[260px] rounded-[24px] border border-white/70 bg-white px-3 py-2 text-left shadow-2xl"
+              className="relative z-10 order-first mb-2 max-w-[260px] rounded-[24px] border border-white bg-white px-3 py-2 text-left shadow-xl"
               initial={{ opacity: 0, x: 14, scale: 0.92 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               transition={{ delay: 0.18, type: 'spring', stiffness: 260, damping: 22 }}
             >
-              <p className="font-bubble text-base leading-tight text-[#2d0a5e]">
+              <p className="font-bubble text-base leading-tight" style={{ color: '#9A3412' }}>
                 {creating ? 'I am Yaagvi, your mascot!' : 'Tap your name!'}
               </p>
-              <p className="font-round mt-1 text-[11px] font-bold leading-4 text-slate-600">
+              <p className="font-round mt-1 text-[11px] font-bold leading-4" style={{ color: 'rgba(66,32,6,0.6)' }}>
                 {creating ? 'Make your player and I will guide your mission.' : 'I will take you to today\'s adventure.'}
               </p>
             </motion.div>
           </div>
-          <h1 className="font-bubble text-white text-3xl drop-shadow-lg"
-            style={{ textShadow: '0 0 30px rgba(255,215,0,0.8)' }}>
+          <h1 className="font-bubble text-3xl" style={{ color: '#422006' }}>
             {creating ? 'Create Profile' : "Who's Playing? 👋"}
           </h1>
           <p className="font-round mt-1 text-sm font-bold"
-            style={{ color: AGE_GROUP_META[ageGroup]?.color || '#FFD700' }}>
+            style={{ color: AGE_GROUP_META[ageGroup]?.color || '#C2410C' }}>
             {AGE_GROUP_META[ageGroup]?.label} · Ages {AGE_GROUP_META[ageGroup]?.range}
           </p>
           {!creating && (
-            <p className="font-round text-yellow-300 text-base mt-1 font-bold">
+            <p className="font-round text-base mt-1 font-bold" style={{ color: '#C2410C' }}>
               Tap your name to start!
             </p>
           )}
@@ -233,25 +234,25 @@ export default function ProfileSelector({
                   onClick={() => setCreating(true)}
                   className="flex items-center gap-4 p-4 rounded-3xl"
                   style={{
-                    background: 'rgba(255,255,255,0.08)',
-                    border: '2px dashed rgba(255,255,255,0.35)',
+                    background: '#FFFFFF',
+                    border: '2px dashed rgba(66,32,6,0.22)',
                   }}
                 >
-                  <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-3xl">
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl" style={{ background: '#FFF7ED', color: '#422006' }}>
                     +
                   </div>
-                  <p className="font-bubble text-white/80 text-xl">Add New Player</p>
+                  <p className="font-bubble text-xl" style={{ color: 'rgba(66,32,6,0.7)' }}>Add New Player</p>
                 </motion.button>
               ) : (
                 <div
                   className="rounded-3xl p-4 text-center"
                   style={{
-                    background: 'rgba(255,255,255,0.08)',
-                    border: '2px solid rgba(255,255,255,0.18)',
+                    background: '#FFFFFF',
+                    border: '2px solid rgba(66,32,6,0.14)',
                   }}
                 >
-                  <p className="font-bubble text-white text-lg">{maxProfiles} player limit reached</p>
-                  <p className="font-round text-white/70 text-sm mt-1">
+                  <p className="font-bubble text-lg" style={{ color: '#422006' }}>{maxProfiles} player limit reached</p>
+                  <p className="font-round text-sm mt-1" style={{ color: 'rgba(66,32,6,0.6)' }}>
                     Delete a player before adding another.
                   </p>
                 </div>
@@ -274,7 +275,7 @@ export default function ProfileSelector({
               </div>
 
               <div>
-                <p className="font-round text-white/80 text-sm mb-1 text-center">What is your name?</p>
+                <p className="font-round text-sm mb-1 text-center" style={{ color: 'rgba(66,32,6,0.7)' }}>What is your name?</p>
                 <input
                   type="text"
                   value={name}
@@ -283,26 +284,26 @@ export default function ProfileSelector({
                   maxLength={14}
                   className="w-full px-4 py-3 rounded-2xl font-bubble text-xl text-center"
                   style={{
-                    background: 'rgba(255,255,255,0.12)',
-                    border: nameError ? '2px solid #EF4444' : '2px solid rgba(255,255,255,0.3)',
-                    color: 'white',
+                    background: '#FFFFFF',
+                    border: nameError ? '2px solid #DC2626' : '2px solid rgba(66,32,6,0.18)',
+                    color: '#422006',
                     outline: 'none',
                   }}
                   autoFocus
                 />
-                {nameError && <p className="text-red-400 font-round text-sm text-center mt-1">{nameError}</p>}
+                {nameError && <p className="font-round text-sm text-center mt-1" style={{ color: '#DC2626' }}>{nameError}</p>}
               </div>
 
               <div>
-                <p className="font-round text-white/80 text-sm mb-2 text-center">Pick an emoji!</p>
+                <p className="font-round text-sm mb-2 text-center" style={{ color: 'rgba(66,32,6,0.7)' }}>Pick an emoji!</p>
                 <div className="grid grid-cols-6 gap-2">
                   {EMOJI_OPTIONS.map((em, i) => (
                     <motion.button key={em} whileTap={{ scale: 0.85 }}
                       onClick={() => setEmojiIdx(i)}
                       className="aspect-square rounded-2xl flex items-center justify-center text-2xl"
                       style={{
-                        background: emojiIdx === i ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.1)',
-                        border: emojiIdx === i ? '2px solid white' : '2px solid transparent',
+                        background: emojiIdx === i ? 'rgba(194,65,12,0.14)' : '#FFFFFF',
+                        border: emojiIdx === i ? '2px solid #C2410C' : '2px solid rgba(66,32,6,0.14)',
                       }}>
                       {em}
                     </motion.button>
@@ -311,7 +312,7 @@ export default function ProfileSelector({
               </div>
 
               <div>
-                <p className="font-round text-white/80 text-sm mb-2 text-center">Pick a colour!</p>
+                <p className="font-round text-sm mb-2 text-center" style={{ color: 'rgba(66,32,6,0.7)' }}>Pick a colour!</p>
                 <div className="flex gap-2 justify-center">
                   {PROFILE_COLORS.map((col, i) => (
                     <motion.button key={col.name} whileTap={{ scale: 0.85 }}
@@ -330,8 +331,8 @@ export default function ProfileSelector({
               <div className="flex gap-3">
                 {profiles.length > 0 && (
                   <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCreating(false)}
-                    className="flex-1 py-3 rounded-2xl font-bubble text-white"
-                    style={{ background: 'rgba(255,255,255,0.15)' }}>
+                    className="flex-1 py-3 rounded-2xl font-bubble"
+                    style={{ background: '#FFFFFF', border: '1px solid rgba(66,32,6,0.14)', color: '#422006' }}>
                     Back
                   </motion.button>
                 )}
@@ -352,20 +353,20 @@ export default function ProfileSelector({
               exit={{ opacity: 0 }}
               className="w-full max-w-sm rounded-3xl p-5 text-center"
               style={{
-                background: 'rgba(255,255,255,0.1)',
-                border: '2px solid rgba(255,255,255,0.2)',
+                background: '#FFFFFF',
+                border: '2px solid rgba(66,32,6,0.14)',
               }}
             >
-              <p className="font-bubble text-white text-2xl">{maxProfiles} player limit reached</p>
-              <p className="font-round text-white/75 text-sm mt-2">
+              <p className="font-bubble text-2xl" style={{ color: '#422006' }}>{maxProfiles} player limit reached</p>
+              <p className="font-round text-sm mt-2" style={{ color: 'rgba(66,32,6,0.62)' }}>
                 You can keep up to {maxProfiles} players. Delete a player first, then Add New Player will appear.
               </p>
               <div className="mt-4 flex gap-3">
                 <motion.button
                   whileTap={{ scale: 0.93 }}
                   onClick={() => setCreating(false)}
-                  className="flex-1 py-3 rounded-2xl font-bubble text-white"
-                  style={{ background: 'rgba(255,255,255,0.15)' }}
+                  className="flex-1 py-3 rounded-2xl font-bubble"
+                  style={{ background: '#FFF7ED', color: '#422006' }}
                 >
                   Show Players
                 </motion.button>
@@ -374,7 +375,7 @@ export default function ProfileSelector({
                     whileTap={{ scale: 0.93 }}
                     onClick={onBack}
                     className="flex-1 py-3 rounded-2xl font-bubble text-white"
-                    style={{ background: 'linear-gradient(135deg, #A8540A, #D1147E)' }}
+                    style={{ background: '#C2410C' }}
                   >
                     Back
                   </motion.button>
@@ -394,25 +395,25 @@ export default function ProfileSelector({
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="w-full max-w-sm rounded-3xl p-6 text-center shadow-2xl"
+              className="w-full max-w-sm rounded-3xl p-6 text-center shadow-xl"
               initial={{ scale: 0.9, y: 24 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 24 }}
               style={{
-                background: 'linear-gradient(160deg, #351367, #18072f)',
-                border: '2px solid rgba(255,255,255,0.18)',
+                background: '#FFFFFF',
+                border: '1px solid rgba(66,32,6,0.10)',
               }}
             >
-              <p className="font-bubble text-white text-2xl">Log out?</p>
-              <p className="font-round text-white/75 text-sm mt-2">
+              <p className="font-bubble text-2xl" style={{ color: '#422006' }}>Log out?</p>
+              <p className="font-round text-sm mt-2" style={{ color: 'rgba(66,32,6,0.62)' }}>
                 This will close the parent session and return to the login screen.
               </p>
               <div className="flex gap-3 mt-5">
                 <motion.button
                   whileTap={{ scale: 0.93 }}
                   onClick={() => setLogoutTarget(false)}
-                  className="flex-1 py-3 rounded-2xl font-bubble text-white"
-                  style={{ background: 'rgba(255,255,255,0.15)' }}
+                  className="flex-1 py-3 rounded-2xl font-bubble"
+                  style={{ background: '#FFF7ED', color: '#422006' }}
                 >
                   Cancel
                 </motion.button>
@@ -420,7 +421,7 @@ export default function ProfileSelector({
                   whileTap={{ scale: 0.93 }}
                   onClick={onLogout}
                   className="flex-1 py-3 rounded-2xl font-bubble text-white"
-                  style={{ background: 'linear-gradient(135deg, #FF7A18, #FF2D55)' }}
+                  style={{ background: '#C2410C' }}
                 >
                   Log out
                 </motion.button>
@@ -439,25 +440,25 @@ export default function ProfileSelector({
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="w-full max-w-sm rounded-3xl p-6 text-center shadow-2xl"
+              className="w-full max-w-sm rounded-3xl p-6 text-center shadow-xl"
               initial={{ scale: 0.9, y: 24 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 24 }}
               style={{
-                background: 'linear-gradient(160deg, #351367, #18072f)',
-                border: '2px solid rgba(255,255,255,0.18)',
+                background: '#FFFFFF',
+                border: '1px solid rgba(66,32,6,0.10)',
               }}
             >
-              <p className="font-bubble text-white text-2xl">Delete {deleteTarget.name}?</p>
-              <p className="font-round text-white/75 text-sm mt-2">
+              <p className="font-bubble text-2xl" style={{ color: '#422006' }}>Delete {deleteTarget.name}?</p>
+              <p className="font-round text-sm mt-2" style={{ color: 'rgba(66,32,6,0.62)' }}>
                 This removes this player and their progress from this device and cloud account.
               </p>
               <div className="flex gap-3 mt-5">
                 <motion.button
                   whileTap={{ scale: 0.93 }}
                   onClick={() => setDeleteTarget(null)}
-                  className="flex-1 py-3 rounded-2xl font-bubble text-white"
-                  style={{ background: 'rgba(255,255,255,0.15)' }}
+                  className="flex-1 py-3 rounded-2xl font-bubble"
+                  style={{ background: '#FFF7ED', color: '#422006' }}
                 >
                   Keep
                 </motion.button>
@@ -465,7 +466,7 @@ export default function ProfileSelector({
                   whileTap={{ scale: 0.93 }}
                   onClick={handleDeleteConfirm}
                   className="flex-1 py-3 rounded-2xl font-bubble text-white"
-                  style={{ background: 'linear-gradient(135deg, #FF4D6D, #C9184A)' }}
+                  style={{ background: '#DC2626' }}
                 >
                   Delete
                 </motion.button>

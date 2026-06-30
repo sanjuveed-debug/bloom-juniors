@@ -31,22 +31,14 @@ export default function SplashScreen({ onDone }) {
         <motion.div
           className="fixed inset-0 z-[200] flex flex-col items-center justify-center overflow-hidden cursor-pointer"
           style={{
-            background: 'linear-gradient(160deg, #0B0F2A 0%, #1A1550 35%, #2D126B 65%, #0B0F2A 100%)',
+            background: 'linear-gradient(160deg, #FFF7ED 0%, #FFEDD5 50%, #FFF7ED 100%)',
           }}
           exit={{ opacity: 0, scale: 1.08 }}
           transition={{ duration: 0.35, ease: 'easeInOut' }}
           onClick={dismiss}
         >
-          {/* Radial glow */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: 'radial-gradient(ellipse 70% 50% at 50% 45%, rgba(139,0,255,0.35) 0%, transparent 70%)',
-            }}
-          />
-
           {/* Animated star particles */}
-          {Array.from({ length: 24 }).map((_, i) => (
+          {Array.from({ length: 16 }).map((_, i) => (
             <motion.div
               key={i}
               className="absolute rounded-full pointer-events-none"
@@ -55,9 +47,9 @@ export default function SplashScreen({ onDone }) {
                 top:    `${(i * 11 + 3)  % 88}%`,
                 width:  `${2 + (i % 3)}px`,
                 height: `${2 + (i % 3)}px`,
-                background: ['#FFD700','#FF6B9D','#7DD3FC','#A78BFA','#6EE7B7'][i % 5],
+                background: ['#F97316','#FB923C','#FBBF24','#0F766E','#14B8A6'][i % 5],
               }}
-              animate={{ opacity: [0.2, 1, 0.2], scale: [0.6, 1.4, 0.6] }}
+              animate={{ opacity: [0.2, 0.8, 0.2], scale: [0.6, 1.4, 0.6] }}
               transition={{ duration: 1.5 + (i % 5) * 0.4, repeat: Infinity, delay: i * 0.09 }}
             />
           ))}
@@ -72,18 +64,11 @@ export default function SplashScreen({ onDone }) {
               transition={{ type: 'spring', stiffness: 260, damping: 16 }}
               className="mb-5"
             >
-              {/* Outer glow ring */}
-              <motion.div
-                className="absolute inset-0 rounded-[28px]"
-                style={{ background: 'radial-gradient(circle, rgba(139,0,255,0.7), transparent 70%)' }}
-                animate={{ scale: [1, 1.3, 1], opacity: [0.7, 0.2, 0.7] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
               <div
                 className="relative w-28 h-28 rounded-[28px] flex items-center justify-center"
                 style={{
-                  background: 'linear-gradient(145deg, #7C3AED, #4F46E5, #1D4ED8)',
-                  boxShadow: '0 0 0 2px rgba(255,255,255,0.15), 0 16px 48px rgba(99,60,255,0.7)',
+                  background: 'linear-gradient(145deg, #F97316, #EA580C)',
+                  boxShadow: '0 0 0 2px rgba(255,255,255,0.6), 0 12px 32px rgba(194,65,12,0.35)',
                 }}
               >
                 <motion.span
@@ -106,17 +91,13 @@ export default function SplashScreen({ onDone }) {
               <h1
                 className="font-bubble text-5xl"
                 style={{
-                  background: 'linear-gradient(135deg, #E879F9, #818CF8, #60A5FA)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  filter: 'drop-shadow(0 0 20px rgba(167,139,250,0.7))',
+                  color: '#9A3412',
                   letterSpacing: '0.03em',
                 }}
               >
                 Bloom Juniors
               </h1>
-              <p className="font-round text-white/50 text-sm mt-0.5 tracking-[0.2em] uppercase">
+              <p className="font-round text-sm mt-0.5 tracking-[0.2em] uppercase" style={{ color: 'rgba(66,32,6,0.45)' }}>
                 Learning
               </p>
             </motion.div>
@@ -128,7 +109,8 @@ export default function SplashScreen({ onDone }) {
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ type: 'spring', stiffness: 300 }}
-                  className="font-round text-white/75 text-base font-bold mt-4 text-center"
+                  className="font-round text-base font-bold mt-4 text-center"
+                  style={{ color: 'rgba(66,32,6,0.7)' }}
                 >
                   {TAGLINES[0]}
                 </motion.p>
@@ -148,7 +130,7 @@ export default function SplashScreen({ onDone }) {
                     <motion.div
                       key={i}
                       className="w-2.5 h-2.5 rounded-full"
-                      style={{ background: ['#E879F9','#818CF8','#60A5FA'][i] }}
+                      style={{ background: ['#F97316','#FBBF24','#0F766E'][i] }}
                       animate={{ scale: [0.7, 1.3, 0.7], opacity: [0.4, 1, 0.4] }}
                       transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.18 }}
                     />
@@ -160,7 +142,8 @@ export default function SplashScreen({ onDone }) {
 
           {/* Bottom tagline for parents */}
           <motion.p
-            className="absolute bottom-10 font-round text-white/30 text-xs text-center px-8"
+            className="absolute bottom-10 font-round text-xs text-center px-8"
+            style={{ color: 'rgba(66,32,6,0.4)' }}
             initial={{ opacity: 0 }}
             animate={{ opacity: phase >= 1 ? 1 : 0 }}
             transition={{ delay: 0.5 }}

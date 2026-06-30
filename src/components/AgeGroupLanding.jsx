@@ -77,17 +77,17 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
   return (
     <div
       className="min-h-screen overflow-y-auto"
-      style={{ background: 'linear-gradient(160deg, #080516 0%, #25064d 52%, #061633 100%)' }}
+      style={{ background: 'linear-gradient(160deg, #FFF7ED 0%, #FFEDD5 50%, #FFF7ED 100%)' }}
     >
-      {Array.from({ length: 18 }).map((_, i) => (
+      {Array.from({ length: 10 }).map((_, i) => (
         <motion.div
           key={i}
-          className="fixed pointer-events-none select-none text-sm"
+          className="fixed pointer-events-none select-none text-sm opacity-60"
           style={{ left: `${(i * 13 + 5) % 94}%`, top: `${(i * 7 + 3) % 88}%`, zIndex: 0 }}
-          animate={{ opacity: [0.2, 0.85, 0.2], scale: [0.8, 1.3, 0.8] }}
+          animate={{ opacity: [0.15, 0.5, 0.15], scale: [0.8, 1.2, 0.8] }}
           transition={{ duration: 2 + (i % 4) * 0.6, repeat: Infinity, delay: i * 0.18 }}
         >
-          {['✨', '⭐', '💫', '🌟', '🎇'][i % 5]}
+          {['✨', '⭐', '🌟'][i % 3]}
         </motion.div>
       ))}
 
@@ -97,7 +97,8 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
             <button
               type="button"
               onClick={handleInstall}
-              className="rounded-2xl bg-white px-4 py-2.5 font-bubble text-xs text-[#2d0a5e] shadow-lg"
+              className="rounded-2xl px-4 py-2.5 font-bubble text-xs shadow-lg"
+              style={{ background: '#FFFFFF', color: '#422006', border: '1px solid rgba(66,32,6,0.12)' }}
             >
               Install app
             </button>
@@ -106,7 +107,8 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
           <button
             type="button"
             onClick={() => setShowIntro(true)}
-            className="rounded-2xl bg-gradient-to-r from-[#FFE45E] via-[#FFB347] to-[#FF5E7E] px-4 py-2.5 font-bubble text-xs text-[#2d0a5e] shadow-lg ring-2 ring-white/60"
+            className="rounded-2xl px-4 py-2.5 font-bubble text-xs shadow-lg"
+            style={{ background: 'linear-gradient(135deg, #FBBF24, #F97316)', color: '#422006' }}
           >
             Meet Yaagvi
           </button>
@@ -115,7 +117,8 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
             <button
               type="button"
               onClick={() => setShowAdminPanel(true)}
-              className="rounded-2xl border border-indigo-400/40 bg-indigo-500/20 px-4 py-2.5 font-round text-xs font-bold text-indigo-300 shadow-lg backdrop-blur"
+              className="rounded-2xl px-4 py-2.5 font-round text-xs font-bold shadow-sm"
+              style={{ border: '1px solid rgba(15,118,110,0.3)', background: 'rgba(15,118,110,0.08)', color: '#0F766E' }}
             >
               ⚙ Settings
             </button>
@@ -124,7 +127,8 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
             <button
               type="button"
               onClick={() => setConfirmLogout(true)}
-              className="rounded-2xl border border-white/25 bg-white/16 px-4 py-2.5 font-round text-xs font-bold text-white shadow-lg backdrop-blur"
+              className="rounded-2xl px-4 py-2.5 font-round text-xs font-bold shadow-sm"
+              style={{ border: '1px solid rgba(66,32,6,0.14)', background: '#FFFFFF', color: '#422006' }}
             >
               Log out
             </button>
@@ -140,18 +144,19 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
             className="relative flex flex-col items-center md:items-start"
           >
             <motion.div
-              className="relative z-10 mb-3 max-w-[310px] rounded-[26px] border border-white/70 bg-white px-4 py-3 text-left shadow-2xl"
+              className="relative z-10 mb-3 max-w-[310px] rounded-[26px] border border-white px-4 py-3 text-left shadow-xl"
+              style={{ background: '#FFFFFF' }}
               initial={{ opacity: 0, y: -10, scale: 0.94 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ delay: 0.2, type: 'spring', stiffness: 260, damping: 22 }}
             >
-              <p className="font-bubble text-lg leading-tight text-[#2d0a5e] md:text-xl">
+              <p className="font-bubble text-lg leading-tight md:text-xl" style={{ color: '#422006' }}>
                 Hi, I am Yaagvi, your mascot!
               </p>
-              <p className="font-round mt-1 text-xs font-bold leading-5 text-slate-600 md:text-sm">
+              <p className="font-round mt-1 text-xs font-bold leading-5 md:text-sm" style={{ color: 'rgba(66,32,6,0.62)' }}>
               I am your learning buddy. Pick your world and I will guide your mission today.
               </p>
-              <span className="absolute -bottom-2 left-12 h-5 w-5 rotate-45 border-b border-r border-white/70 bg-white" />
+              <span className="absolute -bottom-2 left-12 h-5 w-5 rotate-45 border-b border-r border-white bg-white" />
             </motion.div>
             <motion.img
               src="/yaagvi-mascot.webp"
@@ -169,16 +174,16 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
             transition={{ delay: 0.15 }}
             className="mt-4 md:mt-6"
           >
-            <p className="font-round text-sm font-black uppercase tracking-[0.2em] text-yellow-300">
+            <p className="font-round text-sm font-black uppercase tracking-[0.2em]" style={{ color: '#C2410C' }}>
               Learning adventure
             </p>
             <h1
-              className="mt-2 font-bubble text-4xl leading-tight text-white md:text-5xl"
-              style={{ textShadow: '0 0 40px rgba(255,215,0,0.45)' }}
+              className="mt-2 font-bubble text-4xl leading-tight md:text-5xl"
+              style={{ color: '#422006' }}
             >
               Choose your world
             </h1>
-            <p className="mx-auto mt-2 max-w-sm font-round text-sm font-bold leading-6 text-white/65 md:mx-0">
+            <p className="mx-auto mt-2 max-w-sm font-round text-sm font-bold leading-6 md:mx-0" style={{ color: 'rgba(66,32,6,0.6)' }}>
               One child-friendly path, a mascot guide, and games that unlock after learning.
             </p>
           </motion.div>
@@ -247,9 +252,9 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
           ))}
 
           {!visibleAgeGroups.length && (
-            <div className="rounded-[28px] border border-white/15 bg-white/10 p-5 text-center shadow-xl">
-              <p className="font-bubble text-2xl text-white">No player yet</p>
-              <p className="font-round mt-2 text-sm font-bold leading-6 text-white/65">
+            <div className="rounded-[28px] p-5 text-center shadow-sm" style={{ border: '1px solid rgba(66,32,6,0.10)', background: '#FFFFFF' }}>
+              <p className="font-bubble text-2xl" style={{ color: '#422006' }}>No player yet</p>
+              <p className="font-round mt-2 text-sm font-bold leading-6" style={{ color: 'rgba(66,32,6,0.62)' }}>
                 Create a child profile first, then this screen will show that child&apos;s age world.
               </p>
             </div>
@@ -261,20 +266,22 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
                 whileTap={{ scale: 0.95 }}
                 onClick={() => onUpdateGuardian({ classroomMode: true })}
                 className="rounded-full px-5 py-2 font-bubble text-sm text-white shadow-lg"
-                style={{ background: 'linear-gradient(135deg, #4F46E5, #7C3AED)' }}
+                style={{ background: '#0F766E' }}
               >
                 🏫 Classroom View
               </motion.button>
             )}
             <a
               href="/schools"
-              className="rounded-full bg-white/10 px-4 py-2 font-round text-xs font-bold text-white/60 transition-colors hover:bg-white/15 hover:text-white"
+              className="rounded-full px-4 py-2 font-round text-xs font-bold transition-colors"
+              style={{ background: 'rgba(66,32,6,0.05)', color: 'rgba(66,32,6,0.55)' }}
             >
               For Schools
             </a>
             <a
               href="/privacy"
-              className="rounded-full bg-white/10 px-4 py-2 font-round text-xs font-bold text-white/60 transition-colors hover:bg-white/15 hover:text-white"
+              className="rounded-full px-4 py-2 font-round text-xs font-bold transition-colors"
+              style={{ background: 'rgba(66,32,6,0.05)', color: 'rgba(66,32,6,0.55)' }}
             >
               Privacy Policy
             </a>
@@ -284,28 +291,31 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
       </div>
 
       {confirmLogout && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.92, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="w-full max-w-sm rounded-[28px] border border-white/15 bg-[#210942] p-5 text-center shadow-2xl"
+            className="w-full max-w-sm rounded-[28px] p-5 text-center shadow-xl"
+            style={{ background: '#FFFFFF', border: '1px solid rgba(66,32,6,0.10)' }}
           >
-            <p className="font-bubble text-2xl text-white">Log out?</p>
-            <p className="mt-2 font-round text-sm font-bold leading-6 text-white/70">
+            <p className="font-bubble text-2xl" style={{ color: '#422006' }}>Log out?</p>
+            <p className="mt-2 font-round text-sm font-bold leading-6" style={{ color: 'rgba(66,32,6,0.6)' }}>
               You will return to the parent login screen.
             </p>
             <div className="mt-5 flex gap-3">
               <button
                 type="button"
                 onClick={() => setConfirmLogout(false)}
-                className="flex-1 rounded-2xl bg-white/10 py-3 font-bubble text-white"
+                className="flex-1 rounded-2xl py-3 font-bubble"
+                style={{ background: '#FFF7ED', color: '#422006' }}
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={onLogout}
-                className="flex-1 rounded-2xl bg-gradient-to-r from-[#ff7a18] to-[#ff2d55] py-3 font-bubble text-white"
+                className="flex-1 rounded-2xl py-3 font-bubble text-white"
+                style={{ background: '#C2410C' }}
               >
                 Log out
               </button>
@@ -315,27 +325,29 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
       )}
 
       {showAdminPanel && onUpdateGuardian && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.92, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="w-full max-w-sm rounded-[28px] border border-white/15 bg-[#1a0a3d] p-6 shadow-2xl"
+            className="w-full max-w-sm rounded-[28px] p-6 shadow-xl"
+            style={{ background: '#FFFFFF', border: '1px solid rgba(66,32,6,0.10)' }}
           >
             <div className="flex items-center justify-between mb-4">
-              <p className="font-bubble text-xl text-white">Admin Settings</p>
+              <p className="font-bubble text-xl" style={{ color: '#422006' }}>Admin Settings</p>
               <button type="button" onClick={() => setShowAdminPanel(false)}
-                className="rounded-full bg-white/10 px-3 py-1 font-round text-xs text-white/60">
+                className="rounded-full px-3 py-1 font-round text-xs"
+                style={{ background: '#FFF7ED', color: 'rgba(66,32,6,0.6)' }}>
                 Close
               </button>
             </div>
-            <div className="rounded-2xl bg-white/8 border border-white/12 p-4">
+            <div className="rounded-2xl p-4" style={{ background: '#FFF7ED', border: '1px solid rgba(66,32,6,0.10)' }}>
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="font-bubble text-white text-base">🏫 Classroom Mode</p>
-                  <p className="font-round text-white/50 text-xs mt-1">Replace the home screen with a teacher dashboard showing all student profiles and daily completion status.</p>
+                  <p className="font-bubble text-base" style={{ color: '#422006' }}>🏫 Classroom Mode</p>
+                  <p className="font-round text-xs mt-1" style={{ color: 'rgba(66,32,6,0.5)' }}>Replace the home screen with a teacher dashboard showing all student profiles and daily completion status.</p>
                   {classroomMode && (
                     <a href="/curriculum-map" target="_blank" rel="noreferrer"
-                      className="font-round text-indigo-400 text-xs mt-2 block hover:text-indigo-300">
+                      className="font-round text-xs mt-2 block transition-colors" style={{ color: '#0F766E' }}>
                       View Curriculum Map →
                     </a>
                   )}
@@ -344,7 +356,7 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
                   type="button"
                   onClick={() => onUpdateGuardian({ classroomMode: !classroomMode })}
                   className="relative w-12 h-7 rounded-full transition-colors flex-shrink-0"
-                  style={{ background: classroomMode ? '#6366F1' : 'rgba(255,255,255,0.15)' }}
+                  style={{ background: classroomMode ? '#0F766E' : 'rgba(66,32,6,0.15)' }}
                 >
                   <span className="absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow transition-transform"
                     style={{ transform: classroomMode ? 'translateX(20px)' : 'translateX(0)' }} />
@@ -352,7 +364,7 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
               </div>
             </div>
             {classroomMode && (
-              <p className="font-round text-indigo-300 text-xs mt-3 text-center">
+              <p className="font-round text-xs mt-3 text-center" style={{ color: '#0F766E' }}>
                 Classroom Mode is ON — log out and back in to see the teacher dashboard.
               </p>
             )}

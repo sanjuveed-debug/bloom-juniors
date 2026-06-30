@@ -2,6 +2,14 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { isSupabaseConfigured } from '../lib/supabase.js'
 
+const TEXT = '#422006'
+const TEXT_MUTED = 'rgba(66,32,6,0.62)'
+const TEXT_FAINT = 'rgba(66,32,6,0.42)'
+const PRIMARY = '#C2410C'
+const BG = 'linear-gradient(160deg, #FFF7ED 0%, #FFEDD5 50%, #FFF7ED 100%)'
+const CARD_STYLE = { background: '#FFFFFF', border: '1px solid rgba(66,32,6,0.10)', boxShadow: '0 8px 30px rgba(66,32,6,0.08)' }
+const INPUT_STYLE = { background: '#FFF7ED', border: '1.5px solid rgba(66,32,6,0.16)', color: TEXT, fontSize: '1rem' }
+
 export default function GuardianLogin({ guardianName, guardianEmail = '', authError, onLogin, onForgot, onResetPin, onRegister }) {
   const [email, setEmail]     = useState(guardianEmail || '')
   const [password, setPassword] = useState('')
@@ -87,7 +95,7 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
     return (
       <div
         className="min-h-screen overflow-y-auto flex flex-col items-center justify-center px-4 py-10"
-        style={{ background: 'linear-gradient(160deg, #13052c 0%, #2d0a5e 55%, #071b39 100%)' }}
+        style={{ background: BG }}
       >
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
           className="relative z-10 w-full max-w-sm">
@@ -95,51 +103,51 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
             <motion.div className="text-5xl mb-3 inline-block"
               animate={{ rotate: [0, 10, -10, 0] }}
               transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}>🔑</motion.div>
-            <h1 className="font-bubble text-white text-3xl drop-shadow-lg">Reset PIN</h1>
-            <p className="font-round text-white/60 text-sm mt-1">Verify your account, then choose a new PIN</p>
+            <h1 className="font-bubble text-3xl" style={{ color: TEXT }}>Reset PIN</h1>
+            <p className="font-round text-sm mt-1" style={{ color: TEXT_MUTED }}>Verify your account, then choose a new PIN</p>
           </div>
 
-          <div className="w-full rounded-3xl border border-white/15 bg-white/10 p-6 shadow-2xl backdrop-blur space-y-5">
+          <div className="w-full rounded-3xl p-6 space-y-5" style={CARD_STYLE}>
             {prSuccess ? (
               <div className="text-center space-y-4 py-4">
                 <div className="text-5xl">✅</div>
-                <p className="font-bubble text-white text-xl">{prSuccess}</p>
+                <p className="font-bubble text-xl" style={{ color: TEXT }}>{prSuccess}</p>
                 <button onClick={exitPinReset}
                   className="w-full py-4 rounded-2xl font-bubble text-white text-xl"
-                  style={{ background: 'linear-gradient(135deg,#ff7a18,#ff2d55)', boxShadow: '0 6px 20px rgba(255,45,85,0.4)' }}>
+                  style={{ background: PRIMARY, boxShadow: '0 8px 22px rgba(194,65,12,0.3)' }}>
                   Back to login
                 </button>
               </div>
             ) : (
               <>
                 <div>
-                  <label htmlFor="pin-reset-email" className="font-round text-sm font-bold text-white block mb-1">Email Address</label>
+                  <label htmlFor="pin-reset-email" className="font-round text-sm font-bold block mb-1" style={{ color: TEXT }}>Email Address</label>
                   <input id="pin-reset-email" type="email" value={prEmail}
                     onChange={e => { setPrEmail(e.target.value); setPrError('') }}
                     placeholder="name@example.com" inputMode="email" autoComplete="email"
-                    className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 font-round text-white outline-none placeholder:text-white/30"
-                    style={{ fontSize: '1rem' }} />
+                    className="w-full rounded-2xl px-4 py-3 font-round outline-none"
+                    style={INPUT_STYLE} />
                 </div>
 
                 <div>
-                  <label htmlFor="pin-reset-password" className="font-round text-sm font-bold text-white block mb-1">Account Password</label>
+                  <label htmlFor="pin-reset-password" className="font-round text-sm font-bold block mb-1" style={{ color: TEXT }}>Account Password</label>
                   <input id="pin-reset-password" type="password" value={prPassword}
                     onChange={e => { setPrPassword(e.target.value); setPrError('') }}
                     placeholder="Your account password" autoComplete="current-password"
-                    className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 font-round text-white outline-none placeholder:text-white/30"
-                    style={{ fontSize: '1rem' }} />
+                    className="w-full rounded-2xl px-4 py-3 font-round outline-none"
+                    style={INPUT_STYLE} />
                 </div>
 
                 <div>
-                  <label className="font-round text-sm font-bold text-white block mb-2">New 4-digit PIN</label>
+                  <label className="font-round text-sm font-bold block mb-2" style={{ color: TEXT }}>New 4-digit PIN</label>
                   <div className="flex justify-center gap-4 mb-4">
                     {Array.from({ length: 4 }).map((_, i) => (
                       <div key={i}
                         className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl font-bubble border-2 transition-all"
                         style={{
-                          background: prNewPin.length > i ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)',
-                          border: prNewPin.length > i ? '2px solid rgba(255,255,255,0.5)' : '2px solid rgba(255,255,255,0.15)',
-                          color: 'white',
+                          background: prNewPin.length > i ? 'rgba(194,65,12,0.12)' : '#FFF7ED',
+                          border: prNewPin.length > i ? `2px solid ${PRIMARY}80` : '2px solid rgba(66,32,6,0.14)',
+                          color: TEXT,
                         }}>
                         {prNewPin.length > i ? '●' : ''}
                       </div>
@@ -150,10 +158,11 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
                       k === '' ? <div key={i} /> :
                       <motion.button key={i} whileTap={{ scale: 0.88 }}
                         onClick={() => k === '⌫' ? handlePrDelete() : handlePrPin(String(k))}
-                        className="py-4 rounded-2xl font-bubble text-white text-xl"
+                        className="py-4 rounded-2xl font-bubble text-xl"
                         style={{
-                          background: k === '⌫' ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)',
-                          border: '1px solid rgba(255,255,255,0.15)',
+                          background: k === '⌫' ? 'rgba(220,38,38,0.08)' : '#FFF7ED',
+                          border: '1px solid rgba(66,32,6,0.14)',
+                          color: TEXT,
                         }}>
                         {k}
                       </motion.button>
@@ -164,19 +173,19 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
                 <AnimatePresence>
                   {prError && (
                     <motion.p initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                      className="font-round text-sm text-center text-red-300">{prError}</motion.p>
+                      className="font-round text-sm text-center text-red-600">{prError}</motion.p>
                   )}
                 </AnimatePresence>
 
                 <motion.button whileTap={{ scale: 0.97 }}
                   onClick={handlePinReset} disabled={prLoading || prNewPin.length !== 4 || !prPassword}
                   className="w-full py-4 rounded-2xl font-bubble text-white text-xl disabled:opacity-50"
-                  style={{ background: 'linear-gradient(135deg,#ff7a18,#ff2d55)', boxShadow: '0 6px 20px rgba(255,45,85,0.4)' }}>
+                  style={{ background: PRIMARY, boxShadow: '0 8px 22px rgba(194,65,12,0.3)' }}>
                   {prLoading ? 'Saving…' : 'Save New PIN'}
                 </motion.button>
 
                 <button onClick={exitPinReset}
-                  className="w-full font-round text-white/45 text-xs text-center hover:text-white/70 transition-colors">
+                  className="w-full font-round text-xs text-center transition-colors" style={{ color: TEXT_FAINT }}>
                   ← Back to login
                 </button>
               </>
@@ -190,18 +199,8 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
   return (
     <div
       className="min-h-screen overflow-y-auto flex flex-col items-center justify-center px-4 py-10"
-      style={{ background: 'linear-gradient(160deg, #13052c 0%, #2d0a5e 55%, #071b39 100%)' }}
+      style={{ background: BG }}
     >
-      {/* Background stars */}
-      {Array.from({ length: 14 }).map((_, i) => (
-        <motion.div key={i} className="fixed pointer-events-none select-none text-sm"
-          style={{ left: `${(i * 13 + 5) % 94}%`, top: `${(i * 7 + 3) % 88}%`, zIndex: 0 }}
-          animate={{ opacity: [0.2, 0.7, 0.2], scale: [0.8, 1.2, 0.8] }}
-          transition={{ duration: 2 + (i % 4) * 0.5, repeat: Infinity, delay: i * 0.2 }}>
-          {['✨','⭐','💫','🌟'][i % 4]}
-        </motion.div>
-      ))}
-
       <motion.div
         initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
         className="relative z-10 w-full max-w-sm"
@@ -213,23 +212,22 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
             transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}>
             🛡️
           </motion.div>
-          <h1 className="font-bubble text-white text-3xl drop-shadow-lg"
-            style={{ textShadow: '0 0 30px rgba(255,215,0,0.7)' }}>
+          <h1 className="font-bubble text-3xl" style={{ color: TEXT }}>
             Welcome back!
           </h1>
           {guardianName && (
-            <p className="font-round text-white/60 text-sm mt-1">
+            <p className="font-round text-sm mt-1" style={{ color: TEXT_MUTED }}>
               {fullLogin ? 'Signing in as ' : 'Enter PIN for '}
-              <span className="text-yellow-300 font-bold">{guardianName}</span>
+              <span className="font-bold" style={{ color: PRIMARY }}>{guardianName}</span>
             </p>
           )}
         </div>
 
-        <div className="w-full rounded-3xl border border-white/15 bg-white/10 p-6 shadow-2xl backdrop-blur space-y-5">
+        <div className="w-full rounded-3xl p-6 space-y-5" style={CARD_STYLE}>
 
           {fullLogin && (
             <div>
-              <label htmlFor="guardian-login-email" className="font-round text-sm font-bold text-white block mb-1">Email Address</label>
+              <label htmlFor="guardian-login-email" className="font-round text-sm font-bold block mb-1" style={{ color: TEXT }}>Email Address</label>
               <input
                 id="guardian-login-email"
                 type="email"
@@ -239,15 +237,15 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
                 placeholder="name@example.com"
                 inputMode="email"
                 autoComplete="email"
-                className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 font-round text-white outline-none placeholder:text-white/30"
-                style={{ fontSize: '1rem' }}
+                className="w-full rounded-2xl px-4 py-3 font-round outline-none"
+                style={INPUT_STYLE}
               />
             </div>
           )}
 
           {fullLogin && isSupabaseConfigured && (
             <div>
-              <label htmlFor="guardian-login-password" className="font-round text-sm font-bold text-white block mb-1">Account Password</label>
+              <label htmlFor="guardian-login-password" className="font-round text-sm font-bold block mb-1" style={{ color: TEXT }}>Account Password</label>
               <input
                 id="guardian-login-password"
                 type="password"
@@ -256,15 +254,15 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
                 onKeyDown={e => e.key === 'Enter' && pin.length === 4 && handleLogin()}
                 placeholder="Your account password"
                 autoComplete="current-password"
-                className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 font-round text-white outline-none placeholder:text-white/30"
-                style={{ fontSize: '1rem' }}
+                className="w-full rounded-2xl px-4 py-3 font-round outline-none"
+                style={INPUT_STYLE}
               />
             </div>
           )}
 
           {/* PIN display */}
           <div>
-            <label className="font-round text-sm font-bold text-white block mb-2">Parent PIN</label>
+            <label className="font-round text-sm font-bold block mb-2" style={{ color: TEXT }}>Parent PIN</label>
             <motion.div
               animate={shaking ? { x: [-8, 8, -6, 6, -4, 4, 0] } : {}}
               transition={{ duration: 0.4 }}
@@ -273,9 +271,9 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
                 <div key={i}
                   className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl font-bubble border-2 transition-all"
                   style={{
-                    background: pin.length > i ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)',
-                    border: pin.length > i ? '2px solid rgba(255,255,255,0.5)' : '2px solid rgba(255,255,255,0.15)',
-                    color: 'white',
+                    background: pin.length > i ? 'rgba(194,65,12,0.12)' : '#FFF7ED',
+                    border: pin.length > i ? `2px solid ${PRIMARY}80` : '2px solid rgba(66,32,6,0.14)',
+                    color: TEXT,
                   }}>
                   {pin.length > i ? '●' : ''}
                 </div>
@@ -288,10 +286,11 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
                 k === '' ? <div key={i} /> :
                 <motion.button key={i} whileTap={{ scale: 0.88 }}
                   onClick={() => k === '⌫' ? handleDelete() : handlePin(String(k))}
-                  className="py-4 rounded-2xl font-bubble text-white text-xl"
+                  className="py-4 rounded-2xl font-bubble text-xl"
                   style={{
-                    background: k === '⌫' ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.1)',
-                    border: '1px solid rgba(255,255,255,0.15)',
+                    background: k === '⌫' ? 'rgba(220,38,38,0.08)' : '#FFF7ED',
+                    border: '1px solid rgba(66,32,6,0.14)',
+                    color: TEXT,
                   }}>
                   {k}
                 </motion.button>
@@ -303,7 +302,8 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
           <AnimatePresence>
             {(error || authError || notice) && (
               <motion.p initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                className={`font-round text-sm text-center ${notice && !error && !authError ? 'text-emerald-200' : 'text-red-300'}`}>
+                className="font-round text-sm text-center"
+                style={{ color: notice && !error && !authError ? '#15803D' : '#DC2626' }}>
                 {error || authError || notice}
               </motion.p>
             )}
@@ -315,7 +315,7 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
             onClick={handleLogin}
             disabled={loading}
             className="w-full py-4 rounded-2xl font-bubble text-white text-xl disabled:opacity-60"
-            style={{ background: 'linear-gradient(135deg, #ff7a18, #ff2d55)', boxShadow: '0 6px 20px rgba(255,45,85,0.4)' }}>
+            style={{ background: PRIMARY, boxShadow: '0 8px 22px rgba(194,65,12,0.3)' }}>
             {loading ? 'Checking...' : fullLogin ? 'Log In' : 'Unlock'}
           </motion.button>
 
@@ -327,7 +327,8 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
                 setError('')
                 setPin('')
               }}
-              className="w-full rounded-2xl border border-white/15 bg-white/5 py-3 font-round text-sm font-bold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+              className="w-full rounded-2xl py-3 font-round text-sm font-bold transition-colors"
+              style={{ border: '1px solid rgba(66,32,6,0.14)', background: '#FFF7ED', color: TEXT_MUTED }}
             >
               {fullLogin ? `Use PIN for ${guardianName}` : 'Use a different account'}
             </button>
@@ -336,7 +337,7 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
           {/* Forgot PIN */}
           {onResetPin && (
             <button onClick={() => { setPinResetMode(true); setPrEmail(email || guardianEmail || '') }}
-              className="w-full font-round text-white/45 text-xs text-center hover:text-white/70 transition-colors">
+              className="w-full font-round text-xs text-center transition-colors" style={{ color: TEXT_FAINT }}>
               Forgot PIN? Reset it here
             </button>
           )}
@@ -352,7 +353,8 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
             else if (result?.ok) setNotice(result.message)
             else if (result?.message) setError(result.message)
           }}
-            className="w-full font-round text-white/45 text-xs text-center mt-1 hover:text-white/70 transition-colors"
+            className="w-full font-round text-xs text-center mt-1 transition-colors"
+            style={{ color: TEXT_FAINT }}
             disabled={resetting}>
             {resetting ? 'Sending reset email...' : 'Forgot password? Send reset email'}
           </button>
@@ -361,7 +363,8 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
             <button
               type="button"
               onClick={onRegister}
-              className="w-full rounded-2xl border border-white/15 bg-white/5 py-3 font-round text-sm font-bold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+              className="w-full rounded-2xl py-3 font-round text-sm font-bold transition-colors"
+              style={{ border: '1px solid rgba(66,32,6,0.14)', background: '#FFF7ED', color: TEXT_MUTED }}
             >
               New parent? Register access
             </button>
@@ -369,7 +372,8 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
 
           <a
             href="/privacy"
-            className="block text-center font-round text-xs font-bold text-white/45 underline decoration-white/20 underline-offset-4 transition-colors hover:text-white/70"
+            className="block text-center font-round text-xs font-bold underline underline-offset-4 transition-colors"
+            style={{ color: TEXT_FAINT }}
           >
             Privacy Policy
           </a>
