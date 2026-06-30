@@ -396,7 +396,7 @@ function PremiumModal({ mod, theme, onClose }) {
               onClick={handleJoin}
               disabled={status === 'sending'}
               className="rounded-2xl px-4 py-3 font-bubble text-sm text-white shrink-0"
-              style={{ background: 'linear-gradient(135deg,#8B00FF,#FF1D8E)', opacity: status === 'sending' ? 0.7 : 1 }}
+              style={{ background: 'linear-gradient(135deg,#8B00FF,#D1147E)', opacity: status === 'sending' ? 0.7 : 1 }}
             >
               {status === 'sending' ? '...' : 'Join'}
             </motion.button>

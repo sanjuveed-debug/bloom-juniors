@@ -81,7 +81,7 @@ export default function LandingDemo({ onGetStarted }) {
                 whileHover={{ scale: 1.04 }}
                 onClick={() => { setStarted(true); speak('Count the animals, then tap the matching number!', { mood: 'instruct' }) }}
                 className="font-bubble text-lg text-white px-8 py-4 rounded-2xl shadow-xl"
-                style={{ background: `linear-gradient(135deg, ${DEMO_COLOUR}, #FF1D8E)` }}
+                style={{ background: `linear-gradient(135deg, ${DEMO_COLOUR}, #D1147E)` }}
               >
                 ▶ Play the demo
               </motion.button>
@@ -126,7 +126,7 @@ export default function LandingDemo({ onGetStarted }) {
                         whileHover={{ scale: 1.04 }}
                         onClick={onGetStarted}
                         className="font-bubble text-lg text-white px-8 py-4 rounded-2xl shadow-xl"
-                        style={{ background: 'linear-gradient(135deg,#8B00FF,#FF1D8E)' }}
+                        style={{ background: 'linear-gradient(135deg,#8B00FF,#D1147E)' }}
                       >
                         Create a free account →
                       </motion.button>

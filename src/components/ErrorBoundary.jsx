@@ -46,7 +46,7 @@ export default class ErrorBoundary extends React.Component {
             <button
               onClick={() => window.location.reload()}
               className="font-round font-bold text-sm px-5 py-3 rounded-2xl text-white"
-              style={{ background: 'linear-gradient(135deg,#8B00FF,#FF1D8E)' }}
+              style={{ background: 'linear-gradient(135deg,#8B00FF,#D1147E)' }}
             >
               Refresh page
             </button>

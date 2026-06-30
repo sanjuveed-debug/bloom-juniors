@@ -121,7 +121,7 @@ function DeveloperVideo() {
               <motion.div
                 whileHover={{ scale: 1.1 }}
                 className="w-14 h-14 rounded-full flex items-center justify-center shadow-xl"
-                style={{ background: 'linear-gradient(135deg,#8B00FF,#FF1D8E)' }}
+                style={{ background: 'linear-gradient(135deg,#8B00FF,#D1147E)' }}
               >
                 <span className="text-white text-xl" style={{ marginLeft: '3px' }}>▶</span>
               </motion.div>
@@ -185,7 +185,7 @@ function WaitlistForm({ source = 'hero' }) {
         whileTap={{ scale: 0.95 }}
         disabled={status === 'sending'}
         className="rounded-2xl px-6 py-3.5 font-bubble text-sm text-white shadow-lg whitespace-nowrap"
-        style={{ background: 'linear-gradient(135deg,#8B00FF,#FF1D8E)', opacity: status === 'sending' ? 0.7 : 1 }}
+        style={{ background: 'linear-gradient(135deg,#8B00FF,#D1147E)', opacity: status === 'sending' ? 0.7 : 1 }}
       >
         {status === 'sending' ? 'Joining…' : 'Join waitlist →'}
       </motion.button>
@@ -341,7 +341,7 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
             whileTap={{ scale: 0.95 }}
             onClick={onGetStarted}
             className="font-bubble text-sm text-white px-4 py-2 rounded-xl"
-            style={{ background: 'linear-gradient(135deg,#8B00FF,#FF1D8E)' }}
+            style={{ background: 'linear-gradient(135deg,#8B00FF,#D1147E)' }}
           >
             Start free
           </motion.button>
@@ -444,7 +444,7 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
 
             {/* Trust badges */}
             <div className="flex flex-wrap gap-2 justify-center md:justify-start mb-8">
-              {['✓ Free to start', '✓ No ads', '✓ Parent-guided', '✓ No download needed'].map(b => (
+              {['✓ Free to start', '✓ No ads', '✓ No child accounts', '✓ Parent-guided', '✓ British curriculum aligned', '✓ No download needed'].map(b => (
                 <span key={b} className="font-round text-xs text-green-300 px-3 py-1 rounded-full"
                   style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)' }}>
                   {b}
@@ -458,7 +458,7 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
                 whileTap={{ scale: 0.95 }}
                 onClick={onGetStarted}
                 className="font-bubble text-lg text-white px-8 py-4 rounded-2xl shadow-2xl"
-                style={{ background: 'linear-gradient(135deg,#8B00FF,#FF1D8E)', boxShadow: '0 12px 32px rgba(139,0,255,0.4)' }}
+                style={{ background: 'linear-gradient(135deg,#8B00FF,#D1147E)', boxShadow: '0 12px 32px rgba(139,0,255,0.4)' }}
               >
                 Start free today →
               </motion.button>
@@ -520,7 +520,7 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
                   {s.emoji}
                   <div
                     className="absolute -top-3 -right-3 flex h-7 w-7 items-center justify-center rounded-full font-bubble text-sm text-white shadow"
-                    style={{ background: 'linear-gradient(135deg,#8B00FF,#FF1D8E)' }}
+                    style={{ background: 'linear-gradient(135deg,#8B00FF,#D1147E)' }}
                   >
                     {s.step}
                   </div>
@@ -536,7 +536,7 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
               whileHover={{ scale: 1.03 }}
               onClick={onGetStarted}
               className="font-bubble text-base text-white px-8 py-3.5 rounded-2xl shadow-lg"
-              style={{ background: 'linear-gradient(135deg,#8B00FF,#FF1D8E)' }}
+              style={{ background: 'linear-gradient(135deg,#8B00FF,#D1147E)' }}
             >
               Try it free — no card needed →
             </motion.button>
@@ -671,7 +671,7 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
       {/* ── STUDY FIRST SECTION ──────────────────────────────────────────────── */}
       <section className="px-4 pb-16 md:px-8">
         <div className="mx-auto max-w-2xl rounded-[28px] overflow-hidden"
-          style={{ background: 'linear-gradient(135deg,#8B00FF,#FF1D8E)', boxShadow: '0 20px 60px rgba(139,0,255,0.35)' }}>
+          style={{ background: 'linear-gradient(135deg,#8B00FF,#D1147E)', boxShadow: '0 20px 60px rgba(139,0,255,0.35)' }}>
           <div className="p-8 md:p-10 text-center">
             <div className="text-5xl mb-4">🎮</div>
             <h2 className="font-bubble text-white text-3xl mb-3">Games as the reward</h2>
@@ -936,7 +936,7 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
             whileTap={{ scale: 0.96 }}
             onClick={onGetStarted}
             className="font-bubble text-xl text-white px-10 py-5 rounded-2xl shadow-2xl"
-            style={{ background: 'linear-gradient(135deg,#8B00FF,#FF1D8E)', boxShadow: '0 16px 40px rgba(139,0,255,0.4)' }}
+            style={{ background: 'linear-gradient(135deg,#8B00FF,#D1147E)', boxShadow: '0 16px 40px rgba(139,0,255,0.4)' }}
           >
             Create a free account →
           </motion.button>

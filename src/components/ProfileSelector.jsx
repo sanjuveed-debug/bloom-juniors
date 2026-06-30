@@ -374,7 +374,7 @@ export default function ProfileSelector({
                     whileTap={{ scale: 0.93 }}
                     onClick={onBack}
                     className="flex-1 py-3 rounded-2xl font-bubble text-white"
-                    style={{ background: 'linear-gradient(135deg, #FF9A3C, #FF1D8E)' }}
+                    style={{ background: 'linear-gradient(135deg, #A8540A, #D1147E)' }}
                   >
                     Back
                   </motion.button>

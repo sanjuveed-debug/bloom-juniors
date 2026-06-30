@@ -176,7 +176,7 @@ export default function SchoolEnquiryForm({ source = 'schools-page' }) {
         className="rounded-2xl py-3.5 font-bubble text-white text-base shadow-lg mt-1 transition-opacity"
         style={{
           background: valid
-            ? 'linear-gradient(135deg, #8B00FF, #FF1D8E)'
+            ? 'linear-gradient(135deg, #8B00FF, #D1147E)'
             : 'rgba(255,255,255,0.1)',
           opacity: status === 'sending' ? 0.7 : 1,
         }}

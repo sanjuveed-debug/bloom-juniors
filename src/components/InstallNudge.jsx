@@ -67,7 +67,7 @@ export default function InstallNudge({ profileName }) {
                 {!ios && (
                   <motion.button whileTap={{ scale: 0.95 }} onClick={install}
                     className="rounded-xl px-4 py-2 font-bubble text-sm text-white"
-                    style={{ background: 'linear-gradient(135deg, #8B00FF, #FF1D8E)' }}>
+                    style={{ background: 'linear-gradient(135deg, #8B00FF, #D1147E)' }}>
                     Install ⤓
                   </motion.button>
                 )}
