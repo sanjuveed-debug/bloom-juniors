@@ -16,6 +16,7 @@ import DailyBloomPath from './DailyBloomPath'
 import CelebrationScreen from './CelebrationScreen'
 import InviteFriendsCard from './InviteFriendsCard'
 import FeedbackPrompt, { shouldShowFeedback } from './FeedbackPrompt'
+import StreakCard from './StreakCard'
 
 // ── Module registry ───────────────────────────────────────────────────────────
 const PREMIUM_IDS = new Set(['worldgk','science','planets','anatomy','sacred','shapes','shop','logic'])
@@ -1082,7 +1083,7 @@ function ForYouFeed({ theme, progress, challenges, arcadeStatus, dailyAdventure,
   )
 }
 
-export default function Dashboard({ avatar, progress, onNavigate, onLongPress, onSwitchProfiles, onQuickSwitch, profiles, activeProfileId, profileName }) {
+export default function Dashboard({ avatar, progress, onNavigate, onLongPress, onSwitchProfiles, onQuickSwitch, onAddStars, profiles, activeProfileId, profileName }) {
   const { premium } = usePremium()
   const fullAccess = !PREMIUM_GATING_ENABLED || premium
   const theme    = THEMES[avatar] || THEMES.rumi
@@ -1336,6 +1337,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.22 }}
               >
+                <StreakCard progress={progress} theme={theme} onAddStars={onAddStars} />
                 <DailyAdventureCard
                   theme={theme}
                   profileName={profileName}

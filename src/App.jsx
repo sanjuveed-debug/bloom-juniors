@@ -461,14 +461,18 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
       addStars('event', WORLD_EVENT_BONUS)
       speak(`${event.title.replace('!', '')} complete! ${WORLD_EVENT_BONUS} bonus stars!`, { mood: 'celebrate', queue: true })
     }
+    // Bonus award modules (dailygift, event) don't log game sessions
+    const isBonusModule = module === 'dailygift' || module === 'event'
     const { total = 0, correct = 0, struggles = [], stayOnModule = false } = sessionData
-    const duration = screenEntryRef.current
-      ? Math.round((Date.now() - screenEntryRef.current) / 1000)
-      : 0
-    screenEntryRef.current = stayOnModule ? Date.now() : null
-    const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0
-    logSession({ module, stars: count, total, correct, accuracy, duration, date: Date.now(), struggles })
-    tickChallenge({ module, stars: count, accuracy, total, correct })
+    if (!isBonusModule) {
+      const duration = screenEntryRef.current
+        ? Math.round((Date.now() - screenEntryRef.current) / 1000)
+        : 0
+      screenEntryRef.current = stayOnModule ? Date.now() : null
+      const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0
+      logSession({ module, stars: count, total, correct, accuracy, duration, date: Date.now(), struggles })
+      tickChallenge({ module, stars: count, accuracy, total, correct })
+    }
 
     // Use latest progress from ref to avoid stale-closure reads
     const latest = progressRef.current
@@ -646,6 +650,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
           onLongPress={() => navigate('parent')}
           onSwitchProfiles={onSwitchProfiles}
           onQuickSwitch={onQuickSwitch}
+          onAddStars={handleAddStars}
           profiles={profiles}
           activeProfileId={profileId}
         />
