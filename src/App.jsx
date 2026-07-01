@@ -9,6 +9,7 @@ import { useSound } from './hooks/useSound'
 import { triggerHaptic } from './hooks/useHaptic'
 import { THEMES, applyTheme } from './themes'
 import { logSessionStart, trackActivityComplete } from './utils/analytics'
+import { cancelStreakReminder } from './utils/notificationUtils'
 import { STUDY_MODULES, getArcadeUnlockStatus, getTodayStudySessions, getTodayAdventureModules } from './utils/arcadeUnlock'
 import { PREMIUM_GATING_ENABLED, PREMIUM_FS2_MODULES } from './config/premiumContent.js'
 import { usePremium } from './hooks/usePremium'
@@ -452,7 +453,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
   const handleAddStars = useCallback((module, rawCount, sessionData = {}) => {
     const count = Math.max(0, Number(rawCount) || 0)
     addStars(module, count)
-    if (count > 0) triggerHaptic('star')
+    if (count > 0) { triggerHaptic('star'); cancelStreakReminder() }
     trackActivityComplete(module, 'early')
     // Daily world event bonus (once per day, on the featured module)
     const event = getTodayWorldEvent(hasAllAccessRef.current)

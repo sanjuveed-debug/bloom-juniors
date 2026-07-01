@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getTodayGift, isDailyGiftClaimed, claimDailyGift, getStreakMilestone, getWeekDots } from '../utils/streakUtils'
+import { getNotificationPermission, requestNotificationPermission, scheduleStreakReminder } from '../utils/notificationUtils'
 
 const TEXT       = '#422006'
 const TEXT_FAINT = 'rgba(66,32,6,0.45)'
@@ -15,12 +16,21 @@ function streakMessage(streak) {
   return `WOW! ${streak} days straight — you're unstoppable! 👑`
 }
 
-export default function StreakCard({ progress, theme, onAddStars }) {
-  const [claimed, setClaimed]     = useState(() => isDailyGiftClaimed())
-  const [showToast, setShowToast] = useState(false)
-  const [chestOpen, setChestOpen] = useState(false)
+export default function StreakCard({ progress, theme, onAddStars, profileName }) {
+  const [claimed, setClaimed]       = useState(() => isDailyGiftClaimed())
+  const [showToast, setShowToast]   = useState(false)
+  const [chestOpen, setChestOpen]   = useState(false)
+  const [notifPerm, setNotifPerm]   = useState(() => getNotificationPermission())
+  const [notifDismissed, setNotifDismissed] = useState(
+    () => localStorage.getItem('bloom_notif_dismissed') === '1'
+  )
 
   const streak    = progress?.loginStreak || 0
+
+  // Schedule a 6 pm reminder whenever streak > 0 and permission is granted
+  useEffect(() => {
+    if (streak > 0) scheduleStreakReminder(profileName || 'your child', streak)
+  }, [streak, notifPerm, profileName])
   const gift      = getTodayGift()
   const milestone = getStreakMilestone(streak)
   const weekDots  = getWeekDots(progress)
@@ -150,6 +160,47 @@ export default function StreakCard({ progress, theme, onAddStars }) {
         <p className="font-round text-xs mt-3 leading-relaxed" style={{ color: TEXT_FAINT }}>
           {streakMessage(streak)}
         </p>
+
+        {/* Notification permission nudge — show once, only after streak >= 1 */}
+        {streak >= 1 && notifPerm === 'default' && !notifDismissed && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mt-3 flex items-center gap-2 rounded-2xl px-3 py-2.5"
+            style={{ background: 'rgba(194,65,12,0.07)', border: '1px solid rgba(194,65,12,0.18)' }}
+          >
+            <span style={{ fontSize: 16 }}>🔔</span>
+            <p className="font-round text-xs flex-1" style={{ color: TEXT_FAINT }}>
+              Get a reminder at 6 pm if today's streak is at risk
+            </p>
+            <button
+              className="font-round text-xs font-bold px-2.5 py-1 rounded-xl"
+              style={{ background: PRIMARY, color: '#fff' }}
+              onClick={async () => {
+                const result = await requestNotificationPermission()
+                setNotifPerm(result)
+                if (result === 'granted') scheduleStreakReminder(profileName || 'your child', streak)
+                if (result !== 'default') {
+                  localStorage.setItem('bloom_notif_dismissed', '1')
+                  setNotifDismissed(true)
+                }
+              }}
+            >
+              Allow
+            </button>
+            <button
+              className="font-round text-xs px-1.5 py-1 rounded-xl"
+              style={{ color: TEXT_FAINT }}
+              onClick={() => {
+                localStorage.setItem('bloom_notif_dismissed', '1')
+                setNotifDismissed(true)
+              }}
+            >
+              ✕
+            </button>
+          </motion.div>
+        )}
       </motion.div>
 
       {/* Gift claim toast */}

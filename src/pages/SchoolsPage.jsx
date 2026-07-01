@@ -3,9 +3,15 @@ import { motion } from 'framer-motion'
 import BloomLogo from '../components/BloomLogo'
 import SchoolEnquiryForm from '../components/SchoolEnquiryForm'
 
-const BG = 'linear-gradient(160deg, #080516 0%, #130a2e 50%, #061633 100%)'
+const BG      = 'linear-gradient(160deg, #FFF7ED 0%, #FFEDD5 50%, #FFF7ED 100%)'
+const TEXT    = '#422006'
+const FAINT   = 'rgba(66,32,6,0.45)'
+const FAINT2  = 'rgba(66,32,6,0.35)'
+const PRIMARY = '#C2410C'
+const TEAL    = '#0F766E'
+const CARD    = { background: '#FFFFFF', border: '1px solid rgba(66,32,6,0.10)', boxShadow: '0 4px 20px rgba(66,32,6,0.06)' }
 
-// ── UI Mockups ────────────────────────────────────────────────────────────────
+// ── UI Mockups (kept dark — they show the teacher dashboard interface) ─────────
 function MockupFrame({ title, children }) {
   return (
     <div className="rounded-2xl overflow-hidden shadow-2xl" style={{ border: '1px solid rgba(255,255,255,0.12)' }}>
@@ -138,11 +144,11 @@ const CURRICULUM = [
     topics: ['Colours & shapes', 'Counting to 10', 'Animal sounds', 'Fruits & body parts'],
   },
   {
-    emoji: '🌟', stage: 'Reception & KS1', range: 'Ages 4–6 · EYFS / KS1', color: '#C084FC',
+    emoji: '🌟', stage: 'Reception & KS1', range: 'Ages 4–6 · EYFS / KS1', color: TEAL,
     topics: ['RWI phonics Set 1–3', 'Tricky / red words', 'Early maths', 'Story reading & comprehension'],
   },
   {
-    emoji: '🚀', stage: 'KS2', range: 'Ages 7–9 · Year 3–5', color: '#F87171',
+    emoji: '🚀', stage: 'KS2', range: 'Ages 7–9 · Year 3–5', color: '#DC2626',
     topics: ['Times tables 2–12', 'Fractions & word problems', 'Y3–6 spelling list', 'Grammar, reading & science'],
   },
 ]
@@ -158,22 +164,17 @@ const TRUST = [
   { icon: '⏱️', text: 'Session timer — teacher controls screen time' },
 ]
 
+const CLASS_CODE_STEPS = [
+  { icon: '🏫', title: 'Teacher creates a class', body: 'Each class gets its own unique class code, generated automatically when you set up your classroom.' },
+  { icon: '📱', title: 'Pupils use the class code', body: 'On the class tablet, pupils enter the code and tap their name card — no accounts, no passwords, no emails.' },
+  { icon: '👀', title: 'Only that class roster appears', body: 'The code unlocks one roster only — the right pupils for that class, and nothing else.' },
+  { icon: '📊', title: 'Progress stays scoped', body: 'Stars, sessions and weekly reports are saved against that class and school — never mixed with another.' },
+]
+
 const AUDIENCES = [
-  {
-    icon: '🧸',
-    label: 'Nurseries',
-    detail: 'Gentle EYFS practice for colours, shapes, counting and early language.',
-  },
-  {
-    icon: '🌟',
-    label: 'Reception & KS1',
-    detail: 'Daily phonics, early maths and story practice with teacher-set focus.',
-  },
-  {
-    icon: '📚',
-    label: 'Tutors & small groups',
-    detail: 'Fast setup for multi-child sessions without a heavy LMS workflow.',
-  },
+  { icon: '🧸', label: 'Nurseries',          detail: 'Gentle EYFS practice for colours, shapes, counting and early language.' },
+  { icon: '🌟', label: 'Reception & KS1',    detail: 'Daily phonics, early maths and story practice with teacher-set focus.' },
+  { icon: '📚', label: 'Tutors & small groups', detail: 'Fast setup for multi-child sessions without a heavy LMS workflow.' },
 ]
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -204,19 +205,24 @@ export default function SchoolsPage() {
     <div className="min-h-screen overflow-y-auto" style={{ background: BG }}>
 
       {/* Nav */}
-      <nav className="sticky top-0 z-50 backdrop-blur-md border-b border-white/10"
-        style={{ background: 'rgba(8,5,22,0.9)' }}>
+      <nav className="sticky top-0 z-50 backdrop-blur-md"
+        style={{ background: 'rgba(255,247,237,0.92)', borderBottom: '1px solid rgba(66,32,6,0.08)' }}>
         <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
           <a href="/"><BloomLogo size="md" /></a>
           <div className="flex items-center gap-3">
-            <a href="/?app=1" className="font-round text-white/75 text-sm border border-white/15 rounded-xl px-4 py-2 hover:bg-white/8 transition-colors hidden sm:block">
+            <a href="/?app=1"
+              className="font-round text-sm rounded-xl px-4 py-2 transition-colors hidden sm:block"
+              style={{ color: FAINT, border: '1px solid rgba(66,32,6,0.14)' }}>
               Parent login
             </a>
-            <a href="#enquiry" className="font-round text-indigo-300 text-sm border border-indigo-400/40 rounded-xl px-4 py-2 hover:bg-indigo-400/10 transition-colors hidden sm:block">
+            <a href="#enquiry"
+              className="font-round text-sm rounded-xl px-4 py-2 transition-colors hidden sm:block"
+              style={{ color: TEAL, border: `1px solid ${TEAL}44` }}>
               Contact us
             </a>
-            <a href="/?teacher=1" className="font-bubble text-sm text-white rounded-xl px-5 py-2.5 shadow-lg"
-              style={{ background: 'linear-gradient(135deg, #4F46E5, #7C3AED)' }}>
+            <a href="/?teacher=1"
+              className="font-bubble text-sm text-white rounded-xl px-5 py-2.5 shadow-lg"
+              style={{ background: PRIMARY }}>
               Start free →
             </a>
           </div>
@@ -226,31 +232,31 @@ export default function SchoolsPage() {
       {/* Hero */}
       <section className="max-w-4xl mx-auto px-6 pt-16 pb-20 text-center">
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 200 }}>
-          <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6 font-round text-xs font-bold text-indigo-300 uppercase tracking-widest"
-            style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.4)' }}>
+          <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6 font-round text-xs font-bold uppercase tracking-widest"
+            style={{ background: `${TEAL}14`, border: `1px solid ${TEAL}40`, color: TEAL }}>
             🏫 For nurseries, primary schools and tutors
           </div>
-          <h1 className="font-bubble text-5xl md:text-6xl text-white leading-tight mb-6"
-            style={{ textShadow: '0 0 60px rgba(139,0,255,0.5)' }}>
+          <h1 className="font-bubble text-5xl md:text-6xl leading-tight mb-6" style={{ color: TEXT }}>
             Safe classroom practice<br />for EYFS, KS1 and KS2
           </h1>
-          <p className="font-round text-white/65 text-lg max-w-2xl mx-auto leading-relaxed mb-10 font-bold">
+          <p className="font-round text-lg max-w-2xl mx-auto leading-relaxed mb-10 font-bold" style={{ color: FAINT }}>
             Set today's phonics, maths or reading task in seconds.
             Pupils start from their own name card.
             You see live progress across the whole class.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
             <a href="/?teacher=1"
-              className="font-bubble text-white text-xl px-10 py-4 rounded-2xl shadow-2xl"
-              style={{ background: 'linear-gradient(135deg, #4F46E5, #7C3AED)', boxShadow: '0 12px 40px rgba(79,70,229,0.5)' }}>
+              className="font-bubble text-white text-xl px-10 py-4 rounded-2xl shadow-xl"
+              style={{ background: PRIMARY, boxShadow: '0 12px 32px rgba(194,65,12,0.35)' }}>
               Set up a free classroom →
             </a>
             <a href="/curriculum-map" target="_blank"
-              className="font-bubble text-white/80 text-xl px-10 py-4 rounded-2xl border-2 border-white/20 hover:bg-white/8 transition-colors">
+              className="font-bubble text-xl px-10 py-4 rounded-2xl border-2 transition-colors"
+              style={{ color: TEXT, borderColor: 'rgba(66,32,6,0.20)' }}>
               View curriculum map
             </a>
           </div>
-          <p className="font-round text-white/35 text-sm">
+          <p className="font-round text-sm" style={{ color: FAINT2 }}>
             Free for 1 classroom · Up to 30 pupils · No child accounts · No ads
           </p>
         </motion.div>
@@ -259,10 +265,10 @@ export default function SchoolsPage() {
       {/* Trust strip */}
       <div className="max-w-5xl mx-auto px-6 -mt-8 pb-14">
         <div className="rounded-3xl px-5 py-4 flex flex-wrap justify-center gap-x-5 gap-y-3"
-          style={{ background: 'rgba(255,255,255,0.045)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          style={{ background: '#FFFFFF', border: '1px solid rgba(66,32,6,0.08)', boxShadow: '0 2px 12px rgba(66,32,6,0.04)' }}>
           {['✓ British Curriculum', '✓ EYFS · KS1 · KS2', '✓ No child accounts', '✓ No advertising', '✓ GDPR compliant', '✓ No download needed'].map(t => (
-            <span key={t} className="font-round text-white/60 text-xs font-bold rounded-full px-3 py-1"
-              style={{ background: 'rgba(255,255,255,0.045)' }}>
+            <span key={t} className="font-round text-xs font-bold rounded-full px-3 py-1"
+              style={{ background: 'rgba(66,32,6,0.05)', color: FAINT }}>
               {t}
             </span>
           ))}
@@ -271,22 +277,22 @@ export default function SchoolsPage() {
 
       {/* Who it is for */}
       <section className="max-w-5xl mx-auto px-6 py-16">
-        <p className="font-round text-white/35 text-xs font-black uppercase tracking-widest text-center mb-3">Who it is for</p>
-        <h2 className="font-bubble text-4xl text-white text-center mb-4">A classroom companion, not another admin system</h2>
-        <p className="font-round text-white/45 text-center text-sm mb-10 max-w-2xl mx-auto">
+        <p className="font-round text-xs font-black uppercase tracking-widest text-center mb-3" style={{ color: FAINT2 }}>Who it is for</p>
+        <h2 className="font-bubble text-4xl text-center mb-4" style={{ color: TEXT }}>A classroom companion, not another admin system</h2>
+        <p className="font-round text-center text-sm mb-10 max-w-2xl mx-auto" style={{ color: FAINT }}>
           Bloom Juniors sits alongside your existing school tools. It gives children a safe place to practise and gives adults a quick view of engagement.
         </p>
         <div className="grid md:grid-cols-3 gap-5">
           {AUDIENCES.map((audience) => (
             <div key={audience.label}
               className="rounded-3xl p-6"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              style={CARD}>
               <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-5"
-                style={{ background: 'rgba(99,102,241,0.18)' }}>
+                style={{ background: `${TEAL}14` }}>
                 {audience.icon}
               </div>
-              <p className="font-bubble text-white text-xl mb-2">{audience.label}</p>
-              <p className="font-round text-white/55 text-sm leading-relaxed">{audience.detail}</p>
+              <p className="font-bubble text-xl mb-2" style={{ color: TEXT }}>{audience.label}</p>
+              <p className="font-round text-sm leading-relaxed" style={{ color: FAINT }}>{audience.detail}</p>
             </div>
           ))}
         </div>
@@ -294,59 +300,45 @@ export default function SchoolsPage() {
 
       {/* See it in the classroom */}
       <section className="max-w-5xl mx-auto px-6 py-20">
-        <p className="font-round text-white/35 text-xs font-black uppercase tracking-widest text-center mb-3">See it in the classroom</p>
-        <h2 className="font-bubble text-4xl text-white text-center mb-4">Built for how classrooms actually work</h2>
-        <p className="font-round text-white/45 text-center text-sm mb-12 max-w-xl mx-auto">
+        <p className="font-round text-xs font-black uppercase tracking-widest text-center mb-3" style={{ color: FAINT2 }}>See it in the classroom</p>
+        <h2 className="font-bubble text-4xl text-center mb-4" style={{ color: TEXT }}>Built for how classrooms actually work</h2>
+        <p className="font-round text-center text-sm mb-12 max-w-xl mx-auto" style={{ color: FAINT }}>
           From the teacher's morning setup to the end-of-week report — everything in one place.
         </p>
         <div className="grid md:grid-cols-3 gap-6">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
-            <p className="font-bubble text-white text-base mb-3 flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white" style={{ background: '#4F46E5' }}>1</span>
-              Teacher sets the lesson
-            </p>
-            <MockupFrame title="Lesson Setter — ClassroomDashboard">
-              <LessonSetterMockup />
-            </MockupFrame>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <p className="font-bubble text-white text-base mb-3 flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white" style={{ background: '#059669' }}>2</span>
-              See who's engaged — live
-            </p>
-            <MockupFrame title="Pupil Roster — ClassroomDashboard">
-              <PupilRosterMockup />
-            </MockupFrame>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <p className="font-bubble text-white text-base mb-3 flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white" style={{ background: '#D97706' }}>3</span>
-              Weekly progress report
-            </p>
-            <MockupFrame title="This Week — ClassroomDashboard">
-              <WeeklyReportMockup />
-            </MockupFrame>
-          </motion.div>
+          {[
+            { n: '1', color: PRIMARY,  label: 'Teacher sets the lesson',  mockup: <LessonSetterMockup />,  title: 'Lesson Setter — ClassroomDashboard' },
+            { n: '2', color: '#059669', label: 'See who\'s engaged — live', mockup: <PupilRosterMockup />, title: 'Pupil Roster — ClassroomDashboard' },
+            { n: '3', color: '#D97706', label: 'Weekly progress report',   mockup: <WeeklyReportMockup />, title: 'This Week — ClassroomDashboard' },
+          ].map((item, i) => (
+            <motion.div key={item.n} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
+              <p className="font-bubble text-base mb-3 flex items-center gap-2" style={{ color: TEXT }}>
+                <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white" style={{ background: item.color }}>{item.n}</span>
+                {item.label}
+              </p>
+              <MockupFrame title={item.title}>{item.mockup}</MockupFrame>
+            </motion.div>
+          ))}
         </div>
       </section>
 
       {/* Teacher quote */}
       <section className="px-6 pb-20">
         <div className="max-w-3xl mx-auto text-center rounded-[32px] px-8 py-12"
-          style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          style={{ background: '#FFFFFF', border: '1px solid rgba(66,32,6,0.10)', boxShadow: '0 8px 32px rgba(66,32,6,0.07)' }}>
           <div className="text-4xl mb-5">💬</div>
-          <blockquote className="font-round text-white text-lg leading-relaxed mb-5 font-bold">
+          <blockquote className="font-round text-lg leading-relaxed mb-5 font-bold" style={{ color: TEXT }}>
             "The emotion check-in is a lovely way to encourage children to reflect on how they are feeling before learning.
             The simplified experience is appealing, and I can see the thought that has gone into reducing friction for young learners."
           </blockquote>
-          <p className="font-round text-indigo-300 text-sm font-black">Foundation Stage 2 Teacher — currently piloting</p>
+          <p className="font-round text-sm font-black" style={{ color: TEAL }}>Foundation Stage 2 Teacher — currently piloting</p>
         </div>
       </section>
 
       {/* How it works */}
       <section className="max-w-3xl mx-auto px-6 py-20">
-        <p className="font-round text-white/35 text-xs font-black uppercase tracking-widest text-center mb-3">Getting started</p>
-        <h2 className="font-bubble text-4xl text-white text-center mb-12">Up and running in 5 minutes</h2>
+        <p className="font-round text-xs font-black uppercase tracking-widest text-center mb-3" style={{ color: FAINT2 }}>Getting started</p>
+        <h2 className="font-bubble text-4xl text-center mb-12" style={{ color: TEXT }}>Up and running in 5 minutes</h2>
         <div className="flex flex-col gap-4 mb-10">
           {[
             { n: '1', title: 'Create your classroom account', body: 'Enter your school name, class name and age group. No IT department needed. Takes 2 minutes.' },
@@ -358,14 +350,14 @@ export default function SchoolsPage() {
               initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.08 }}
               className="flex gap-5 items-start p-5 rounded-2xl"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              style={CARD}>
               <div className="w-10 h-10 rounded-full flex items-center justify-center font-bubble text-lg text-white shrink-0"
-                style={{ background: 'linear-gradient(135deg, #4F46E5, #7C3AED)' }}>
+                style={{ background: PRIMARY }}>
                 {step.n}
               </div>
               <div>
-                <p className="font-bubble text-white text-lg mb-1">{step.title}</p>
-                <p className="font-round text-white/55 text-sm leading-relaxed">{step.body}</p>
+                <p className="font-bubble text-lg mb-1" style={{ color: TEXT }}>{step.title}</p>
+                <p className="font-round text-sm leading-relaxed" style={{ color: FAINT }}>{step.body}</p>
               </div>
             </motion.div>
           ))}
@@ -373,17 +365,18 @@ export default function SchoolsPage() {
 
         {/* Mid-page pilot CTA */}
         <div className="rounded-3xl p-7 text-center"
-          style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.35)' }}>
-          <p className="font-bubble text-white text-xl mb-2">Want to pilot this with one class?</p>
-          <p className="font-round text-white/50 text-sm mb-5">Set up a free classroom today or book a 15-minute walkthrough with us.</p>
+          style={{ background: `${PRIMARY}0D`, border: `1px solid ${PRIMARY}35` }}>
+          <p className="font-bubble text-xl mb-2" style={{ color: TEXT }}>Want to pilot this with one class?</p>
+          <p className="font-round text-sm mb-5" style={{ color: FAINT }}>Set up a free classroom today or book a 15-minute walkthrough with us.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a href="/?teacher=1"
               className="font-bubble text-white px-7 py-3 rounded-2xl text-base"
-              style={{ background: 'linear-gradient(135deg, #4F46E5, #7C3AED)' }}>
+              style={{ background: PRIMARY }}>
               Start free classroom →
             </a>
             <a href="#enquiry"
-              className="font-bubble text-white/70 px-7 py-3 rounded-2xl text-base border border-white/20 hover:bg-white/8 transition-colors">
+              className="font-bubble px-7 py-3 rounded-2xl text-base border transition-colors"
+              style={{ color: TEXT, borderColor: 'rgba(66,32,6,0.20)' }}>
               Book a 15-min demo
             </a>
           </div>
@@ -393,11 +386,11 @@ export default function SchoolsPage() {
       {/* Curriculum */}
       <section className="py-20 px-6">
         <div className="max-w-5xl mx-auto">
-          <p className="font-round text-white/35 text-xs font-black uppercase tracking-widest text-center mb-3">Curriculum</p>
-          <h2 className="font-bubble text-4xl text-white text-center mb-4">Aligned to the National Curriculum</h2>
-          <p className="font-round text-white/40 text-center text-sm mb-10">
+          <p className="font-round text-xs font-black uppercase tracking-widest text-center mb-3" style={{ color: FAINT2 }}>Curriculum</p>
+          <h2 className="font-bubble text-4xl text-center mb-4" style={{ color: TEXT }}>Aligned to the National Curriculum</h2>
+          <p className="font-round text-center text-sm mb-10" style={{ color: FAINT }}>
             Full curriculum coverage map available to download.{' '}
-            <a href="/curriculum-map" target="_blank" className="text-indigo-400 underline underline-offset-2 hover:text-indigo-300 transition-colors">
+            <a href="/curriculum-map" target="_blank" className="underline underline-offset-2 transition-colors" style={{ color: TEAL }}>
               View curriculum map →
             </a>
           </p>
@@ -407,22 +400,22 @@ export default function SchoolsPage() {
                 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.08 }}
                 className="rounded-3xl p-6"
-                style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid ${c.color}40` }}>
+                style={{ background: '#FFFFFF', border: `1.5px solid ${c.color}40`, boxShadow: '0 4px 16px rgba(66,32,6,0.06)' }}>
                 <div className="flex items-center gap-3 mb-5">
                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
-                    style={{ background: c.color + '20' }}>
+                    style={{ background: c.color + '18' }}>
                     {c.emoji}
                   </div>
                   <div>
-                    <p className="font-bubble text-white text-base leading-tight">{c.stage}</p>
-                    <p className="font-round text-white/40 text-xs font-bold mt-0.5">{c.range}</p>
+                    <p className="font-bubble text-base leading-tight" style={{ color: TEXT }}>{c.stage}</p>
+                    <p className="font-round text-xs font-bold mt-0.5" style={{ color: FAINT }}>{c.range}</p>
                   </div>
                 </div>
                 <ul className="flex flex-col gap-2.5">
                   {c.topics.map(t => (
                     <li key={t} className="flex items-start gap-2.5">
                       <span className="text-sm mt-0.5 font-bold" style={{ color: c.color }}>✓</span>
-                      <span className="font-round text-white/65 text-sm">{t}</span>
+                      <span className="font-round text-sm" style={{ color: FAINT }}>{t}</span>
                     </li>
                   ))}
                 </ul>
@@ -434,60 +427,98 @@ export default function SchoolsPage() {
 
       {/* Safe for schools */}
       <section className="max-w-3xl mx-auto px-6 py-20">
-        <p className="font-round text-white/35 text-xs font-black uppercase tracking-widest text-center mb-3">Safeguarding</p>
-        <h2 className="font-bubble text-4xl text-white text-center mb-3">Designed to be safe in schools</h2>
-        <p className="font-round text-white/40 text-center text-sm mb-10 max-w-xl mx-auto">
+        <p className="font-round text-xs font-black uppercase tracking-widest text-center mb-3" style={{ color: FAINT2 }}>Safeguarding</p>
+        <h2 className="font-bubble text-4xl text-center mb-3" style={{ color: TEXT }}>Designed to be safe in schools</h2>
+        <p className="font-round text-center text-sm mb-10 max-w-xl mx-auto" style={{ color: FAINT }}>
           No setup needed from your IT team. No personal data collected from children. Built to reduce common safeguarding and classroom-management concerns.
         </p>
         <div className="grid sm:grid-cols-2 gap-3">
           {TRUST.map(point => (
             <div key={point.text} className="flex items-start gap-3 p-4 rounded-2xl"
-              style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)' }}>
+              style={{ background: 'rgba(15,118,110,0.07)', border: '1px solid rgba(15,118,110,0.20)' }}>
               <span className="text-lg shrink-0">{point.icon}</span>
-              <p className="font-round text-white/75 text-sm font-bold">{point.text}</p>
+              <p className="font-round text-sm font-bold" style={{ color: TEXT }}>{point.text}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Safe by class code */}
+      <section className="max-w-4xl mx-auto px-6 py-20">
+        <p className="font-round text-xs font-black uppercase tracking-widest text-center mb-3" style={{ color: FAINT2 }}>Data &amp; class isolation</p>
+        <h2 className="font-bubble text-4xl text-center mb-3" style={{ color: TEXT }}>Safe by class code</h2>
+        <p className="font-round text-center text-sm mb-10 max-w-2xl mx-auto" style={{ color: FAINT }}>
+          Every class gets its own unique code. That code is the only way in — and it only ever opens that one class.
+        </p>
+        <div className="grid sm:grid-cols-2 gap-4 mb-6">
+          {CLASS_CODE_STEPS.map((step, i) => (
+            <motion.div key={step.title}
+              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.08 }}
+              className="flex gap-4 items-start p-5 rounded-2xl"
+              style={CARD}>
+              <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0"
+                style={{ background: `${TEAL}14` }}>
+                {step.icon}
+              </div>
+              <div>
+                <p className="font-bubble text-base mb-1" style={{ color: TEXT }}>{step.title}</p>
+                <p className="font-round text-sm leading-relaxed" style={{ color: FAINT }}>{step.body}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+        <div className="flex items-center gap-3 p-4 rounded-2xl"
+          style={{ background: 'rgba(15,118,110,0.07)', border: '1px solid rgba(15,118,110,0.20)' }}>
+          <span className="text-lg shrink-0">🛡️</span>
+          <p className="font-round text-sm font-bold" style={{ color: TEXT }}>
+            Teachers only ever see their own school's and class's data — never another class or school.
+          </p>
         </div>
       </section>
 
       {/* Pricing */}
       <section className="py-20 px-6">
         <div className="max-w-3xl mx-auto">
-          <p className="font-round text-white/35 text-xs font-black uppercase tracking-widest text-center mb-3">Pricing</p>
-          <h2 className="font-bubble text-4xl text-white text-center mb-12">Simple and transparent</h2>
+          <p className="font-round text-xs font-black uppercase tracking-widest text-center mb-3" style={{ color: FAINT2 }}>Pricing</p>
+          <h2 className="font-bubble text-4xl text-center mb-12" style={{ color: TEXT }}>Simple and transparent</h2>
           <div className="grid sm:grid-cols-2 gap-5">
-            <div className="rounded-3xl p-7" style={{ background: 'rgba(99,102,241,0.12)', border: '2px solid rgba(99,102,241,0.4)' }}>
-              <p className="font-bubble text-white text-4xl mb-1">Free</p>
-              <p className="font-round text-white/45 text-sm mb-6">Forever. No credit card.</p>
+            {/* Free tier */}
+            <div className="rounded-3xl p-7"
+              style={{ background: '#FFFFFF', border: `2px solid ${PRIMARY}50`, boxShadow: `0 8px 32px ${PRIMARY}18` }}>
+              <p className="font-bubble text-4xl mb-1" style={{ color: TEXT }}>Free</p>
+              <p className="font-round text-sm mb-6" style={{ color: FAINT }}>Forever. No credit card.</p>
               <ul className="flex flex-col gap-3 mb-8">
                 {['1 classroom', 'Up to 30 pupils', 'All activities', 'Lesson setter', 'Daily class dashboard', 'Weekly progress report'].map(f => (
                   <li key={f} className="flex items-center gap-3">
-                    <span className="text-indigo-400 font-black text-sm">✓</span>
-                    <span className="font-round text-white/80 text-sm">{f}</span>
+                    <span className="font-black text-sm" style={{ color: PRIMARY }}>✓</span>
+                    <span className="font-round text-sm" style={{ color: TEXT }}>{f}</span>
                   </li>
                 ))}
               </ul>
               <a href="/?teacher=1"
                 className="block w-full text-center py-4 rounded-2xl font-bubble text-white text-lg"
-                style={{ background: 'linear-gradient(135deg, #4F46E5, #7C3AED)', boxShadow: '0 8px 24px rgba(79,70,229,0.4)' }}>
+                style={{ background: PRIMARY, boxShadow: '0 8px 24px rgba(194,65,12,0.30)' }}>
                 Start free →
               </a>
             </div>
 
-            <div className="rounded-3xl p-7" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)' }}>
-              <p className="font-bubble text-white text-4xl mb-1">School</p>
-              <p className="font-round text-white/45 text-sm mb-1">Annual licence — whole school.</p>
-              <p className="font-round text-indigo-300 text-sm font-bold mb-6">Simple annual invoice for schools.</p>
+            {/* School tier */}
+            <div className="rounded-3xl p-7" style={CARD}>
+              <p className="font-bubble text-4xl mb-1" style={{ color: TEXT }}>School</p>
+              <p className="font-round text-sm mb-1" style={{ color: FAINT }}>Annual licence — whole school.</p>
+              <p className="font-round text-sm font-bold mb-6" style={{ color: TEAL }}>Simple annual invoice for schools.</p>
               <ul className="flex flex-col gap-3 mb-8">
                 {['Multiple classrooms', 'School admin account', 'Aggregate class reports', 'Teacher invite flow', 'Annual invoice — no subscriptions', 'Priority support'].map(f => (
                   <li key={f} className="flex items-center gap-3">
-                    <span className="text-white/40 font-black text-sm">✓</span>
-                    <span className="font-round text-white/55 text-sm">{f}</span>
+                    <span className="font-black text-sm" style={{ color: FAINT }}>✓</span>
+                    <span className="font-round text-sm" style={{ color: FAINT }}>{f}</span>
                   </li>
                 ))}
               </ul>
               <a href="#enquiry"
-                className="block w-full text-center py-4 rounded-2xl font-bubble text-white/75 text-lg border border-white/20 hover:bg-white/8 transition-colors">
+                className="block w-full text-center py-4 rounded-2xl font-bubble text-lg border transition-colors"
+                style={{ color: TEXT, borderColor: 'rgba(66,32,6,0.20)' }}>
                 Get a quote →
               </a>
             </div>
@@ -497,26 +528,26 @@ export default function SchoolsPage() {
 
       {/* Enquiry */}
       <section id="enquiry" className="max-w-xl mx-auto px-6 py-20">
-        <p className="font-round text-white/35 text-xs font-black uppercase tracking-widest text-center mb-3">Contact</p>
-        <h2 className="font-bubble text-4xl text-white text-center mb-2">Talk to us</h2>
-        <p className="font-round text-white/45 text-sm text-center mb-10">
+        <p className="font-round text-xs font-black uppercase tracking-widest text-center mb-3" style={{ color: FAINT2 }}>Contact</p>
+        <h2 className="font-bubble text-4xl text-center mb-2" style={{ color: TEXT }}>Talk to us</h2>
+        <p className="font-round text-sm text-center mb-10" style={{ color: FAINT }}>
           Questions about curriculum, classroom setup or pricing. We reply within 1 working day.
         </p>
-        <div className="rounded-3xl p-7" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)' }}>
+        <div className="rounded-3xl p-7" style={CARD}>
           <SchoolEnquiryForm source="schools-page" />
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/8 py-8 px-6">
+      <footer className="py-8 px-6" style={{ borderTop: '1px solid rgba(66,32,6,0.08)' }}>
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <BloomLogo size="sm" />
           <div className="flex gap-6">
-            <a href="/curriculum-map" target="_blank" className="font-round text-white/30 text-xs hover:text-white/60 transition-colors">Curriculum Map</a>
-            <a href="/privacy" className="font-round text-white/30 text-xs hover:text-white/60 transition-colors">Privacy Policy</a>
-            <a href="/" className="font-round text-white/30 text-xs hover:text-white/60 transition-colors">Home</a>
+            <a href="/curriculum-map" target="_blank" className="font-round text-xs transition-colors" style={{ color: FAINT2 }}>Curriculum Map</a>
+            <a href="/privacy" className="font-round text-xs transition-colors" style={{ color: FAINT2 }}>Privacy Policy</a>
+            <a href="/" className="font-round text-xs transition-colors" style={{ color: FAINT2 }}>Home</a>
           </div>
-          <p className="font-round text-white/20 text-xs">© 2026 Bloom Juniors</p>
+          <p className="font-round text-xs" style={{ color: 'rgba(66,32,6,0.20)' }}>© 2026 Bloom Juniors</p>
         </div>
       </footer>
     </div>

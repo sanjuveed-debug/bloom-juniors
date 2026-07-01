@@ -1337,7 +1337,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.22 }}
               >
-                <StreakCard progress={progress} theme={theme} onAddStars={onAddStars} />
+                <StreakCard progress={progress} theme={theme} onAddStars={onAddStars} profileName={profileName} />
                 <DailyAdventureCard
                   theme={theme}
                   profileName={profileName}
