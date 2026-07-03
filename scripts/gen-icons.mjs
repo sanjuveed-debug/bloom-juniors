@@ -1,4 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+/**
+ * Generates all Bloom Juniors PWA icons from an SVG using sharp.
+ * Run: node scripts/gen-icons.mjs
+ */
+import sharp from 'sharp'
+import { writeFileSync } from 'fs'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dir = dirname(fileURLToPath(import.meta.url))
+const PUBLIC = join(__dir, '..', 'public')
+
+// ── New warm-palette Bloom Juniors icon SVG ───────────────────────────────────
+const SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
     <!-- Warm orange background gradient -->
     <radialGradient id="bg" cx="38%" cy="32%" r="75%">
@@ -73,4 +86,31 @@
   <path d="M398 98 l6 14 14 6 -14 6 -6 14 -6 -14 -14 -6 14 -6z" fill="#FEF3C7" opacity="0.95"/>
   <path d="M115 388 l4 9 9 4 -9 4 -4 9 -4 -9 -9 -4 9 -4z" fill="#FDE68A" opacity="0.80"/>
   <path d="M415 365 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z" fill="#FEF3C7" opacity="0.70"/>
-</svg>
+</svg>`
+
+const SVG_BUF = Buffer.from(SVG)
+
+async function exportPng(destFile, size, background = undefined) {
+  let img = sharp(SVG_BUF).resize(size, size)
+  if (background) img = img.flatten({ background })
+  await img.png().toFile(join(PUBLIC, destFile))
+  console.log(`  ✓  ${destFile}  (${size}×${size})`)
+}
+
+console.log('\nGenerating Bloom Juniors warm-palette icons…\n')
+
+await exportPng('bm-icon-192.png',              192)
+await exportPng('bm-icon-512.png',              512)
+await exportPng('bm-maskable-512.png',          512)   // same design works as maskable (safe-zone centred)
+await exportPng('bm-apple-touch-icon.png',      180)
+await exportPng('bm-apple-touch-icon-180.png',  180)
+await exportPng('apple-touch-icon.png',         180)
+await exportPng('apple-touch-icon-180x180.png', 180)
+await exportPng('pwa-192x192.png',              192)
+await exportPng('pwa-512x512.png',              512)
+await exportPng('pwa-64x64.png',                 64)
+
+// Write the updated SVG source too
+writeFileSync(join(PUBLIC, 'bloom-icon.svg'), SVG)
+console.log('  ✓  bloom-icon.svg  (source)\n')
+console.log('Done. Commit the public/ folder and push to deploy.\n')
