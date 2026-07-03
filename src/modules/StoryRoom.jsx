@@ -1,6 +1,7 @@
 ﻿import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSpeech } from '../hooks/useSpeech'
+import { dailySeedFor, seededShuffle } from '../utils/seededRandom'
 import { THEMES } from '../themes'
 
 // ── Animated scene layers per story page ────────────────────────────────────
@@ -499,7 +500,11 @@ function isRoundComplete(progress = {}) {
 
 function getRecommendedStories(stories, progress = {}) {
   const stats = getStoryStats(progress)
-  return [...stories].sort((a, b) => {
+  const round = getCurrentRound(progress)
+  // Shuffle ties (same readCount + difficulty) per round so repeat rounds
+  // don't present the exact same 1-8 sequence as before.
+  const shuffled = seededShuffle(stories, dailySeedFor(`storyroom-round-${round}`))
+  return shuffled.sort((a, b) => {
     const aReads = stats[a.id]?.readCount || 0
     const bReads = stats[b.id]?.readCount || 0
     if (aReads !== bReads) return aReads - bReads

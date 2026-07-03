@@ -473,6 +473,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
       const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0
       logSession({ module, stars: count, total, correct, accuracy, duration, date: Date.now(), struggles })
       tickChallenge({ module, stars: count, accuracy, total, correct })
+      window.dispatchEvent(new CustomEvent('yaagvi:celebrate', { detail: { module, stars: count } }))
     }
 
     // Use latest progress from ref to avoid stale-closure reads

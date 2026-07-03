@@ -11,6 +11,8 @@ import { shouldSendAutoDigest, markDigestSent, buildDigestPayload, sendDigestEma
 import { useSpeech } from '../hooks/useSpeech'
 import { VoiceContext } from '../contexts/VoiceContext'
 import { trackActivityComplete } from '../utils/analytics.js'
+import { dailySeedFor, seededShuffle, getToddlerLevel, getToddlerSessionSize } from '../utils/seededRandom'
+import { speakThenAdvance } from '../utils/speechAdvance'
 
 // ── Toddler themes (3–4 year olds) ───────────────────────────────────────────
 const TODDLER_THEMES = {
@@ -67,18 +69,16 @@ const TODDLER_MODULES = [
   { id: 'alphabet',   label: 'A B C',       emoji: '🔤', desc: 'Learn letters!',    bg: '#F59E0B', comingSoon: false },
 ]
 
-// ── Session helper: shuffled subset so repeat plays differ ────────────────────
-function shuffleArr(arr) {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
-
-function makeSession(pool, n = 6) {
-  return shuffleArr(pool).slice(0, Math.min(n, pool.length)).map(q => ({ ...q, options: shuffleArr(q.options) }))
+// ── Session helper: daily + play-count seeded subset so repeat plays differ
+// and sessions grow a little longer as a child plays a module more (growth signal).
+function makeSession(pool, moduleId, played = 0) {
+  const level = getToddlerLevel(played)
+  const n = getToddlerSessionSize(level, pool.length)
+  const seed = dailySeedFor(`toddler-${moduleId}`) + played * 131
+  return seededShuffle(pool, seed).slice(0, n).map((q, i) => ({
+    ...q,
+    options: seededShuffle(q.options, seed + (i + 1) * 991),
+  }))
 }
 
 // ── Fruits game data ──────────────────────────────────────────────────────────
@@ -196,8 +196,8 @@ const COLOUR_QUESTIONS = [
   { colour: 'White',  hex: '#F9FAFB', emoji: '☁️', options: ['White', 'Yellow', 'Pink'] },
 ]
 
-function ColoursModule({ theme, onDone, onBack }) {
-  const [questions] = useState(() => makeSession(COLOUR_QUESTIONS))
+function ColoursModule({ theme, onDone, onBack, played }) {
+  const [questions] = useState(() => makeSession(COLOUR_QUESTIONS, 'colours', played))
   const [q, setQ] = useState(0)
   const [score, setScore] = useState(0)
   const [feedback, setFeedback] = useState(null)
@@ -229,13 +229,12 @@ function ColoursModule({ theme, onDone, onBack }) {
     if (correct) {
       setScore(nextScore)
       confetti({ particleCount: 60, spread: 80, origin: { x: 0.5, y: 0.4 } })
-      speak(`Yes! That is ${current.colour}! Amazing!`, { mood: 'celebrate', rate: 0.8 })
-    } else {
-      speak(`This colour is ${current.colour}. Keep going!`, { mood: 'instruct', rate: 0.8 })
     }
     setFeedback(correct ? 'correct' : 'wrong')
-    const id = window.setTimeout(() => {
-      timersRef.current = timersRef.current.filter(t => t !== id)
+    const feedbackText = correct
+      ? `Yes! That is ${current.colour}! Amazing!`
+      : `This colour is ${current.colour}. Keep going!`
+    speakThenAdvance(speak, feedbackText, { mood: correct ? 'celebrate' : 'instruct', rate: 0.8 }, () => {
       setFeedback(null)
       if (q + 1 >= questions.length) {
         completedRef.current = true
@@ -244,8 +243,7 @@ function ColoursModule({ theme, onDone, onBack }) {
         setQ(v => v + 1)
         lockedRef.current = false
       }
-    }, 2800)
-    timersRef.current.push(id)
+    }, timersRef)
   }
 
   return (
@@ -301,8 +299,8 @@ const SHAPE_QUESTIONS = [
   { shape: 'Rectangle', svg: <rect x="8" y="25" width="84" height="50" />,                         options: ['Rectangle', 'Square', 'Oval']  },
 ]
 
-function ShapesModule({ theme, onDone, onBack }) {
-  const [questions] = useState(() => makeSession(SHAPE_QUESTIONS))
+function ShapesModule({ theme, onDone, onBack, played }) {
+  const [questions] = useState(() => makeSession(SHAPE_QUESTIONS, 'shapes', played))
   const [q, setQ] = useState(0)
   const [score, setScore] = useState(0)
   const [feedback, setFeedback] = useState(null)
@@ -334,13 +332,12 @@ function ShapesModule({ theme, onDone, onBack }) {
     if (correct) {
       setScore(nextScore)
       confetti({ particleCount: 60, spread: 80, origin: { x: 0.5, y: 0.4 } })
-      speak(`Yes! It is a ${current.shape}! Well done!`, { mood: 'celebrate', rate: 0.8 })
-    } else {
-      speak(`This is a ${current.shape}. Let's look at the next one!`, { mood: 'instruct', rate: 0.8 })
     }
     setFeedback(correct ? 'correct' : 'wrong')
-    const id = window.setTimeout(() => {
-      timersRef.current = timersRef.current.filter(t => t !== id)
+    const feedbackText = correct
+      ? `Yes! It is a ${current.shape}! Well done!`
+      : `This is a ${current.shape}. Let's look at the next one!`
+    speakThenAdvance(speak, feedbackText, { mood: correct ? 'celebrate' : 'instruct', rate: 0.8 }, () => {
       setFeedback(null)
       if (q + 1 >= questions.length) {
         completedRef.current = true
@@ -349,8 +346,7 @@ function ShapesModule({ theme, onDone, onBack }) {
         setQ(v => v + 1)
         lockedRef.current = false
       }
-    }, 2800)
-    timersRef.current.push(id)
+    }, timersRef)
   }
 
   return (
@@ -402,8 +398,8 @@ const NUMBER_QUESTIONS = [
   { count: 10, emoji: '🎁', options: [8, 9, 10] },
 ]
 
-function NumbersModule({ theme, onDone, onBack }) {
-  const [questions] = useState(() => makeSession(NUMBER_QUESTIONS))
+function NumbersModule({ theme, onDone, onBack, played }) {
+  const [questions] = useState(() => makeSession(NUMBER_QUESTIONS, 'numbers', played))
   const [q, setQ] = useState(0)
   const [score, setScore] = useState(0)
   const [feedback, setFeedback] = useState(null)
@@ -435,13 +431,12 @@ function NumbersModule({ theme, onDone, onBack }) {
     if (correct) {
       setScore(nextScore)
       confetti({ particleCount: 80, spread: 100, origin: { x: 0.5, y: 0.4 } })
-      speak(`Yes! There are ${current.count}! Brilliant!`, { mood: 'celebrate', rate: 0.8 })
-    } else {
-      speak(`There are ${current.count}. Let's count the next one together!`, { mood: 'instruct', rate: 0.8 })
     }
     setFeedback(correct ? 'correct' : 'wrong')
-    const id = window.setTimeout(() => {
-      timersRef.current = timersRef.current.filter(t => t !== id)
+    const feedbackText = correct
+      ? `Yes! There are ${current.count}! Brilliant!`
+      : `There are ${current.count}. Let's count the next one together!`
+    speakThenAdvance(speak, feedbackText, { mood: correct ? 'celebrate' : 'instruct', rate: 0.8 }, () => {
       setFeedback(null)
       if (q + 1 >= questions.length) {
         completedRef.current = true
@@ -450,8 +445,7 @@ function NumbersModule({ theme, onDone, onBack }) {
         setQ(v => v + 1)
         lockedRef.current = false
       }
-    }, 2800)
-    timersRef.current.push(id)
+    }, timersRef)
   }
 
   return (
@@ -508,8 +502,8 @@ const ANIMAL_QUESTIONS = [
   { animal: 'Frog',     emoji: '🐸', sound: 'Ribbit!', options: ['Frog', 'Duck', 'Bird']   },
 ]
 
-function AnimalsModule({ theme, onDone, onBack }) {
-  const [questions] = useState(() => makeSession(ANIMAL_QUESTIONS))
+function AnimalsModule({ theme, onDone, onBack, played }) {
+  const [questions] = useState(() => makeSession(ANIMAL_QUESTIONS, 'animals', played))
   const [q, setQ] = useState(0)
   const [score, setScore] = useState(0)
   const [feedback, setFeedback] = useState(null)
@@ -541,13 +535,12 @@ function AnimalsModule({ theme, onDone, onBack }) {
     if (correct) {
       setScore(nextScore)
       confetti({ particleCount: 60, spread: 80, origin: { x: 0.5, y: 0.4 } })
-      speak(`Yes! It is a ${current.animal}! Great job!`, { mood: 'celebrate', rate: 0.8 })
-    } else {
-      speak(`This is a ${current.animal}. Let's meet the next animal!`, { mood: 'instruct', rate: 0.8 })
     }
     setFeedback(correct ? 'correct' : 'wrong')
-    const id = window.setTimeout(() => {
-      timersRef.current = timersRef.current.filter(t => t !== id)
+    const feedbackText = correct
+      ? `Yes! It is a ${current.animal}! Great job!`
+      : `This is a ${current.animal}. Let's meet the next animal!`
+    speakThenAdvance(speak, feedbackText, { mood: correct ? 'celebrate' : 'instruct', rate: 0.8 }, () => {
       setFeedback(null)
       if (q + 1 >= questions.length) {
         completedRef.current = true
@@ -556,8 +549,7 @@ function AnimalsModule({ theme, onDone, onBack }) {
         setQ(v => v + 1)
         lockedRef.current = false
       }
-    }, 2800)
-    timersRef.current.push(id)
+    }, timersRef)
   }
 
   return (
@@ -598,8 +590,8 @@ function AnimalsModule({ theme, onDone, onBack }) {
 }
 
 // ── Fruits module ─────────────────────────────────────────────────────────────
-function FruitsModule({ theme, onDone, onBack }) {
-  const [questions] = useState(() => makeSession(FRUIT_QUESTIONS))
+function FruitsModule({ theme, onDone, onBack, played }) {
+  const [questions] = useState(() => makeSession(FRUIT_QUESTIONS, 'fruits', played))
   const [q, setQ] = useState(0)
   const [score, setScore] = useState(0)
   const [feedback, setFeedback] = useState(null)
@@ -632,13 +624,12 @@ function FruitsModule({ theme, onDone, onBack }) {
     if (correct) {
       setScore(nextScore)
       confetti({ particleCount: 60, spread: 80, origin: { x: 0.5, y: 0.4 } })
-      speak(`Yes! That is a ${current.fruit}! Well done!`, { mood: 'celebrate', rate: 0.8 })
-    } else {
-      speak(`This is a ${current.fruit}. Keep going!`, { mood: 'instruct', rate: 0.8 })
     }
     setFeedback(correct ? 'correct' : 'wrong')
-    const id = window.setTimeout(() => {
-      timersRef.current = timersRef.current.filter(t => t !== id)
+    const feedbackText = correct
+      ? `Yes! That is a ${current.fruit}! Well done!`
+      : `This is a ${current.fruit}. Keep going!`
+    speakThenAdvance(speak, feedbackText, { mood: correct ? 'celebrate' : 'instruct', rate: 0.8 }, () => {
       setFeedback(null)
       if (q + 1 >= questions.length) {
         completedRef.current = true
@@ -647,8 +638,7 @@ function FruitsModule({ theme, onDone, onBack }) {
         setQ(v => v + 1)
         lockedRef.current = false
       }
-    }, 2800)
-    timersRef.current.push(id)
+    }, timersRef)
   }
 
   return (
@@ -678,8 +668,8 @@ function FruitsModule({ theme, onDone, onBack }) {
 }
 
 // ── Body parts module ─────────────────────────────────────────────────────────
-function BodyPartsModule({ theme, onDone, onBack }) {
-  const [questions] = useState(() => makeSession(BODY_QUESTIONS))
+function BodyPartsModule({ theme, onDone, onBack, played }) {
+  const [questions] = useState(() => makeSession(BODY_QUESTIONS, 'bodyparts', played))
   const [q, setQ] = useState(0)
   const [score, setScore] = useState(0)
   const [feedback, setFeedback] = useState(null)
@@ -712,13 +702,12 @@ function BodyPartsModule({ theme, onDone, onBack }) {
     if (correct) {
       setScore(nextScore)
       confetti({ particleCount: 60, spread: 80, origin: { x: 0.5, y: 0.4 } })
-      speak(`Yes! ${current.part}! Fantastic!`, { mood: 'celebrate', rate: 0.8 })
-    } else {
-      speak(`These are ${current.part}. Here comes the next one!`, { mood: 'instruct', rate: 0.8 })
     }
     setFeedback(correct ? 'correct' : 'wrong')
-    const id = window.setTimeout(() => {
-      timersRef.current = timersRef.current.filter(t => t !== id)
+    const feedbackText = correct
+      ? `Yes! ${current.part}! Fantastic!`
+      : `These are ${current.part}. Here comes the next one!`
+    speakThenAdvance(speak, feedbackText, { mood: correct ? 'celebrate' : 'instruct', rate: 0.8 }, () => {
       setFeedback(null)
       if (q + 1 >= questions.length) {
         completedRef.current = true
@@ -727,8 +716,7 @@ function BodyPartsModule({ theme, onDone, onBack }) {
         setQ(v => v + 1)
         lockedRef.current = false
       }
-    }, 2800)
-    timersRef.current.push(id)
+    }, timersRef)
   }
 
   return (
@@ -788,16 +776,20 @@ const LETTER_QUESTIONS = [
   { letter: 'Z', sound: 'z',  word: 'zebra',    emoji: '🦓' },
 ].map(l => ({ ...l, options: [] }))
 
-function makeLetterSession(n = 6) {
-  const picked = shuffleArr(LETTER_QUESTIONS).slice(0, n)
-  return picked.map(q => {
-    const others = shuffleArr(LETTER_QUESTIONS.filter(l => l.letter !== q.letter)).slice(0, 2)
-    return { ...q, options: shuffleArr([q.letter, ...others.map(o => o.letter)]) }
+function makeLetterSession(played = 0) {
+  const level = getToddlerLevel(played)
+  const n = getToddlerSessionSize(level, LETTER_QUESTIONS.length)
+  const seed = dailySeedFor('toddler-alphabet') + played * 131
+  const picked = seededShuffle(LETTER_QUESTIONS, seed).slice(0, n)
+  return picked.map((q, i) => {
+    const distractorSeed = seed + (i + 1) * 991
+    const others = seededShuffle(LETTER_QUESTIONS.filter(l => l.letter !== q.letter), distractorSeed).slice(0, 2)
+    return { ...q, options: seededShuffle([q.letter, ...others.map(o => o.letter)], distractorSeed + 17) }
   })
 }
 
-function AlphabetModule({ theme, onDone, onBack }) {
-  const [questions] = useState(() => makeLetterSession())
+function AlphabetModule({ theme, onDone, onBack, played }) {
+  const [questions] = useState(() => makeLetterSession(played))
   const [q, setQ] = useState(0)
   const [score, setScore] = useState(0)
   const [feedback, setFeedback] = useState(null)
@@ -830,13 +822,12 @@ function AlphabetModule({ theme, onDone, onBack }) {
     if (correct) {
       setScore(nextScore)
       confetti({ particleCount: 60, spread: 80, origin: { x: 0.5, y: 0.4 } })
-      speak(`Yes! ${current.letter}! ${current.letter} is for ${current.word}! Wonderful!`, { mood: 'celebrate', rate: 0.8 })
-    } else {
-      speak(`This is the letter ${current.letter}. ${current.letter} is for ${current.word}!`, { mood: 'instruct', rate: 0.8 })
     }
     setFeedback(correct ? 'correct' : 'wrong')
-    const id = window.setTimeout(() => {
-      timersRef.current = timersRef.current.filter(t => t !== id)
+    const feedbackText = correct
+      ? `Yes! ${current.letter}! ${current.letter} is for ${current.word}! Wonderful!`
+      : `This is the letter ${current.letter}. ${current.letter} is for ${current.word}!`
+    speakThenAdvance(speak, feedbackText, { mood: correct ? 'celebrate' : 'instruct', rate: 0.8 }, () => {
       setFeedback(null)
       if (q + 1 >= questions.length) {
         completedRef.current = true
@@ -845,8 +836,7 @@ function AlphabetModule({ theme, onDone, onBack }) {
         setQ(v => v + 1)
         lockedRef.current = false
       }
-    }, 2800)
-    timersRef.current.push(id)
+    }, timersRef)
   }
 
   return (
@@ -1205,13 +1195,15 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
     update(p => {
       const today = todayStamp()
       const firstToday = p[moduleId]?.lastPlayedDate !== today
+      const nextPlayed = (p[moduleId]?.played || 0) + 1
       return {
         ...p,
         toddlerTreasurePoints: (p.toddlerTreasurePoints || 0) + (firstToday ? 5 : 0),
         [moduleId]: {
           ...p[moduleId],
           stars: Math.max(p[moduleId]?.stars || 0, stars),
-          played: (p[moduleId]?.played || 0) + 1,
+          played: nextPlayed,
+          level: getToddlerLevel(nextPlayed),
           lastPlayedDate: todayStamp(),
         },
       }
@@ -1256,13 +1248,13 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
   }
 
   const moduleMap = {
-    colours:   <ColoursModule   theme={theme} onDone={(s) => handleModuleDone('colours', s)}   onBack={() => setScreen('home')} />,
-    shapes:    <ShapesModule    theme={theme} onDone={(s) => handleModuleDone('shapes', s)}    onBack={() => setScreen('home')} />,
-    numbers:   <NumbersModule   theme={theme} onDone={(s) => handleModuleDone('numbers', s)}   onBack={() => setScreen('home')} />,
-    animals:   <AnimalsModule   theme={theme} onDone={(s) => handleModuleDone('animals', s)}   onBack={() => setScreen('home')} />,
-    fruits:    <FruitsModule    theme={theme} onDone={(s) => handleModuleDone('fruits', s)}    onBack={() => setScreen('home')} />,
-    bodyparts: <BodyPartsModule theme={theme} onDone={(s) => handleModuleDone('bodyparts', s)} onBack={() => setScreen('home')} />,
-    alphabet:  <AlphabetModule theme={theme} onDone={(s) => handleModuleDone('alphabet', s)} onBack={() => setScreen('home')} />,
+    colours:   <ColoursModule   theme={theme} onDone={(s) => handleModuleDone('colours', s)}   onBack={() => setScreen('home')} played={progress.colours?.played || 0} />,
+    shapes:    <ShapesModule    theme={theme} onDone={(s) => handleModuleDone('shapes', s)}    onBack={() => setScreen('home')} played={progress.shapes?.played || 0} />,
+    numbers:   <NumbersModule   theme={theme} onDone={(s) => handleModuleDone('numbers', s)}   onBack={() => setScreen('home')} played={progress.numbers?.played || 0} />,
+    animals:   <AnimalsModule   theme={theme} onDone={(s) => handleModuleDone('animals', s)}   onBack={() => setScreen('home')} played={progress.animals?.played || 0} />,
+    fruits:    <FruitsModule    theme={theme} onDone={(s) => handleModuleDone('fruits', s)}    onBack={() => setScreen('home')} played={progress.fruits?.played || 0} />,
+    bodyparts: <BodyPartsModule theme={theme} onDone={(s) => handleModuleDone('bodyparts', s)} onBack={() => setScreen('home')} played={progress.bodyparts?.played || 0} />,
+    alphabet:  <AlphabetModule theme={theme} onDone={(s) => handleModuleDone('alphabet', s)} onBack={() => setScreen('home')} played={progress.alphabet?.played || 0} />,
   }
 
   if (moduleMap[screen]) {

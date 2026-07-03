@@ -40,6 +40,7 @@ function FinishScreen({ theme, title, score, onDone }) {
 
 function QuestDashGame({ theme, onDone }) {
   const lanes = [18, 50, 82]
+  const questions = useMemo(() => seededShuffle([...QUEST_QUESTIONS], dailySeedFor('questdash')), [])
   const [lane, setLane] = useState(1)
   const [items, setItems] = useState([])
   const [questionIndex, setQuestionIndex] = useState(0)
@@ -50,7 +51,7 @@ function QuestDashGame({ theme, onDone }) {
   const [suspended, setSuspended] = useState(false)
   const nextId = useRef(0)
   const timersRef = useRef([])
-  const question = QUEST_QUESTIONS[questionIndex]
+  const question = questions[questionIndex]
 
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
 
@@ -105,7 +106,7 @@ function QuestDashGame({ theme, onDone }) {
               const nextScore = score + 25
               setScore(nextScore)
               clearFallingAnswers = true
-              if (questionIndex + 1 >= QUEST_QUESTIONS.length) {
+              if (questionIndex + 1 >= questions.length) {
                 setFinished(true)
                 confetti({ particleCount: 100, spread: 120 })
               } else {
@@ -130,7 +131,7 @@ function QuestDashGame({ theme, onDone }) {
       })
     }, 45)
     return () => clearInterval(tick)
-  }, [finished, suspended, lane, questionIndex, score])
+  }, [finished, suspended, lane, questionIndex, score, questions])
 
   useEffect(() => {
     if (!finished && health <= 0) {

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { THEMES } from '../themes'
 import { getAssistant } from '../assistants'
@@ -8,6 +8,7 @@ import { PREMIUM_GATING_ENABLED } from '../config/premiumContent.js'
 import { usePremium } from '../hooks/usePremium'
 import { getTodayWorldEvent, isEventBonusCollected, WORLD_EVENT_BONUS } from '../utils/worldEvent.js'
 import RetentionPanel, { YaagviRoom } from './RetentionWidgets'
+import YaagviCharacter from './YaagviCharacter'
 import { useSpeech } from '../hooks/useSpeech'
 import PhonicsMap from './PhonicsMap'
 import BloomGarden from './BloomGarden'
@@ -1098,6 +1099,42 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
   const [showFeedback, setShowFeedback] = useState(() => shouldShowFeedback(progress))
   const arcadeStatus = getArcadeUnlockStatus(progress)
 
+  // Yaagvi greeting: wave on arrival → settle into mood-based state
+  const [yaagviState, setYaagviState] = useState('wave')
+  const [yaagviSpeech, setYaagviSpeech] = useState(null)
+  const yaagviTimerRef = useRef(null)
+
+  const setYaagviMood = useCallback((state, speech = null, duration = 3000) => {
+    clearTimeout(yaagviTimerRef.current)
+    setYaagviState(state)
+    setYaagviSpeech(speech)
+    yaagviTimerRef.current = setTimeout(() => {
+      setYaagviState('idle')
+      setYaagviSpeech(null)
+    }, duration)
+  }, [])
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (arcadeStatus.unlocked) setYaagviMood('dance', 'Arcade time! 🎮', 4000)
+      else if (arcadeStatus.completedCount > 0) setYaagviMood('point', 'Keep going! 💪', 3000)
+      else setYaagviMood('idle', 'Hi! Ready to learn? ⭐', 3500)
+    }, 2800)
+    return () => clearTimeout(t)
+  }, [])
+
+  useEffect(() => {
+    const SPEECHES = [
+      'Amazing work! ⭐', 'You did it! 🎉', 'Star player! 🌟', 'Brilliant! 💫',
+    ]
+    const handler = (e) => {
+      const msg = SPEECHES[Math.floor(Math.random() * SPEECHES.length)]
+      setYaagviMood('celebrate', msg, 3500)
+    }
+    window.addEventListener('yaagvi:celebrate', handler)
+    return () => window.removeEventListener('yaagvi:celebrate', handler)
+  }, [setYaagviMood])
+
   const startLong = () => { longRef.current = setTimeout(() => onLongPress?.(), 1200) }
   const endLong   = () => clearTimeout(longRef.current)
   const getScore  = (id) => progress[id]?.score || 0
@@ -1223,21 +1260,14 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
               )}
             </div>
 
-            {/* Avatar circle — clean, no level display */}
-            <div className="relative shrink-0">
-              <motion.div
-                className="flex items-center justify-center rounded-full text-4xl"
-                style={{
-                  width: 64, height: 64,
-                  background: `${theme.primary}30`,
-                  border: `3px solid ${theme.primary}80`,
-                  boxShadow: `0 0 20px ${theme.primary}40`,
-                }}
-                animate={{ scale: [1, 1.04, 1] }}
-                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-              >
-                {theme.emoji}
-              </motion.div>
+            {/* Yaagvi character — animated mascot */}
+            <div className="relative shrink-0 self-end">
+              <YaagviCharacter
+                state={yaagviState}
+                size={150}
+                speech={yaagviSpeech}
+                style={{ filter: `drop-shadow(0 8px 24px ${theme.primary}60)` }}
+              />
             </div>
           </div>
 

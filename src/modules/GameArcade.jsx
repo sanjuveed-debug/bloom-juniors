@@ -1783,6 +1783,7 @@ function RocketPreview({ selection, launching }) {
 
 function InventorBlocks({ theme, profileName, speak, onBack, onComplete }) {
   const launchTimerRef = useRef(null)
+  const previewRef = useRef(null)
   const [selection, setSelection] = useState({})
   const [launching, setLaunching] = useState(false)
   const [completed, setCompleted] = useState(false)
@@ -1824,6 +1825,7 @@ function InventorBlocks({ theme, profileName, speak, onBack, onComplete }) {
 
   const handleLaunch = useCallback(() => {
     if (!allFilled || launching) return
+    previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     setLaunching(true)
     confetti({ particleCount: 120, spread: 90, origin: { y: 0.72 }, colors: ['#F97316', '#FACC15', '#60A5FA', '#A855F7'] })
     speak(`Three, two, one... blast off ${profileName || 'inventor'}!`, { mood: 'celebrate' })
@@ -1924,7 +1926,7 @@ function InventorBlocks({ theme, profileName, speak, onBack, onComplete }) {
             </motion.button>
           </div>
 
-          <div className="mt-4 rounded-[28px] bg-white/70 px-3 py-5 shadow-inner">
+          <div ref={previewRef} className="mt-4 rounded-[28px] bg-white/70 px-3 py-5 shadow-inner">
             <RocketPreview selection={selectedParts} launching={launching} />
           </div>
 

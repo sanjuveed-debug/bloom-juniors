@@ -2,10 +2,13 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useSpeech } from '../hooks/useSpeech'
+import { dailySeedFor, seededShuffle, mulberry32 } from '../utils/seededRandom'
 import { THEMES } from '../themes'
 import SkillHint, { getHint } from '../components/SkillHint'
 import BuddyCompanion, { useBuddyMood } from '../components/BuddyCompanion'
 import { buildSoundPopCompletion } from '../utils/moduleScoring'
+import { speakThenAdvance } from '../utils/speechAdvance'
+import YaagviCharacter from '../components/YaagviCharacter'
 
 // ── RWI-aligned phonics sound bank ────────────────────────────────────────────
 // Set 0 Letter Sounds   : m  a  s  d  t  i  n  p  g  o  c  k  u  b  f  e  l  h  r  j  v  y  w  z  x
@@ -857,7 +860,10 @@ function makeQuestion(targetKey, usedMap, activeSoundKeys) {
     pool = [...bank.words]
   }
 
-  const targetWord = pool[Math.floor(Math.random() * pool.length)]
+  // Daily-seeded so the word picked for a given sound varies day to day,
+  // and shifts as words get used up within the session.
+  const wordRng = mulberry32(dailySeedFor(`soundpop-word-${targetKey}`) + used.size * 97)
+  const targetWord = pool[Math.floor(wordRng() * pool.length)]
 
   // Distractors from OTHER active sounds — exclude similar-phoneme sounds to avoid
   // unfair near-misses (e.g. don't use an 'ea' word as distractor for 'ee')
@@ -883,6 +889,12 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
   const activeSoundKeys = useRef(getActiveSoundKeys(sessionsPlayed)).current
   const soundSetLevel = getSoundSetLevel(sessionsPlayed)
 
+  // Daily-seeded rotation through active sounds so the sequence of sounds
+  // practised differs from day to day instead of pure Math.random repeats.
+  const soundQueueRef = useRef([])
+  const lastSoundRef = useRef(null)
+  const soundCycleRef = useRef(0)
+
   const [mode, setMode] = useState(null) // null = chooser | 'pop' | 'blend'
 
   const [question,    setQuestion]    = useState(null)
@@ -899,6 +911,16 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
   const buddy = useBuddyMood()
   const timersRef = useRef(new Set())
 
+  const [yaagviState, setYaagviState] = useState('idle')
+  const yaagviRef = useRef(null)
+  useEffect(() => {
+    if (!feedback) return
+    clearTimeout(yaagviRef.current)
+    setYaagviState(feedback.type === 'correct' ? 'clap' : 'think')
+    yaagviRef.current = setTimeout(() => setYaagviState('idle'), 2000)
+    return () => clearTimeout(yaagviRef.current)
+  }, [feedback])
+
   useEffect(() => () => {
     timersRef.current.forEach(clearTimeout)
     timersRef.current.clear()
@@ -912,8 +934,23 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
     timersRef.current.add(id)
   }, [])
 
-  const pickNextSound = useCallback(() =>
-    activeSoundKeys[Math.floor(Math.random() * activeSoundKeys.length)], [activeSoundKeys])
+  const pickNextSound = useCallback(() => {
+    if (soundQueueRef.current.length === 0) {
+      soundCycleRef.current += 1
+      soundQueueRef.current = seededShuffle(
+        activeSoundKeys,
+        dailySeedFor(`soundpop-order-${sessionsPlayed}`) + soundCycleRef.current * 17
+      )
+    }
+    let next = soundQueueRef.current.shift()
+    // Avoid practising the same sound twice in a row when an alternative exists
+    if (next === lastSoundRef.current && soundQueueRef.current.length > 0) {
+      soundQueueRef.current.push(next)
+      next = soundQueueRef.current.shift()
+    }
+    lastSoundRef.current = next
+    return next
+  }, [activeSoundKeys, sessionsPlayed])
 
   const nextRound = useCallback((forceKey) => {
     const key = forceKey || pickNextSound()
@@ -974,6 +1011,21 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
     }
   }
 
+  const speakBlendInstruction = () => {
+    if (!blendWord) return
+    if (blendPhase === 'tap') {
+      const allTapped = blendTapped >= blendWord.sounds.length
+      speak(allTapped ? 'Now squash the sounds together!' : 'Tap each sound button in order', { mood: 'instruct', voice: 'gb' })
+    } else if (blendPhase === 'pick') {
+      speak(`Which picture is "${blendWord.word}"?`, { mood: 'question', voice: 'gb' })
+    } else if (blendPhase === 'blend') {
+      speak(
+        `${blendWord.sounds.map(getSoundDisplay).join(', ')}, ${blendWord.word}!`,
+        { mood: 'phonics', voice: 'gb', ssmlInner: buildBlendSSML(blendWord.sounds, blendWord.word) }
+      )
+    }
+  }
+
   const handleBlend = () => {
     if (!blendWord) return
     setBlendPhase('blend')
@@ -985,6 +1037,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
     defer(() => {
       setBlendOptions(makeBlendOptions(blendWord, blendPoolRef.current))
       setBlendPhase('pick')
+      speak(`Which picture is "${blendWord.word}"?`, { mood: 'question', voice: 'gb' })
     }, wait)
   }
 
@@ -995,10 +1048,9 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
       const newScore = blendScore + 1
       setBlendScore(newScore)
       confetti({ particleCount: 70, spread: 90, origin: { x: 0.5, y: 0.5 }, colors: ['#FFD700', '#34D399', '#38BDF8'] })
-      speak(`Yes! ${blendWord.word}! You blended it!`, { mood: 'celebrate', voice: 'gb' })
       buddy.onWow()
       setBlendPhase('reveal')
-      defer(() => {
+      speakThenAdvance(speak, `Yes! ${blendWord.word}! You blended it!`, { mood: 'celebrate', voice: 'gb' }, () => {
         const next = blendRound + 1
         if (next >= BLEND_ROUNDS) {
           setBlendDone(true)
@@ -1017,12 +1069,16 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
           setBlendTapped(0)
           setBlendPicked(null)
           setBlendPhase('tap')
+          defer(() => {
+            speak('Tap each sound button in order', { mood: 'instruct', voice: 'gb' })
+          }, 450)
         }
-      }, 2300)
+      }, timersRef, { minMs: 1800, maxMs: 6000 })
     } else {
-      speak('Not quite. Listen again!', { mood: 'phonics', voice: 'gb', ssmlInner: `Not quite.<break time="300ms"/>${buildBlendSSML(blendWord.sounds, blendWord.word)}` })
       buddy.onWrong(false)
-      defer(() => setBlendPicked(null), 1500)
+      speakThenAdvance(speak, 'Not quite. Listen again!', { mood: 'phonics', voice: 'gb', ssmlInner: `Not quite.<break time="300ms"/>${buildBlendSSML(blendWord.sounds, blendWord.word)}` }, () => {
+        setBlendPicked(null)
+      }, timersRef, { minMs: 1000, maxMs: 6000 })
     }
   }
 
@@ -1051,30 +1107,30 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
       const msg = avatarTheme.correct[Math.floor(Math.random() * avatarTheme.correct.length)]
       setFeedback({ type: 'correct', msg: streak >= 2 ? `🔥 ${streak + 1} streak! ${msg}` : msg })
       confetti({ particleCount: 70, spread: 90, origin: { x: 0.5, y: 0.5 }, colors: ['#FFD700', '#FF6B9D', '#38BDF8'] })
-      // Reinforce phoneme awareness: "Can you hear /sh/ in shell?"
-      speak(
-        `Can you hear the ${getSoundSpeechCue(question.targetKey).prompt} in ${word}? Brilliant!`,
-        { mood: 'celebrate', voice: 'gb', ssmlInner: buildCorrectWithContextSSML(question.targetKey, word) }
-      )
       streak >= 2 ? buddy.onWow() : buddy.onCorrect()
 
-      if (round >= totalRounds) {
-        defer(() => {
-          setRound(totalRounds + 1)
-          const name = profileName || 'Superstar'
-          const completion = buildSoundPopCompletion({
-            totalRounds,
-            correctAnswers: newCorrectAnswers,
-            bonusStars: newScore,
-            wrongSounds,
-          })
-          speak(`Amazing ${name}! You scored ${newScore} stars! You are a phonics superstar!`, { mood: 'celebrate' })
-          onAddStars('phonics', completion.stars, completion.sessionData)
-          buddy.onGameEnd()
-        }, 700)
-      } else {
-        defer(() => { setRound(r => r + 1); nextRound() }, 1400)
-      }
+      // Reinforce phoneme awareness: "Can you hear /sh/ in shell?"
+      speakThenAdvance(speak,
+        `Can you hear the ${getSoundSpeechCue(question.targetKey).prompt} in ${word}? Brilliant!`,
+        { mood: 'celebrate', voice: 'gb', ssmlInner: buildCorrectWithContextSSML(question.targetKey, word) },
+        () => {
+          if (round >= totalRounds) {
+            setRound(totalRounds + 1)
+            const name = profileName || 'Superstar'
+            const completion = buildSoundPopCompletion({
+              totalRounds,
+              correctAnswers: newCorrectAnswers,
+              bonusStars: newScore,
+              wrongSounds,
+            })
+            speak(`Amazing ${name}! You scored ${newScore} stars! You are a phonics superstar!`, { mood: 'celebrate' })
+            onAddStars('phonics', completion.stars, completion.sessionData)
+            buddy.onGameEnd()
+          } else {
+            setRound(r => r + 1)
+            nextRound()
+          }
+        }, timersRef, { minMs: 1400, maxMs: 6000 })
     } else {
       const newWrong = consecutiveWrong + 1
       setStreak(0)
@@ -1082,19 +1138,22 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
       setWrongSounds(prev => [...prev, question.targetKey])
       const msg = avatarTheme.wrong[Math.floor(Math.random() * avatarTheme.wrong.length)]
       setFeedback({ type: 'wrong', msg })
-      speak(
-        `Not quite. Listen for the ${getSoundSpeechCue(question.targetKey).prompt}. Can you find it?`,
-        { mood: 'phonics', voice: 'gb', ssmlInner: buildRetrySSML(question.targetKey) }
-      )
       buddy.onWrong(newWrong >= 2)
-      if (newWrong >= 2) {
-        defer(() => setShowHint(true), 1600)
-      } else {
-        defer(() => { setSelected(null); setFeedback(null) }, 1800)
-      }
+
+      speakThenAdvance(speak,
+        `Not quite. Listen for the ${getSoundSpeechCue(question.targetKey).prompt}. Can you find it?`,
+        { mood: 'phonics', voice: 'gb', ssmlInner: buildRetrySSML(question.targetKey) },
+        () => {
+          if (newWrong >= 2) {
+            setShowHint(true)
+          } else {
+            setSelected(null)
+            setFeedback(null)
+          }
+        }, timersRef, { minMs: 1600, maxMs: 6000 })
     }
   }, [selected, question, streak, score, correctAnswers, round, totalRounds, wrongSounds,
-      speak, nextRound, onAddStars, avatarTheme, profileName, defer])
+      speak, nextRound, onAddStars, avatarTheme, profileName])
 
   const playInstruction = () => {
     if (!question) return
@@ -1115,7 +1174,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
           transition={{ type: 'spring', stiffness: 300, damping: 15 }}
           className="text-center"
         >
-          <div className="text-8xl mb-4">🎉</div>
+          <YaagviCharacter state="dance" size={160} style={{ margin: '0 auto 8px' }} />
           <h2 className="font-bubble text-4xl shimmer-text mb-2">
             {profileName ? `Amazing ${profileName}!` : 'Amazing!'}
           </h2>
@@ -1217,12 +1276,23 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
             className="mx-4 mt-1 rounded-3xl p-5 text-center shadow-lg"
             style={{ background: 'linear-gradient(135deg, #10B981, #0D9488)' }}
           >
-            <p className="font-round text-white text-sm font-bold">
-              {blendPhase === 'tap' && (allTapped ? '🧲 Now squash the sounds together!' : '👆 Tap each sound button in order')}
-              {blendPhase === 'blend' && '👂 Listen... what word do they make?'}
-              {blendPhase === 'pick' && `🔍 Which picture is "${blendWord.word}"?`}
-              {blendPhase === 'reveal' && `🎉 ${blendWord.word.toUpperCase()}! You blended it!`}
-            </p>
+            <div className="flex items-center justify-center gap-2">
+              <p className="font-round text-white text-sm font-bold">
+                {blendPhase === 'tap' && (allTapped ? '🧲 Now squash the sounds together!' : '👆 Tap each sound button in order')}
+                {blendPhase === 'blend' && '👂 Listen... what word do they make?'}
+                {blendPhase === 'pick' && `🔍 Which picture is "${blendWord.word}"?`}
+                {blendPhase === 'reveal' && `🎉 ${blendWord.word.toUpperCase()}! You blended it!`}
+              </p>
+              {blendPhase !== 'reveal' && (
+                <motion.button
+                  whileTap={{ scale: 0.85 }}
+                  onClick={speakBlendInstruction}
+                  className="bg-white/25 rounded-full px-2.5 py-1 text-white font-round text-xs shrink-0"
+                >
+                  🔊
+                </motion.button>
+              )}
+            </div>
 
             {/* Sound buttons */}
             <div
@@ -1498,6 +1568,11 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
           }}
         />
       )}
+
+      {/* Yaagvi reacts to correct/wrong answers */}
+      <div style={{ position: 'fixed', bottom: 12, left: 12, zIndex: 40, pointerEvents: 'none' }}>
+        <YaagviCharacter state={yaagviState} size={90} />
+      </div>
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { THEMES } from '../themes'
 import { isDigestOptedIn, setDigestOptIn, buildDigestPayload, sendDigestEmail, markDigestSent } from '../utils/weeklyDigest.js'
 import { loadPremiumStatus, startPremiumCheckout, openBillingPortal } from '../services/cloudStore.js'
 import { PREMIUM_GATING_ENABLED } from '../config/premiumContent.js'
+import { getModuleGrowth, growthEmoji } from '../utils/growthLevels.js'
 
 const PREMIUM_PRICE_LABEL = 'AED 19/month'
 
@@ -17,6 +18,29 @@ const MODULES_INFO = [
   { id: 'story',   label: 'Story Room',   emoji: '📖', color: '#34D399' },
   { id: 'logic',   label: 'Logic',        emoji: '🧩', color: '#60A5FA' },
   { id: 'shop',    label: 'Coin Shop',    emoji: '🛍️', color: '#A78BFA' },
+]
+
+// Module lists for the "Progress" tab, per age group — each age group's
+// modules live under different progress keys with different shapes.
+const TODDLER_MODULES_INFO = [
+  { id: 'colours',   label: 'Colours',  emoji: '🎨',  color: '#FF6B9D' },
+  { id: 'shapes',    label: 'Shapes',   emoji: '🔷',  color: '#8B00FF' },
+  { id: 'numbers',   label: '1 2 3',    emoji: '🔢',  color: '#00B4FF' },
+  { id: 'animals',   label: 'Animals',  emoji: '🐘',  color: '#22C55E' },
+  { id: 'fruits',    label: 'Fruits',   emoji: '🍎',  color: '#FF9A3C' },
+  { id: 'bodyparts', label: 'My Body',  emoji: '🖐️', color: '#E879F9' },
+  { id: 'alphabet',  label: 'A B C',    emoji: '🔤',  color: '#F59E0B' },
+]
+
+const KS2_MODULES_INFO = [
+  { id: 'timestables',  label: 'Times Tables',  emoji: '✖️', color: '#E21C1C' },
+  { id: 'fractions',    label: 'Fractions',     emoji: '½',  color: '#8B00FF' },
+  { id: 'wordproblems', label: 'Word Problems', emoji: '🧩', color: '#FF6B35' },
+  { id: 'reading',      label: 'Reading',       emoji: '📖', color: '#00B4FF' },
+  { id: 'spelling',     label: 'Spelling',      emoji: '✏️', color: '#22C55E' },
+  { id: 'grammar',      label: 'Grammar',       emoji: '🔤', color: '#FF1D8E' },
+  { id: 'science',      label: 'Science Quest', emoji: '🔬', color: '#00C9A7' },
+  { id: 'worldmap',     label: 'World Map',     emoji: '🌍', color: '#1B5FE2' },
 ]
 
 const STICKER_TYPES = [
@@ -692,12 +716,27 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
         {tab === 'map' && (
           <motion.div key="map" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
             className="px-4 flex flex-col gap-3">
-            {MODULES_INFO.map(mod => {
-              const { score, percent } = getModuleScore(mod.id)
-              const modSessions = sessions.filter(s => s.module === mod.id)
-              const avgAcc = modSessions.length > 0
-                ? Math.round(modSessions.reduce((sum, s) => sum + (s.accuracy || 0), 0) / modSessions.length)
-                : null
+            {(profileAgeGroup === 'toddler' ? TODDLER_MODULES_INFO
+              : profileAgeGroup === 'junior' ? KS2_MODULES_INFO
+              : MODULES_INFO).map(mod => {
+              const growth = getModuleGrowth(mod.id, progress)
+              let statsLine, percent
+              if (profileAgeGroup === 'toddler' || profileAgeGroup === 'junior') {
+                const modProgress = progress[mod.id] || {}
+                const stars = modProgress.stars || 0
+                const played = modProgress.played || 0
+                const acc = modProgress.lastAccuracy
+                statsLine = `${stars} ${stars === 1 ? 'star' : 'stars'} · ${played} ${played === 1 ? 'play' : 'plays'}${acc != null ? ` · last ${acc}%` : ''}`
+                percent = growth ? Math.round((growth.level / growth.maxLevel) * 100) : Math.min(100, stars * 20)
+              } else {
+                const score = getModuleScore(mod.id)
+                const modSessions = sessions.filter(s => s.module === mod.id)
+                const avgAcc = modSessions.length > 0
+                  ? Math.round(modSessions.reduce((sum, s) => sum + (s.accuracy || 0), 0) / modSessions.length)
+                  : null
+                statsLine = `${score.score} stars · ${modSessions.length} sessions${avgAcc !== null ? ` · ${avgAcc}% avg` : ''}`
+                percent = score.percent
+              }
               return (
                 <div key={mod.id} className="p-4 rounded-3xl shadow" style={{ background: theme.card }}>
                   <div className="flex items-center gap-3 mb-2">
@@ -707,13 +746,15 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
                     </div>
                     <div className="flex-1">
                       <p className="font-bubble text-sm" style={{ color: theme.text }}>{mod.label}</p>
-                      <p className="font-round text-xs opacity-60" style={{ color: theme.text }}>
-                        {score} stars · {modSessions.length} sessions
-                        {avgAcc !== null ? ` · ${avgAcc}% avg` : ''}
-                      </p>
+                      <p className="font-round text-xs opacity-60" style={{ color: theme.text }}>{statsLine}</p>
                     </div>
                     <div className="text-right">
                       <p className="font-bubble text-xl" style={{ color: mod.color }}>{percent}%</p>
+                      {growth && (
+                        <p className="font-round text-xs font-bold" style={{ color: mod.color }}>
+                          {growthEmoji(growth.level, growth.maxLevel)} Lv {growth.level}/{growth.maxLevel}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="progress-bar">

@@ -58,6 +58,17 @@ function getPreferredSpeechLang() {
   return lang.startsWith('en') ? lang : 'en-us'
 }
 
+// ─── Shared audio singleton ────────────────────────────────────────────────────
+// iOS locks each Audio() element individually — it must be .play()-ed during a
+// user gesture before it can play programmatically. By reusing ONE element across
+// all speak() calls, a single gesture (e.g. tapping a letter) unlocks it for all
+// subsequent auto-speak calls from useEffect / setTimeout.
+let _sharedAudio = null
+function getSharedAudio() {
+  if (!_sharedAudio) _sharedAudio = new Audio()
+  return _sharedAudio
+}
+
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useSpeech() {
@@ -75,11 +86,12 @@ export function useSpeech() {
     return () => {
       isMounted.current = false
       pendingRef.current = null
-      if (audioRef.current) {
-        audioRef.current.pause()
-        audioRef.current.src = ''
-        audioRef.current = null
-      }
+      const audio = getSharedAudio()
+      audio.pause()
+      audio.onplay = null
+      audio.onended = null
+      audio.onerror = null
+      audioRef.current = null
       recognitionRef.current?.stop?.()
       window.speechSynthesis?.cancel()
     }
@@ -87,47 +99,48 @@ export function useSpeech() {
 
   const stopSpeaking = useCallback(() => {
     pendingRef.current = null
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.src = ''
-      audioRef.current = null
-    }
+    const audio = getSharedAudio()
+    audio.pause()
+    audio.onplay = null
+    audio.onended = null
+    audio.onerror = null
+    audioRef.current = null
     window.speechSynthesis?.cancel()
     setSpeaking(false)
   }, [])
 
-  // No-op kept for API compatibility — Azure speak() handles its own iOS priming
   const primeSpeech = useCallback(() => {}, [])
 
   const speak = useCallback((text, options = {}) => {
-    const { queue = false, mood, rate: rateOverride, voice: voiceOverride, ssmlInner = null } = options
+    const { queue = false, mood, rate: rateOverride, voice: voiceOverride, ssmlInner = null, onEnd } = options
 
-    if (queue && audioRef.current && !audioRef.current.paused && !audioRef.current.ended) {
-      pendingRef.current = { text, options: { mood, rate: rateOverride, voice: voiceOverride, ssmlInner } }
+    const audio = getSharedAudio()
+
+    if (queue && audioRef.current && !audio.paused && !audio.ended) {
+      pendingRef.current = { text, options: { mood, rate: rateOverride, voice: voiceOverride, ssmlInner, onEnd } }
       return
     }
 
     pendingRef.current = null
     stopSpeaking()
+
     const prepared = preprocessText(text)
-    if (!prepared) return
+    if (!prepared) { onEnd?.(); return }
+
     const moodRatePercent = mood ? (MOOD_RATE[mood] ?? 0) : 0
     const overridePercent = rateOverride != null ? Math.round((rateOverride - 1) * 100) : null
     const ratePercent = overridePercent ?? moodRatePercent
     const voice = voiceOverride === 'gb' ? AZURE_VOICE_GB : (voiceOverride || defaultVoice || AZURE_VOICE)
 
-    // iOS Safari: gesture activation must be registered on the element via .play()
-    // before the async fetch resolves. Empty src rejects immediately — that's expected.
-    const audio = new Audio()
-    audio.play().catch(() => {})
+    // Mark this element as the active one. If a gesture triggered this call,
+    // the .play() below unlocks the shared element for all future calls too.
     audioRef.current = audio
+    audio.play().catch(() => {})
 
     fetchAzureTTS(prepared, ratePercent, voice, ssmlInner)
       .then((blob) => {
         if (!isMounted.current || audioRef.current !== audio) return
         const url = URL.createObjectURL(blob)
-        audio.src = url
-        audio.load()
         audio.onplay = () => setSpeaking(true)
         audio.onended = () => {
           URL.revokeObjectURL(url)
@@ -138,21 +151,27 @@ export function useSpeech() {
             pendingRef.current = null
             speak(pending.text, pending.options)
           }
+          onEnd?.()
         }
         audio.onerror = () => {
           URL.revokeObjectURL(url)
           if (audioRef.current === audio) audioRef.current = null
           setSpeaking(false)
+          onEnd?.()
         }
+        audio.src = url
+        audio.load()
         audio.play().catch(() => {
           URL.revokeObjectURL(url)
           if (audioRef.current === audio) audioRef.current = null
           setSpeaking(false)
+          onEnd?.()
         })
       })
       .catch(() => {
         if (audioRef.current === audio) audioRef.current = null
         setSpeaking(false)
+        onEnd?.()
       })
   }, [stopSpeaking, defaultVoice])
 

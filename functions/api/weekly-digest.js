@@ -25,11 +25,11 @@ function buildDigestHtml({ parentName, childName, period, stats, modules, topMod
   `).join('')
 
   return `
-    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08)">
-      <div style="background:linear-gradient(135deg,#8B00FF,#FF1D8E);padding:32px 28px;text-align:center">
-        <p style="color:rgba(255,255,255,0.7);font-size:12px;margin:0 0 8px;text-transform:uppercase;letter-spacing:2px">Weekly Progress Report</p>
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#FFF7ED;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(66,32,6,0.10)">
+      <div style="background:linear-gradient(135deg,#C2410C,#EA580C);padding:32px 28px;text-align:center">
+        <p style="color:rgba(255,255,255,0.8);font-size:12px;margin:0 0 8px;text-transform:uppercase;letter-spacing:2px">Weekly Progress Report</p>
         <h1 style="color:white;font-size:28px;margin:0 0 4px">${escapeHtml(childName)}'s week</h1>
-        <p style="color:rgba(255,255,255,0.7);font-size:13px;margin:0">${escapeHtml(period)}</p>
+        <p style="color:rgba(255,255,255,0.8);font-size:13px;margin:0">${escapeHtml(period)}</p>
       </div>
       <div style="display:flex;gap:0;border-bottom:1px solid #f1f5f9">
         ${[
@@ -67,7 +67,7 @@ function buildDigestHtml({ parentName, childName, period, stats, modules, topMod
       </div>
       <div style="background:#f8fafc;padding:24px;text-align:center">
         <a href="https://bloomjuniors.com?app=1"
-          style="display:inline-block;background:linear-gradient(135deg,#8B00FF,#FF1D8E);color:white;text-decoration:none;padding:12px 28px;border-radius:50px;font-weight:900;font-size:14px">
+          style="display:inline-block;background:#C2410C;color:white;text-decoration:none;padding:12px 28px;border-radius:50px;font-weight:900;font-size:14px;box-shadow:0 6px 20px rgba(194,65,12,0.28)">
           View full progress →
         </a>
         <p style="font-size:11px;color:#94a3b8;margin:16px 0 0">
@@ -81,40 +81,42 @@ function buildDigestHtml({ parentName, childName, period, stats, modules, topMod
 function buildNudgeHtml({ childName }) {
   const name = escapeHtml(childName || 'your child')
   return `
-    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08)">
-      <div style="background:linear-gradient(135deg,#8B00FF,#FF1D8E);padding:36px 28px;text-align:center">
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#FFF7ED;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(66,32,6,0.10)">
+      <div style="background:linear-gradient(135deg,#C2410C,#EA580C);padding:36px 28px;text-align:center">
         <div style="font-size:64px;margin-bottom:12px">🌱</div>
-        <h1 style="color:white;font-size:26px;margin:0 0 8px">Yaagvi misses ${name}!</h1>
-        <p style="color:rgba(255,255,255,0.75);font-size:14px;margin:0">${name} hasn't had a learning session this week.</p>
+        <h1 style="color:white;font-size:26px;margin:0 0 8px;font-weight:900">Yaagvi is waiting for ${name}!</h1>
+        <p style="color:rgba(255,255,255,0.85);font-size:14px;margin:0">There's a brand new adventure ready — only ${name} can unlock it.</p>
       </div>
 
       <div style="padding:32px 28px;text-align:center">
-        <p style="font-size:16px;color:#334155;line-height:1.6;margin:0 0 24px">
-          Even <strong>5 minutes</strong> of learning keeps the streak alive and the Bloom Garden growing.
-          Yaagvi is ready with a short activity whenever ${name} is.
+        <p style="font-size:16px;color:#422006;line-height:1.7;margin:0 0 8px">
+          It's been a few days since ${name} visited Bloom Juniors.
+        </p>
+        <p style="font-size:16px;color:#422006;line-height:1.7;margin:0 0 28px">
+          Just <strong>5 minutes today</strong> keeps the streak alive — and Yaagvi has something special waiting. 🎁
         </p>
 
-        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:28px">
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:32px">
           ${[
             { emoji: '🎤', label: 'Sound Pop', desc: '5 min phonics' },
             { emoji: '🔢', label: 'Number World', desc: '5 min maths' },
             { emoji: '🎨', label: 'Da Vinci Studio', desc: 'Creative play' },
           ].map(m => `
-            <div style="background:#f8fafc;border-radius:16px;padding:14px 18px;text-align:center;min-width:100px">
+            <div style="background:white;border:1.5px solid rgba(194,65,12,0.15);border-radius:16px;padding:14px 18px;text-align:center;min-width:100px">
               <div style="font-size:28px">${m.emoji}</div>
-              <div style="font-weight:700;color:#1e293b;font-size:13px;margin-top:4px">${m.label}</div>
-              <div style="color:#94a3b8;font-size:11px">${m.desc}</div>
+              <div style="font-weight:700;color:#422006;font-size:13px;margin-top:4px">${m.label}</div>
+              <div style="color:rgba(66,32,6,0.5);font-size:11px">${m.desc}</div>
             </div>
           `).join('')}
         </div>
 
         <a href="https://bloomjuniors.com?app=1"
-          style="display:inline-block;background:linear-gradient(135deg,#8B00FF,#FF1D8E);color:white;text-decoration:none;padding:14px 36px;border-radius:50px;font-weight:900;font-size:16px;box-shadow:0 8px 24px rgba(139,0,255,0.3)">
-          Start today's learning →
+          style="display:inline-block;background:#C2410C;color:white;text-decoration:none;padding:14px 36px;border-radius:50px;font-weight:900;font-size:16px;box-shadow:0 8px 24px rgba(194,65,12,0.30)">
+          Open Bloom Juniors →
         </a>
 
-        <p style="font-size:12px;color:#94a3b8;margin:24px 0 0">
-          Bloom Juniors · Sent because ${name} hasn't learned this week.
+        <p style="font-size:12px;color:rgba(66,32,6,0.4);margin:24px 0 0">
+          Bloom Juniors · You're receiving this because ${name} hasn't played this week.
         </p>
       </div>
     </div>
@@ -146,7 +148,7 @@ export async function onRequest(context) {
     : buildDigestHtml({ parentName, childName, period, stats, modules: modules || [], topModule, streakDays: streakDays || 0 })
 
   const subject = isNudge
-    ? `Yaagvi misses ${escapeHtml(childName || 'your child')}! 🌱`
+    ? `${escapeHtml(childName || 'Your child')} has a new adventure waiting at Bloom Juniors 🌱`
     : `${escapeHtml(childName)}'s weekly learning report ⭐`
 
   const emailRes = await fetch('https://api.resend.com/emails', {

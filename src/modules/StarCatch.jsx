@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useSpeech } from '../hooks/useSpeech'
 import { THEMES } from '../themes'
+import { speakThenAdvance } from '../utils/speechAdvance'
 
 // Official Read Write Inc. (RWI) Red Words — progressive sets
 const WORD_SETS = [
@@ -27,6 +28,103 @@ function getWordSetLevel(sessionsPlayed) {
 }
 
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5) }
+
+// Bonus "Sentence Match" round — short RWI-decodable sentences matched to a picture.
+// Unlocks once a child has progressed past the first Red word set (setLevel >= 2).
+const SENTENCE_BANK = [
+  { text: 'I can see the cat.',     match: '🐱', other: '🐶' },
+  { text: 'The dog can run.',       match: '🐶', other: '🐱' },
+  { text: 'We go to the sun.',      match: '☀️', other: '🌙' },
+  { text: 'She can hop like a frog.', match: '🐸', other: '🐢' },
+  { text: 'He has a big hat.',      match: '🎩', other: '👞' },
+  { text: 'The pig is in the mud.', match: '🐷', other: '🐄' },
+  { text: 'I can run to you.',      match: '🏃', other: '🚶' },
+  { text: 'We sit on the mat.',     match: '🧘', other: '🛏️' },
+  { text: 'The duck can swim.',     match: '🦆', other: '🐔' },
+  { text: 'My bag is big.',         match: '🎒', other: '👜' },
+]
+
+function SentenceMatchPhase({ theme, speak, onComplete }) {
+  const [questions] = useState(() =>
+    shuffle(SENTENCE_BANK).slice(0, 3).map(q => ({ ...q, options: shuffle([q.match, q.other]) }))
+  )
+  const [q, setQ] = useState(0)
+  const [score, setScore] = useState(0)
+  const [feedback, setFeedback] = useState(null)
+  const [picked, setPicked] = useState(null)
+  const lockedRef = useRef(false)
+  const completedRef = useRef(false)
+  const timersRef = useRef([])
+  const spokenQ = useRef(-1)
+  const current = questions[q]
+
+  useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
+
+  useEffect(() => {
+    if (spokenQ.current === q) return
+    spokenQ.current = q
+    const timer = setTimeout(() => speak(current.text, { mood: 'instruct', rate: 0.85 }), 400)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q])
+
+  const handlePick = (emoji) => {
+    if (lockedRef.current || completedRef.current) return
+    lockedRef.current = true
+    setPicked(emoji)
+    const correct = emoji === current.match
+    const nextScore = score + (correct ? 1 : 0)
+    if (correct) {
+      setScore(nextScore)
+      confetti({ particleCount: 70, spread: 90, origin: { x: 0.5, y: 0.6 } })
+    }
+    setFeedback(correct ? 'correct' : 'wrong')
+    const feedbackText = correct ? `Yes! ${current.text} Brilliant!` : `Let's listen again. ${current.text}`
+    speakThenAdvance(speak, feedbackText, { mood: correct ? 'celebrate' : 'instruct', rate: 0.85 }, () => {
+      setFeedback(null)
+      setPicked(null)
+      if (q + 1 >= questions.length) {
+        completedRef.current = true
+        onComplete(nextScore, questions.length)
+      } else {
+        setQ(v => v + 1)
+        lockedRef.current = false
+      }
+    }, timersRef, { minMs: 1200, maxMs: 6000 })
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-6"
+      style={{ background: `linear-gradient(160deg, ${theme.bg}, ${theme.card})` }}>
+      <div className="text-center mb-6">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl mb-4"
+          style={{ background: theme.primary + '20' }}>
+          <span>📖</span>
+          <p className="font-round text-sm font-bold" style={{ color: theme.text }}>Bonus: Read the sentence!</p>
+        </div>
+        <p className="font-bubble text-2xl mb-2" style={{ color: theme.text }}>{current.text}</p>
+        <motion.button whileTap={{ scale: 0.9 }} onClick={() => speak(current.text, { rate: 0.85 })}
+          className="px-5 py-1.5 rounded-full font-round text-sm"
+          style={{ background: theme.primary + '20', color: theme.text }}>
+          🔊 Hear it
+        </motion.button>
+      </div>
+      <div className="grid grid-cols-2 gap-6 w-full max-w-xs">
+        {current.options.map(opt => (
+          <motion.button key={opt} whileTap={{ scale: 0.85 }} onClick={() => handlePick(opt)}
+            className="aspect-square rounded-3xl flex items-center justify-center text-6xl shadow-xl"
+            style={{
+              background: feedback === 'correct' && opt === current.match ? '#22C55E55' : theme.card,
+              border: `3px solid ${picked === opt ? (opt === current.match ? '#22C55E' : '#EF4444') : 'rgba(255,255,255,0.4)'}`,
+            }}>
+            {opt}
+          </motion.button>
+        ))}
+      </div>
+      <p className="font-round text-sm mt-8 opacity-60" style={{ color: theme.text }}>{q + 1} / {questions.length}</p>
+    </div>
+  )
+}
 
 const STAR_COLORS = ['#FFD700', '#FF6B9D', '#38BDF8', '#A78BFA']
 
@@ -57,9 +155,11 @@ export default function StarCatch({ avatar, progress, onAddStars, onBack, profil
   const [round, setRound]         = useState(1)
   const [feedback, setFeedback]   = useState(null)
   const [wrongWords, setWrongWords] = useState([])
+  const [phase, setPhase] = useState('catch')
   const totalRounds = 12
   const completedRef = useRef(false)
   const timersRef = useRef([])
+  const pendingScoreRef = useRef(0)
 
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
 
@@ -98,27 +198,28 @@ export default function StarCatch({ avatar, progress, onAddStars, onBack, profil
         origin: { x: 0.5, y: 0.6 },
         colors: ['#FFD700', '#FF6B9D', '#A78BFA'],
       })
-      speak(`Yes! ${currentWord}! Brilliant, ${profileName || 'superstar'}!`, { mood: 'celebrate' })
-
+      const feedbackText = `Yes! ${currentWord}! Brilliant, ${profileName || 'superstar'}!`
       if (round >= totalRounds) {
         completedRef.current = true
-        const id = window.setTimeout(() => {
-          timersRef.current = timersRef.current.filter(t => t !== id)
-          onAddStars('tricky', finalScore, {
-            total: totalRounds,
-            correct: finalScore,
-            struggles: wrongWords,
-          })
-        }, 900)
-        timersRef.current.push(id)
+        speakThenAdvance(speak, feedbackText, { mood: 'celebrate' }, () => {
+          if (setLevel >= 2) {
+            pendingScoreRef.current = finalScore
+            setPhase('sentences')
+          } else {
+            onAddStars('tricky', finalScore, {
+              total: totalRounds,
+              correct: finalScore,
+              struggles: wrongWords,
+            })
+            setPhase('done')
+          }
+        }, timersRef, { minMs: 900, maxMs: 6000 })
       } else {
-        // Give celebrate speech time to finish before next instruction fires
-        const id = window.setTimeout(() => {
-          timersRef.current = timersRef.current.filter(t => t !== id)
+        // Wait for the celebrate speech to finish before the next instruction fires
+        speakThenAdvance(speak, feedbackText, { mood: 'celebrate' }, () => {
           setRound(r => r + 1)
           nextRound()
-        }, 2200)
-        timersRef.current.push(id)
+        }, timersRef, { minMs: 1400, maxMs: 6000 })
       }
     } else {
       // Wrong — speak the tapped word, then re-cue the instruction
@@ -135,9 +236,26 @@ export default function StarCatch({ avatar, progress, onAddStars, onBack, profil
       }, 1200)
       timersRef.current.push(id)
     }
-  }, [caught, shaking, currentWord, score, round, totalRounds, wrongWords, speak, nextRound, onAddStars, profileName])
+  }, [caught, shaking, currentWord, score, round, totalRounds, wrongWords, speak, nextRound, onAddStars, profileName, setLevel])
 
-  if (round > totalRounds) {
+  if (phase === 'sentences') {
+    return (
+      <SentenceMatchPhase
+        theme={theme}
+        speak={speak}
+        onComplete={(sentenceScore, sentenceTotal) => {
+          onAddStars('tricky', pendingScoreRef.current + sentenceScore, {
+            total: totalRounds + sentenceTotal,
+            correct: pendingScoreRef.current + sentenceScore,
+            struggles: wrongWords,
+          })
+          setPhase('done')
+        }}
+      />
+    )
+  }
+
+  if (phase === 'done') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6"
         style={{ background: `linear-gradient(160deg, ${theme.bg}, ${theme.card})` }}>

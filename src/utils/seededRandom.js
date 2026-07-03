@@ -1,5 +1,5 @@
 // Mulberry32 — fast 32-bit seeded PRNG
-function mulberry32(seed) {
+export function mulberry32(seed) {
   let s = seed >>> 0
   return function () {
     s += 0x6D2B79F5
@@ -35,4 +35,18 @@ export function seededShuffle(arr, seed) {
     [result[i], result[j]] = [result[j], result[i]]
   }
   return result
+}
+
+// Toddler "growth" level based on how many times a module has been played —
+// used to give parents a visible sign that practice is getting a little longer/tougher.
+export function getToddlerLevel(played = 0) {
+  if (played < 3) return 1
+  if (played < 6) return 2
+  return 3
+}
+
+// Session length grows with level (capped to the available pool size)
+export function getToddlerSessionSize(level, poolSize) {
+  const sizes = { 1: 4, 2: 6, 3: 8 }
+  return Math.min(sizes[level] || 6, poolSize)
 }

@@ -2,11 +2,14 @@ import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useSpeech } from '../hooks/useSpeech'
+import { dailySeedFor, mulberry32 } from '../utils/seededRandom'
+import { speakThenAdvance } from '../utils/speechAdvance'
 import { THEMES } from '../themes'
 import SkillHint, { getHint } from '../components/SkillHint'
 import BuddyCompanion, { useBuddyMood } from '../components/BuddyCompanion'
 import MatchingActivity from '../components/MatchingActivity'
 import SubitisingFlash from '../components/SubitisingFlash'
+import YaagviCharacter from '../components/YaagviCharacter'
 
 // ── Avatar object sets ────────────────────────────────────────────────────────
 const OBJECT_SETS = {
@@ -70,34 +73,34 @@ function getOpDifficulty(plays) {
   return { level: 1, mult: 1.0 }
 }
 
-function generateQuestion(op, maxNumOverride) {
+function generateQuestion(op, maxNumOverride, rng = Math.random) {
   const max = maxNumOverride ?? OPS[op].maxNum
   switch (op) {
     case 'count': {
-      const n = Math.floor(Math.random() * max) + 1
+      const n = Math.floor(rng() * max) + 1
       return { q: `How many are there?`, a: n, n1: n, n2: 0, display: 'count' }
     }
     case 'onemore': {
-      const n = Math.floor(Math.random() * (max - 1)) + 1
+      const n = Math.floor(rng() * (max - 1)) + 1
       return { q: `What is one MORE than ${n}?`, a: n + 1, n1: n, n2: 1, display: 'onemore' }
     }
     case 'oneless': {
-      const n = Math.floor(Math.random() * (max - 1)) + 2
+      const n = Math.floor(rng() * (max - 1)) + 2
       return { q: `What is one LESS than ${n}?`, a: n - 1, n1: n, n2: -1, display: 'oneless' }
     }
     case 'add': {
-      const a = Math.floor(Math.random() * max) + 1
-      const b = Math.floor(Math.random() * (max - a)) + 1
+      const a = Math.floor(rng() * max) + 1
+      const b = Math.floor(rng() * (max - a)) + 1
       return { q: `${a} + ${b} = ?`, a: a + b, n1: a, n2: b, display: 'add' }
     }
     case 'subtract': {
-      const a = Math.floor(Math.random() * max) + 2
-      const b = Math.floor(Math.random() * (a - 1)) + 1
+      const a = Math.floor(rng() * max) + 2
+      const b = Math.floor(rng() * (a - 1)) + 1
       return { q: `${a} − ${b} = ?`, a: a - b, n1: a, n2: b, display: 'sub' }
     }
     case 'multiply': {
-      const a = Math.floor(Math.random() * max) + 1
-      const b = Math.floor(Math.random() * max) + 1
+      const a = Math.floor(rng() * max) + 1
+      const b = Math.floor(rng() * max) + 1
       return { q: `${a} × ${b} = ?`, a: a * b, n1: a, n2: b, display: 'mul' }
     }
     default: return { q: '1 + 1 = ?', a: 2, n1: 1, n2: 1, display: 'add' }
@@ -547,7 +550,19 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
   const buddy = useBuddyMood()
   const awardedRef = useRef(false)
   const matchAwardedRef = useRef(false)
+
+  const [yaagviState, setYaagviState] = useState('idle')
+  const yaagviRef = useRef(null)
+  useEffect(() => {
+    if (!feedback) return
+    clearTimeout(yaagviRef.current)
+    setYaagviState(feedback.type === 'correct' ? 'celebrate' : 'think')
+    yaagviRef.current = setTimeout(() => setYaagviState('idle'), 2000)
+    return () => clearTimeout(yaagviRef.current)
+  }, [feedback])
   const timersRef  = useRef(new Set())
+  const askedRef   = useRef(new Set())
+  const seedStepRef = useRef(0)
 
   useEffect(() => () => {
     timersRef.current.forEach(clearTimeout)
@@ -563,7 +578,16 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
   }, [])
 
   const newQuestion = useCallback((op, maxNum) => {
-    const q = generateQuestion(op, maxNum)
+    // Daily-seeded so the question set differs each day, with a per-round step
+    // and retries so the same sum/number doesn't repeat within a session.
+    let q
+    for (let attempt = 0; attempt < 8; attempt++) {
+      seedStepRef.current += 1
+      const seed = dailySeedFor(`numberworld-${op}-${maxNum}`) + seedStepRef.current * 131
+      q = generateQuestion(op, maxNum, mulberry32(seed))
+      if (!askedRef.current.has(q.q)) break
+    }
+    askedRef.current.add(q.q)
     setQuestion(q)
     setChoices(makeChoices(q.a))
     setSelected(null)
@@ -592,6 +616,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
 
   const handleOpSelect = useCallback((op) => {
     awardedRef.current = false
+    askedRef.current = new Set()
     const plays = opPlayed[op] || 0
     const { level, mult } = getOpDifficulty(plays)
     const maxNum = Math.floor(OPS[op].maxNum * mult)
@@ -660,29 +685,41 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
       setConsecutiveWrong(0)
       setFeedback({ type: 'correct', msg: `✅ ${question.a}! Brilliant!` })
       confetti({ particleCount: 55, spread: 75, origin: { x: 0.5, y: 0.6 }, colors: ['#FFD700','#22C55E','#4D96FF'] })
-      speak(`Yes! ${question.a} is correct! Well done ${profileName || 'superstar'}!`, { mood: 'celebrate' })
       buddy.onCorrect()
+
+      const finalScore = score + 1
+      speakThenAdvance(speak, `Yes! ${question.a} is correct! Well done ${profileName || 'superstar'}!`, { mood: 'celebrate' }, () => {
+        if (round >= totalRounds) {
+          setRound(totalRounds + 1)
+          completeMath(finalScore)
+        } else {
+          setRound(r => r + 1)
+          newQuestion(selectedOp, currentMaxNum)
+        }
+      }, timersRef, { minMs: 1400, maxMs: 6000 })
     } else {
       const newWrong = consecutiveWrong + 1
       setConsecutiveWrong(newWrong)
       setWrongAnswers(prev => [...prev, question.q])
       setFeedback({ type: 'wrong', msg: `The answer is ${question.a}! Look at the picture!` })
-      speak(`Not quite. The answer is ${question.a}. Look at the picture carefully.`, { mood: 'instruct' })
       buddy.onWrong(newWrong >= 2)
-      if (newWrong >= 2) {
-        defer(() => setShowHint(true), 1600)
-        return
-      }
-    }
 
-    if (round >= totalRounds) {
-      const finalScore = score + (correct ? 1 : 0)
-      defer(() => { setRound(totalRounds + 1); completeMath(finalScore) }, 1600)
-    } else {
-      defer(() => { setRound(r => r + 1); newQuestion(selectedOp, currentMaxNum) }, correct ? 1800 : 2200)
+      speakThenAdvance(speak, `Not quite. The answer is ${question.a}. Look at the picture carefully.`, { mood: 'instruct' }, () => {
+        if (newWrong >= 2) {
+          setShowHint(true)
+          return
+        }
+        if (round >= totalRounds) {
+          setRound(totalRounds + 1)
+          completeMath(score)
+        } else {
+          setRound(r => r + 1)
+          newQuestion(selectedOp, currentMaxNum)
+        }
+      }, timersRef, { minMs: 1600, maxMs: 6000 })
     }
   }, [selected, answered, question, round, totalRounds, score, wrongAnswers,
-      consecutiveWrong, selectedOp, currentMaxNum, speak, newQuestion, completeMath, profileName, buddy, defer])
+      consecutiveWrong, selectedOp, currentMaxNum, speak, newQuestion, completeMath, profileName, buddy])
 
   // ── Op selector screen ──────────────────────────────────────────────────────
   if (!selectedOp) {
@@ -1118,6 +1155,11 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
           }}
         />
       )}
+
+      {/* Yaagvi reacts to correct/wrong answers */}
+      <div style={{ position: 'fixed', bottom: 12, left: 12, zIndex: 40, pointerEvents: 'none' }}>
+        <YaagviCharacter state={yaagviState} size={90} />
+      </div>
     </div>
   )
 }
