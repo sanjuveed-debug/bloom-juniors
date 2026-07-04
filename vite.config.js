@@ -61,9 +61,9 @@ export default defineConfig({
         lang: 'en',
         categories: ['education', 'kids'],
         icons: [
-          { src: 'bm-icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: 'bm-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: 'bm-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+          { src: 'bj-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'bj-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'bj-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ],
         screenshots: [
           {
@@ -80,7 +80,7 @@ export default defineConfig({
             short_name: 'Learn',
             description: 'Jump straight into learning',
             url: '/?shortcut=learn',
-            icons: [{ src: 'bm-icon-192.png', sizes: '192x192' }]
+            icons: [{ src: 'bj-192.png', sizes: '192x192' }]
           }
         ]
       }
