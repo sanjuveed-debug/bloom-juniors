@@ -29,6 +29,7 @@ import PremiumLockModal from '../components/PremiumLockModal'
 import { recordAdaptiveSession } from '../utils/adaptiveLearning.js'
 import ModuleArrival from '../components/ModuleArrival'
 import AdventureModuleFrame from '../components/AdventureModuleFrame'
+import LivingAdventure from '../components/LivingAdventure'
 
 // ── Themes ────────────────────────────────────────────────────────────────────
 const KS2_THEMES = {
@@ -566,11 +567,12 @@ function LegacyKS2Dashboard({ theme, profileName, progress, todayKey, gamesUnloc
 // ── Main app ──────────────────────────────────────────────────────────────────
 const KS2_MAP_POSITIONS = [['12%','39%'],['31%','35%'],['50%','39%'],['70%','34%'],['88%','40%'],['20%','64%'],['39%','68%'],['59%','63%'],['79%','67%'],['10%','82%'],['50%','84%'],['90%','82%']]
 
-function KS2Dashboard({ profileName, progress, todayKey, gamesUnlocked, studyDoneCount, onNavigate, onSwitchProfiles, onParent, classroomLesson, fullAccess=true }) {
+function KS2Dashboard({ profileName, progress, todayKey, gamesUnlocked, studyDoneCount, onNavigate, onSwitchProfiles, onParent, classroomLesson, fullAccess=true, onUpdateProgress }) {
   const xp=progress.ks2Xp||0, level=getLevel(xp), levelPct=getLevelPct(xp), mission=getKS2DailyMission(progress,todayKey,classroomLesson,fullAccess)
   const next=mission.next?.module||mission.steps[0]?.module, nextLoc=MAP_LOCATIONS.find(l=>l.id===next?.id)||MAP_LOCATIONS[0]
   return <div className="min-h-screen bg-[#f4e5c7] pb-16 text-[#28150d]">
     <header className="border-b border-[#5d321d]/20 bg-[#2a1837] px-4 py-3 text-white shadow-lg"><div className="mx-auto flex max-w-7xl items-center gap-3"><div className="min-w-0 flex-1"><p className="font-round text-[11px] font-black uppercase tracking-[.2em] text-[#f4ba62]">Yaagvi expedition atlas</p><h1 className="truncate font-bubble text-2xl">Agent {profileName}</h1><div className="mt-1 flex items-center gap-2"><span className="font-round text-xs text-white/65">Level {level}</span><div className="h-1.5 max-w-md flex-1 overflow-hidden rounded-full bg-white/15"><div className="h-full bg-[#f4ba45]" style={{width:`${levelPct}%`}}/></div><span className="font-round text-xs text-white/55">{xp} XP</span></div></div><div className="rounded-xl border border-[#f4ba62]/30 bg-white/10 px-3 py-2 text-center"><p className="text-lg">🧭</p><p className="font-bubble text-sm">{studyDoneCount}/2</p></div>{onSwitchProfiles&&<button onClick={onSwitchProfiles} className="rounded-xl bg-[#f4ba62] px-3 py-2 font-bubble text-sm text-[#28150d]">Switch</button>}</div></header>
+    <LivingAdventure ageGroup="junior" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress}/>
     <section className="mx-auto mt-5 max-w-7xl px-3 sm:px-5"><div className="relative min-h-[760px] overflow-hidden rounded-[30px] border-4 border-[#70401f] bg-cover bg-center shadow-2xl" style={{backgroundImage:'linear-gradient(rgba(35,20,13,.08),rgba(35,20,13,.18)),url(/treasure-map-bg.png)'}}>
       <div className="absolute left-5 right-5 top-5 z-20 flex flex-col gap-3 rounded-[22px] border border-[#6e3b20]/20 bg-[#fff4dc]/94 p-5 shadow-xl backdrop-blur-sm sm:left-7 sm:right-auto sm:w-[520px]"><p className="font-round text-xs font-black uppercase tracking-[.18em] text-[#a33e18]">Current mission · {mission.doneCount}/3 stops</p><div className="flex items-center gap-3"><span className="text-5xl">{nextLoc.emoji}</span><div><h2 className="font-bubble text-3xl">Proceed to {nextLoc.name}</h2><p className="font-round text-sm font-bold text-[#765039]">Complete the challenge, earn XP, and recover +{nextLoc.treasure} treasure.</p><p className="mt-1 font-round text-xs font-black text-[#9c321d]">Gold ring marks your recommended route.</p></div></div><motion.button whileTap={{scale:.97}} onClick={()=>next&&onNavigate(next.id)} className="min-h-12 rounded-xl bg-gradient-to-r from-[#9c321d] to-[#5d285f] font-bubble text-lg text-white shadow-lg">START MISSION →</motion.button></div>
       {MAP_LOCATIONS.map((loc,idx)=>{const [left,top]=KS2_MAP_POSITIONS[idx],locked=loc.id==='games'&&!gamesUnlocked,done=progress[loc.id]?.lastPlayedDate===todayKey,active=loc.id===next?.id;return <motion.button key={loc.id} disabled={locked} onClick={()=>!locked&&onNavigate(loc.id)} whileTap={{scale:.92}} className="absolute z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center" style={{left,top,opacity:locked ? .55 : 1}} initial={{opacity:0,scale:.7}} animate={{opacity:locked ? .55 : 1,scale:1}} transition={{delay:idx*.04}}><motion.div className={`grid h-16 w-16 place-items-center rounded-2xl border-2 text-3xl shadow-lg sm:h-20 sm:w-20 sm:text-4xl ${done?'border-[#32865a] bg-[#e9ffda]':active?'border-white bg-[#8f321e] ring-4 ring-[#f4ba45]':'border-[#7b4b2c]/25 bg-[#fff5df]'}`} animate={active?{y:[0,-5,0]}:{}} transition={{duration:1.7,repeat:Infinity}}>{locked?'🔒':done?'✓':loc.emoji}</motion.div><span className="mt-1 max-w-[110px] rounded-md bg-[#2b1724]/90 px-2 py-1 text-center font-round text-[11px] font-black text-white shadow">{loc.name}</span><span className="font-round text-[10px] font-black text-[#6d341b]">+{loc.treasure}</span></motion.button>})}
@@ -769,6 +771,7 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
         onParent={parentPin ? () => setScreen('parent') : undefined}
         classroomLesson={classroomLesson}
         fullAccess={hasAllAccess}
+        onUpdateProgress={(patch) => update(p => ({ ...p, ...patch }))}
       />
       <PremiumLockModal
         show={Boolean(lockedModule)}

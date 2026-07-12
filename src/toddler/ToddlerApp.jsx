@@ -8,6 +8,7 @@ import MoodCheckIn from '../components/MoodCheckIn'
 import ParentZone from '../components/ParentZone'
 import ModuleArrival from '../components/ModuleArrival'
 import AdventureModuleFrame from '../components/AdventureModuleFrame'
+import LivingAdventure from '../components/LivingAdventure'
 import { formatLocalDate } from '../utils/date.js'
 import { shouldSendAutoDigest, markDigestSent, buildDigestPayload, sendDigestEmail, sendNudgeEmail } from '../utils/weeklyDigest.js'
 import { useSpeech } from '../hooks/useSpeech'
@@ -1147,11 +1148,12 @@ function LegacyToddlerDashboard({ theme, profileId, profileName, progress, onNav
 // ── Main toddler app ──────────────────────────────────────────────────────────
 const TODDLER_MAP_POSITIONS = { colours:['17%','42%'], shapes:['35%','69%'], numbers:['49%','43%'], animals:['65%','68%'], fruits:['82%','42%'], bodyparts:['8%','70%'], alphabet:['91%','70%'] }
 
-function ToddlerDashboard({ profileName, progress, onNavigate, onSwitchProfiles, onParent }) {
+function ToddlerDashboard({ profileName, progress, onNavigate, onSwitchProfiles, onParent, onUpdateProgress }) {
   const totalStars=TODDLER_MODULES.reduce((sum,m)=>sum+(progress[m.id]?.stars||0),0), dailyPath=getToddlerDailyPath(progress)
   const nextId=dailyPath.next?.module?.id||dailyPath.steps[0]?.module?.id, nextModule=TODDLER_MODULES.find(m=>m.id===nextId)||TODDLER_MODULES[0]
   return <div className="min-h-screen bg-[#fff0d6] pb-16 text-[#3b1607]">
     <header className="border-b-2 border-[#9a4b20]/15 bg-[#fff4dc] px-4 py-3 shadow-sm"><div className="mx-auto flex max-w-6xl items-center gap-3"><div className="mascot-video relative h-20 w-24 shrink-0"><img src="/yaagvi-3d-wave.png" alt="Yaagvi waving" className="absolute inset-0 h-full w-full object-contain drop-shadow-lg"/><video className="absolute inset-0 h-full w-full object-contain drop-shadow-lg" autoPlay muted loop playsInline preload="metadata" poster="/yaagvi-3d-wave.png" aria-hidden="true"><source src="/yaagvi-3d-wave.webm" type="video/webm"/></video></div><div className="min-w-0 flex-1"><p className="font-round text-xs font-black uppercase tracking-[.15em] text-[#b44b20]">Yaagvi’s little treasure hunt</p><h1 className="truncate font-bubble text-2xl sm:text-3xl">Hi, {profileName}! 👋</h1><p className="font-round text-sm font-bold text-[#8a5435]">Find two treasures, then celebrate.</p></div><div className="rounded-2xl bg-[#ffe29a] px-3 py-2 text-center"><p>⭐</p><p className="font-bubble text-lg leading-none">{totalStars}</p></div>{onSwitchProfiles&&<button onClick={onSwitchProfiles} className="hidden rounded-xl bg-white/70 px-3 py-2 font-bubble text-sm sm:block">Switch</button>}</div></header>
+    <LivingAdventure ageGroup="toddler" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress}/>
     <section className="mx-auto mt-5 max-w-6xl px-3 sm:px-5"><div className="relative min-h-[590px] overflow-hidden rounded-[34px] border-4 border-[#d58a46] bg-cover bg-center shadow-2xl sm:min-h-[650px]" style={{backgroundImage:'url(/treasure-map-bg.png)'}}><div className="absolute inset-0 bg-[#fff1cb]/15"/>
       <div className="absolute left-4 right-4 top-4 z-20 rounded-[24px] bg-[#fff8e8]/90 p-4 shadow-lg backdrop-blur-sm sm:left-7 sm:right-auto sm:w-[430px]"><p className="font-round text-xs font-black uppercase tracking-[.16em] text-[#b74818]">Start here</p><div className="mt-1 flex items-center gap-3"><span className="text-5xl">{nextModule.emoji}</span><div><h2 className="font-bubble text-2xl sm:text-3xl">Let’s find {nextModule.label}</h2><p className="font-round text-sm font-bold text-[#805033]">One tiny game. Yaagvi comes too!</p></div></div><motion.button whileTap={{scale:.94}} onClick={()=>onNavigate(nextModule.id)} className="mt-3 min-h-14 w-full rounded-2xl bg-gradient-to-r from-[#ff7b29] to-[#ef3f83] font-bubble text-xl text-white shadow-lg">PLAY →</motion.button></div>
       {TODDLER_MODULES.filter(m=>!m.comingSoon).map((mod,idx)=>{const [left,top]=TODDLER_MAP_POSITIONS[mod.id]||['50%','50%'],done=progress[mod.id]?.lastPlayedDate===todayStamp(),active=mod.id===nextId;return <motion.button key={mod.id} onClick={()=>onNavigate(mod.id)} whileTap={{scale:.9}} initial={{scale:0}} animate={{scale:1}} transition={{delay:.08*idx,type:'spring'}} className="absolute z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center" style={{left,top}}><motion.div className={`grid h-20 w-20 place-items-center rounded-full border-4 text-4xl shadow-xl sm:h-24 sm:w-24 sm:text-5xl ${done?'border-[#2f9d67] bg-[#eaffd9]':active?'border-white bg-gradient-to-br from-[#ff792f] to-[#ee3f82] ring-8 ring-[#ffd35b]/65':'border-[#fff4d9] bg-[#fff8e8]'}`} animate={active?{scale:[1,1.08,1]}:{}} transition={{duration:1.6,repeat:Infinity}}>{done?'✅':mod.emoji}</motion.div><span className="mt-1 rounded-full bg-[#fff8e8]/95 px-3 py-1 font-bubble text-sm shadow-md">{mod.label}</span></motion.button>})}
@@ -1300,6 +1302,7 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
         onNavigate={openModule}
         onSwitchProfiles={onSwitchProfiles}
         onParent={parentPin ? () => setScreen('parent') : undefined}
+        onUpdateProgress={(patch) => update(p => ({ ...p, ...patch }))}
       />
       <AnimatePresence>
         {rewardInfo && (

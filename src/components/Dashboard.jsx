@@ -19,6 +19,7 @@ import InviteFriendsCard from './InviteFriendsCard'
 import FeedbackPrompt, { shouldShowFeedback } from './FeedbackPrompt'
 import StreakCard from './StreakCard'
 import SkyshipAdventure from './SkyshipAdventure'
+import LivingAdventure from './LivingAdventure'
 
 // ── Module registry ───────────────────────────────────────────────────────────
 const PREMIUM_IDS = new Set(['worldgk','science','planets','anatomy','sacred','shapes','shop','logic'])
@@ -1299,6 +1300,8 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
 
         </div>
       </div>
+
+      <LivingAdventure ageGroup="early" profileName={profileName} progress={progress} onNavigate={handleGatedNavigate} onUpdateProgress={onUpdateProgress}/>
 
       {skyshipEnabled && (
         <SkyshipAdventure

@@ -501,6 +501,14 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
             </div>
 
             {/* Adaptive mastery journey */}
+            {progress.livingAdventure && (
+              <div className="rounded-3xl p-4 shadow" style={{ background: theme.card }}>
+                <div className="flex items-center justify-between gap-3"><div><p className="font-bubble text-lg" style={{color:theme.text}}>Living Adventure 🥚</p><p className="font-round text-xs opacity-65" style={{color:theme.text}}>The Secret of the Moon Egg</p></div><span className="rounded-full px-3 py-1 font-bubble text-sm text-white" style={{background:theme.primary}}>{Math.min(progress.livingAdventure.completed?.length||0,5)}/5 chapters</span></div>
+                <div className="mt-3 flex gap-2">{[0,1,2,3,4].map(i=><div key={i} className="h-2 flex-1 rounded-full" style={{background:i<(progress.livingAdventure.completed?.length||0)?theme.primary:`${theme.primary}20`}}/>)}</div>
+                <p className="mt-3 font-round text-xs" style={{color:theme.text,opacity:.75}}>Chosen route: {progress.livingAdventure.choice==='river'?'Waterfall trail':progress.livingAdventure.choice==='forest'?'Forest trail':'Not chosen yet'} · Last chapter: {progress.livingAdventure.lastCompletedDate||'Not started'}</p>
+              </div>
+            )}
+
             {Object.keys(progress.learningJourney?.skills || {}).length > 0 && (
               <div className="rounded-3xl p-4 shadow" style={{ background: theme.card }}>
                 <p className="font-bubble text-lg" style={{ color: theme.text }}>Learning Journey 🧭</p>
