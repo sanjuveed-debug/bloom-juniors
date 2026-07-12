@@ -503,4 +503,5 @@ button, [role="button"], a {
 @media (prefers-reduced-motion: reduce) {
   .game-ambient { animation: none }
   .game-experience main button { transition: none }
+  .mascot-video video { display: none }
 }
