@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
-import { dailySeedFor, seededShuffle } from '../../utils/seededRandom'
+import { sessionSeedFor, seededShuffle } from '../../utils/seededRandom'
 
 const PROBLEMS = [
   {
@@ -109,9 +109,9 @@ const HARDER_PROBLEMS = [
 
 function getProblems(played) {
   if (played >= 3) {
-    return seededShuffle([...PROBLEMS, ...HARDER_PROBLEMS], dailySeedFor('wordproblems-hard')).slice(0, 8)
+    return seededShuffle([...PROBLEMS, ...HARDER_PROBLEMS], sessionSeedFor('wordproblems-hard', played)).slice(0, 8)
   }
-  return seededShuffle([...PROBLEMS], dailySeedFor('wordproblems'))
+  return seededShuffle([...PROBLEMS], sessionSeedFor('wordproblems', played))
 }
 
 export default function WordProblemsModule({ theme, onDone, onBack, played = 0 }) {

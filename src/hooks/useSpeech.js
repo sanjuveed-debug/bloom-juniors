@@ -58,6 +58,17 @@ function getPreferredSpeechLang() {
   return lang.startsWith('en') ? lang : 'en-us'
 }
 
+function browserVoiceFor(azureVoice) {
+  const voices = window.speechSynthesis?.getVoices?.() || []
+  const lang = azureVoice?.startsWith('en-US') ? 'en-US' : 'en-GB'
+  const preferredNames = lang === 'en-US'
+    ? ['Microsoft Ana Online', 'Microsoft Ana', 'Samantha', 'Google US English']
+    : ['Microsoft Sonia Online', 'Microsoft Libby Online', 'Daniel', 'Google UK English Female']
+  return preferredNames.map(name => voices.find(v => v.name.includes(name))).find(Boolean)
+    || voices.find(v => v.lang?.toLowerCase() === lang.toLowerCase())
+    || voices.find(v => v.lang?.toLowerCase().startsWith('en'))
+}
+
 // ─── Shared audio singleton ────────────────────────────────────────────────────
 // iOS locks each Audio() element individually — it must be .play()-ed during a
 // user gesture before it can play programmatically. By reusing ONE element across
@@ -80,6 +91,7 @@ export function useSpeech() {
   const isMounted = useRef(true)
   const audioRef = useRef(null)
   const pendingRef = useRef(null)
+  const browserUtteranceRef = useRef(null)
 
   useEffect(() => {
     isMounted.current = true
@@ -94,6 +106,7 @@ export function useSpeech() {
       audioRef.current = null
       recognitionRef.current?.stop?.()
       window.speechSynthesis?.cancel()
+      browserUtteranceRef.current = null
     }
   }, [])
 
@@ -106,17 +119,23 @@ export function useSpeech() {
     audio.onerror = null
     audioRef.current = null
     window.speechSynthesis?.cancel()
+    browserUtteranceRef.current = null
     setSpeaking(false)
   }, [])
 
-  const primeSpeech = useCallback(() => {}, [])
+  const primeSpeech = useCallback(() => {
+    if (!window.speechSynthesis || typeof SpeechSynthesisUtterance === 'undefined') return
+    const utterance = new SpeechSynthesisUtterance(' ')
+    utterance.volume = 0
+    window.speechSynthesis.speak(utterance)
+  }, [])
 
   const speak = useCallback((text, options = {}) => {
     const { queue = false, mood, rate: rateOverride, voice: voiceOverride, ssmlInner = null, onEnd } = options
 
     const audio = getSharedAudio()
 
-    if (queue && audioRef.current && !audio.paused && !audio.ended) {
+    if (queue && ((audioRef.current && !audio.paused && !audio.ended) || window.speechSynthesis?.speaking)) {
       pendingRef.current = { text, options: { mood, rate: rateOverride, voice: voiceOverride, ssmlInner, onEnd } }
       return
     }
@@ -131,6 +150,34 @@ export function useSpeech() {
     const overridePercent = rateOverride != null ? Math.round((rateOverride - 1) * 100) : null
     const ratePercent = overridePercent ?? moodRatePercent
     const voice = voiceOverride === 'gb' ? AZURE_VOICE_GB : (voiceOverride || defaultVoice || AZURE_VOICE)
+
+    const finishSpeech = () => {
+      if (!isMounted.current) return
+      setSpeaking(false)
+      browserUtteranceRef.current = null
+      const pending = pendingRef.current
+      if (pending) {
+        pendingRef.current = null
+        speak(pending.text, pending.options)
+      }
+      onEnd?.()
+    }
+
+    const speakWithBrowser = () => {
+      if (!window.speechSynthesis || typeof SpeechSynthesisUtterance === 'undefined') { finishSpeech(); return }
+      const utterance = new SpeechSynthesisUtterance(prepared)
+      utterance.lang = voice.startsWith('en-US') ? 'en-US' : 'en-GB'
+      utterance.voice = browserVoiceFor(voice) || null
+      utterance.rate = Math.max(0.65, Math.min(1.25, 1 + ratePercent / 100))
+      utterance.pitch = mood === 'celebrate' ? 1.08 : voice.includes('AnaNeural') ? 1.05 : 1
+      utterance.volume = 1
+      utterance.onstart = () => isMounted.current && setSpeaking(true)
+      utterance.onend = finishSpeech
+      utterance.onerror = finishSpeech
+      browserUtteranceRef.current = utterance
+      window.speechSynthesis.cancel()
+      window.speechSynthesis.speak(utterance)
+    }
 
     // Mark this element as the active one. If a gesture triggered this call,
     // the .play() below unlocks the shared element for all future calls too.
@@ -156,22 +203,19 @@ export function useSpeech() {
         audio.onerror = () => {
           URL.revokeObjectURL(url)
           if (audioRef.current === audio) audioRef.current = null
-          setSpeaking(false)
-          onEnd?.()
+          speakWithBrowser()
         }
         audio.src = url
         audio.load()
         audio.play().catch(() => {
           URL.revokeObjectURL(url)
           if (audioRef.current === audio) audioRef.current = null
-          setSpeaking(false)
-          onEnd?.()
+          speakWithBrowser()
         })
       })
       .catch(() => {
         if (audioRef.current === audio) audioRef.current = null
-        setSpeaking(false)
-        onEnd?.()
+        speakWithBrowser()
       })
   }, [stopSpeaking, defaultVoice])
 

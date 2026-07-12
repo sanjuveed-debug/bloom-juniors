@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
-import { dailySeedFor, seededShuffle } from '../../utils/seededRandom'
+import { sessionSeedFor, seededShuffle } from '../../utils/seededRandom'
 
 const TYPE_COLORS = {
   noun:      { bg: '#3B82F6', label: 'Noun',      def: 'a person, place, or thing'        },
@@ -52,10 +52,10 @@ const shuffleTypes = (correct, harder = false) => {
 
 function getQuestions(played) {
   if (played >= 3) {
-    const pool = seededShuffle([...QUESTIONS, ...HARDER_QUESTIONS], dailySeedFor('grammar-hard')).slice(0, 12)
+    const pool = seededShuffle([...QUESTIONS, ...HARDER_QUESTIONS], sessionSeedFor('grammar-hard', played)).slice(0, 12)
     return { questions: pool, harder: true }
   }
-  return { questions: seededShuffle([...QUESTIONS], dailySeedFor('grammar')), harder: false }
+  return { questions: seededShuffle([...QUESTIONS], sessionSeedFor('grammar', played)), harder: false }
 }
 
 export default function GrammarModule({ theme, onDone, onBack, played = 0 }) {

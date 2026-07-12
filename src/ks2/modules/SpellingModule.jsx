@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
-import { dailySeedFor, seededShuffle } from '../../utils/seededRandom'
+import { sessionSeedFor, seededShuffle } from '../../utils/seededRandom'
 import { useSpeech } from '../../hooks/useSpeech'
 import MatchingActivity from '../../components/MatchingActivity'
 
@@ -197,7 +197,7 @@ export default function SpellingModule({ theme, onDone, onBack, played = 0 }) {
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
 
   const startLevel = (lv) => {
-    const shuffled = seededShuffle(WORD_SETS[lv], dailySeedFor('spelling-' + lv)).slice(0, 10)
+    const shuffled = seededShuffle(WORD_SETS[lv], sessionSeedFor('spelling-' + lv, played)).slice(0, 10)
     lockedRef.current = false
     timersRef.current.forEach(clearTimeout)
     timersRef.current = []

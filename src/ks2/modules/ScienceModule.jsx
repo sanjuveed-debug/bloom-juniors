@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
-import { dailySeedFor, seededShuffle } from '../../utils/seededRandom'
+import { sessionSeedFor, seededShuffle } from '../../utils/seededRandom'
 
 const TOPICS = {
   'Plants 🌱': [
@@ -31,7 +31,7 @@ const TOPICS = {
   ],
 }
 
-export default function ScienceModule({ theme, onDone, onBack }) {
+export default function ScienceModule({ theme, onDone, onBack, played = 0 }) {
   const [topic, setTopic] = useState(null)
   const [questions, setQuestions] = useState([])
   const [q, setQ] = useState(0)
@@ -44,7 +44,7 @@ export default function ScienceModule({ theme, onDone, onBack }) {
     lockedRef.current = false
     completedRef.current = false
     setTopic(t)
-    setQuestions(seededShuffle([...TOPICS[t]], dailySeedFor('science-' + t)))
+    setQuestions(seededShuffle([...TOPICS[t]], sessionSeedFor('science-' + t, played)))
     setQ(0)
     setScore(0)
     setFeedback(null)

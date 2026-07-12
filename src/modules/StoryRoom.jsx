@@ -284,12 +284,12 @@ const STORIES = [
     emoji: "🔭",
     cover: "🌟",
     pages: [
-      { text: "Yaagvi was the bravest explorer in the whole wide world!", emoji: "🔭", bg: "from-violet-500 to-purple-600" },
-      { text: "She packed her bag with a map, a torch, and lots of biscuits.", emoji: "🎒", bg: "from-amber-400 to-orange-500" },
-      { text: "Deep in the magical forest, she discovered a talking butterfly!", emoji: "🦋", bg: "from-green-400 to-teal-500" },
-      { text: "The butterfly showed her a hidden waterfall made of starlight!", emoji: "⭐", bg: "from-blue-400 to-indigo-500" },
-      { text: "Yaagvi wrote everything down in her magical adventure book.", emoji: "📚", bg: "from-rose-400 to-pink-500" },
-      { text: "She came home knowing tomorrow would bring another adventure! The End! 🌟", emoji: "🌙", bg: "from-indigo-400 to-violet-600" },
+      { text: "Yaagvi was the bravest explorer in the whole wide world!", emoji: "🔭", image: "/stories/yaagvi-explorer/page-1.png", bg: "from-violet-500 to-purple-600" },
+      { text: "She packed her bag with a map, a torch, and lots of biscuits.", emoji: "🎒", image: "/stories/yaagvi-explorer/page-2.png", bg: "from-amber-400 to-orange-500" },
+      { text: "Deep in the magical forest, she discovered a talking butterfly!", emoji: "🦋", image: "/stories/yaagvi-explorer/page-3.png", bg: "from-green-400 to-teal-500" },
+      { text: "The butterfly showed her a hidden waterfall made of starlight!", emoji: "⭐", image: "/stories/yaagvi-explorer/page-4.png", bg: "from-blue-400 to-indigo-500" },
+      { text: "Yaagvi wrote everything down in her magical adventure book.", emoji: "📚", image: "/stories/yaagvi-explorer/page-5.png", bg: "from-rose-400 to-pink-500" },
+      { text: "She came home knowing tomorrow would bring another adventure! The End! 🌟", emoji: "🌙", image: "/stories/yaagvi-explorer/page-6.png", bg: "from-indigo-400 to-violet-600" },
     ]
   },
   {
@@ -519,6 +519,7 @@ export default function StoryRoom({ avatar, progress, onAddStars, onBack, profil
   const [page, setPage] = useState(0)
   const [highlightedWord, setHighlightedWord] = useState(-1)
   const [autoPlay, setAutoPlay] = useState(false)
+  const [showAllStories, setShowAllStories] = useState(false)
   const [foundPhonics, setFoundPhonics] = useState(new Set())
   const [tapFeedback, setTapFeedback] = useState(null)
   const autoRef = useRef(null)
@@ -593,6 +594,7 @@ export default function StoryRoom({ avatar, progress, onAddStars, onBack, profil
   const currentRound = getCurrentRound(progress)
   const unlockedCount = getUnlockedStoryCount(progress)
   const unlockedStories = recommendedStories.filter(s => s.id <= unlockedCount)
+  const displayedStories = showAllStories ? unlockedStories : unlockedStories.slice(0, 3)
   const nextLockedStory = STORIES.find(s => s.id === unlockedCount + 1) || null
   const allRead = unlockedStories.every(s => getStoryReadCount(progress, s.id) >= currentRound)
 
@@ -759,7 +761,7 @@ export default function StoryRoom({ avatar, progress, onAddStars, onBack, profil
 
         <div className="flex flex-col gap-4 px-4">
           {/* Unlocked stories */}
-          {unlockedStories.map((story, i) => {
+          {displayedStories.map((story, i) => {
             const readCount = getStoryReadCount(progress, story.id)
             const isRecommended = i === 0
             return (
@@ -799,12 +801,20 @@ export default function StoryRoom({ avatar, progress, onAddStars, onBack, profil
             )
           })}
 
+          {unlockedStories.length > 3 && (
+            <motion.button whileTap={{ scale: .97 }} onClick={() => setShowAllStories(value => !value)}
+              className="rounded-2xl px-5 py-3 font-bubble text-sm"
+              style={{ background:`${theme.primary}12`, color:theme.primary, border:`1.5px solid ${theme.primary}30` }}>
+              {showAllStories ? 'Show just today’s picks' : `Explore all ${unlockedStories.length} stories`}
+            </motion.button>
+          )}
+
           {/* Next locked story teaser */}
           {nextLockedStory && (
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: unlockedStories.length * 0.08 }}
+              transition={{ delay: displayedStories.length * 0.08 }}
               className="flex items-center gap-4 p-4 rounded-3xl shadow-lg"
               style={{ background: theme.card, border: `2px dashed ${theme.secondary}`, opacity: 0.65 }}
             >
@@ -867,34 +877,51 @@ export default function StoryRoom({ avatar, progress, onAddStars, onBack, profil
           initial={{ opacity: 0, x: 60 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -60 }}
-          className="flex-1 mx-4 mt-2 rounded-3xl overflow-hidden shadow-2xl flex flex-col"
+          className="flex-1 mx-4 mt-2 rounded-3xl overflow-hidden shadow-2xl flex flex-col md:grid md:grid-cols-[1.35fr_.85fr]"
           style={{ minHeight: 300 }}
         >
           {/* Animated scene illustration */}
-          <div className={`bg-gradient-to-br ${currentPage.bg} flex-1 flex flex-col items-center justify-center p-8 relative`}
-            style={{ minHeight: 200 }}>
+          <div className={`bg-gradient-to-br ${currentPage.bg} flex flex-col items-center justify-center relative overflow-hidden`}
+            style={{ minHeight: 360 }}>
+
+            {/* Layered storybook stage — gives every page depth before its unique scene elements. */}
+            <motion.div className="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-yellow-200/30 blur-sm"
+              animate={{ scale:[1,1.12,1], opacity:[.35,.65,.35] }} transition={{duration:4,repeat:Infinity}} />
+            <div className="absolute inset-x-0 bottom-0 h-[38%] rounded-[50%_50%_0_0/35%_35%_0_0] bg-emerald-700/15" />
+            <div className="absolute -bottom-12 -left-10 h-44 w-[65%] rotate-3 rounded-[50%] bg-emerald-900/12" />
+            <motion.div className="absolute bottom-[12%] left-[8%] text-3xl" animate={{x:[0,22,0],y:[0,-5,0]}} transition={{duration:5,repeat:Infinity}}>✨</motion.div>
 
             {/* Animated background scene elements */}
             <SceneLayer storyId={selectedStory.id} pageIdx={page} />
 
-            {/* Main page emoji — sits above scene */}
-            <motion.div
+            {currentPage.image ? (
+              <motion.img
+                src={currentPage.image}
+                alt={`Illustration for ${selectedStory.title}, page ${page + 1}`}
+                className="absolute inset-0 h-full w-full object-contain"
+                initial={{ scale: 1.08, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+                style={{ zIndex: 1 }}
+              />
+            ) : <motion.div
               key={`emoji-${page}`}
               initial={{ scale: 0, rotate: -30 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: 'spring', stiffness: 300 }}
-              className="text-[100px] leading-none select-none relative"
+              className="text-[120px] leading-none select-none relative drop-shadow-2xl"
               style={{ zIndex: 2 }}
+              whileHover={{ scale: 1.08 }}
             >
               {currentPage.emoji}
-            </motion.div>
-            <p className="font-round text-white/70 text-sm mt-4 relative" style={{ zIndex: 2 }}>
+            </motion.div>}
+            <p className="font-round absolute bottom-3 right-3 rounded-full bg-black/45 px-3 py-1 text-white text-sm" style={{ zIndex: 3 }}>
               Page {page + 1} of {selectedStory.pages.length}
             </p>
           </div>
 
           {/* Text with word highlighting + phonics tap */}
-          <div className="p-4" style={{ background: 'rgba(255,255,255,0.97)' }}>
+          <div className="flex flex-col justify-center p-5 md:border-l" style={{ background: 'rgba(255,255,255,0.98)', borderColor:`${theme.primary}20` }}>
 
             {/* Mission banner — explicit goal + live progress */}
             <div className="rounded-2xl p-3 mb-3"
@@ -925,7 +952,7 @@ export default function StoryRoom({ avatar, progress, onAddStars, onBack, profil
                   style={{ background: theme.primary }}>🔵 Tap to hear the sound</span>
               </div>
             </div>
-            <p className="font-round text-lg font-bold leading-relaxed text-center" style={{ color: theme.text }}>
+            <p className="font-round text-xl font-bold leading-[1.8] text-center" style={{ color: theme.text }}>
               {words.map((word, i) => {
                 const clean = word.replace(/[^a-zA-Z]/g, '').toLowerCase()
                 const isPhonics = PHONICS_WORDS.has(clean)

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
-import { dailySeedFor, seededShuffle } from '../../utils/seededRandom'
+import { sessionSeedFor, seededShuffle } from '../../utils/seededRandom'
 
 const COUNTRIES = [
   { country: 'France',       flag: '🇫🇷', continent: 'Europe',   capital: 'Paris',        opts: ['Paris', 'Lyon', 'Brussels', 'Rome']           },
@@ -36,7 +36,7 @@ const HARDER_COUNTRIES = [
 
 export default function WorldMapModule({ theme, onDone, onBack, played = 0 }) {
   const pool = played >= 3 ? [...COUNTRIES, ...HARDER_COUNTRIES] : COUNTRIES
-  const questions = useMemo(() => seededShuffle([...pool], dailySeedFor('worldmap')).slice(0, 12), [])
+  const questions = useMemo(() => seededShuffle([...pool], sessionSeedFor('worldmap', played)).slice(0, 12), [played])
   const [q, setQ] = useState(0)
   const [score, setScore] = useState(0)
   const [feedback, setFeedback] = useState(null)

@@ -18,6 +18,7 @@ import CelebrationScreen from './CelebrationScreen'
 import InviteFriendsCard from './InviteFriendsCard'
 import FeedbackPrompt, { shouldShowFeedback } from './FeedbackPrompt'
 import StreakCard from './StreakCard'
+import SkyshipAdventure from './SkyshipAdventure'
 
 // ── Module registry ───────────────────────────────────────────────────────────
 const PREMIUM_IDS = new Set(['worldgk','science','planets','anatomy','sacred','shapes','shop','logic'])
@@ -477,7 +478,7 @@ function YaagviStateCard({ theme, arcadeStatus, dailyAdventure, profileName, onS
       transition={{ delay: 0.42 }}
       whileTap={{ scale: 0.97 }}
       onClick={handleTap}
-      className="mt-4 flex max-w-xl w-full items-center gap-3 rounded-[24px] p-3.5 text-left"
+      className="mt-4 flex w-full items-center gap-3 rounded-[24px] p-3.5 text-left"
       style={{
         background: `rgba(255,255,255,0.07)`,
         border: `1.5px solid ${state.border}`,
@@ -485,8 +486,12 @@ function YaagviStateCard({ theme, arcadeStatus, dailyAdventure, profileName, onS
         backdropFilter: 'blur(12px)',
       }}
     >
-      <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[20px] bg-white/10">
-        <img src="/yaagvi-mascot-single.webp" alt="Yaagvi" className="h-full w-full object-cover" draggable={false} />
+      <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] bg-white/10">
+        <YaagviCharacter
+          state={state.mood === 'celebrate' ? 'celebrate' : state.mood === 'encourage' ? 'clap' : 'wave'}
+          size={56}
+          className="overflow-hidden rounded-[20px]"
+        />
         <motion.div
           className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full text-sm"
           style={{ background: 'rgba(0,0,0,0.55)', border: '1.5px solid rgba(255,255,255,0.2)' }}
@@ -1084,7 +1089,7 @@ function ForYouFeed({ theme, progress, challenges, arcadeStatus, dailyAdventure,
   )
 }
 
-export default function Dashboard({ avatar, progress, onNavigate, onLongPress, onSwitchProfiles, onQuickSwitch, onAddStars, profiles, activeProfileId, profileName }) {
+export default function Dashboard({ avatar, progress, onNavigate, onLongPress, onSwitchProfiles, onQuickSwitch, onAddStars, onUpdateProgress, profiles, activeProfileId, profileName }) {
   const { premium } = usePremium()
   const fullAccess = !PREMIUM_GATING_ENABLED || premium
   const theme    = THEMES[avatar] || THEMES.rumi
@@ -1153,6 +1158,8 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
   const dailyAccess      = getAdventureAccess(dailyAdventure)
   const isDailyPathDone = arcadeStatus?.unlocked === true ||
     (dailyAdventure?.steps?.length > 0 && dailyAdventure.steps.every(s => s.done))
+  const skyshipEnabled = Boolean(onUpdateProgress)
+  const skyshipEngineComplete = Boolean(progress.adventure?.skyship?.engineColour)
   const handleGatedNavigate = (to) => {
     const mod = MODULE_MAP[to]
     if (mod?.premium && !fullAccess) {
@@ -1209,7 +1216,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
 
         <div className="relative z-10 mx-auto max-w-6xl px-4 pt-safe pb-5 md:px-6 xl:px-8">
           {/* Top row */}
-          <div className="flex items-end justify-between">
+          <div className="flex items-end">
             <div className="flex-1 mr-3">
               <p className="font-round text-white/50 text-sm font-semibold">
                 {timeGreeting()}
@@ -1260,15 +1267,6 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
               )}
             </div>
 
-            {/* Yaagvi character — animated mascot */}
-            <div className="relative shrink-0 self-end">
-              <YaagviCharacter
-                state={yaagviState}
-                size={150}
-                speech={yaagviSpeech}
-                style={{ filter: `drop-shadow(0 8px 24px ${theme.primary}60)` }}
-              />
-            </div>
           </div>
 
           {/* ── Stars + Streak (simplified) ── */}
@@ -1299,17 +1297,20 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
             )}
           </div>
 
-          <YaagviStateCard
-            theme={theme}
-            arcadeStatus={arcadeStatus}
-            dailyAdventure={dailyAdventure}
-            profileName={profileName}
-          />
         </div>
       </div>
 
+      {skyshipEnabled && (
+        <SkyshipAdventure
+          progress={progress}
+          profileName={profileName}
+          onNavigate={onNavigate}
+          onUpdateProgress={onUpdateProgress}
+        />
+      )}
+
       {/* ── PHASE 1: DAILY BLOOM PATH (path not done) ────────────────────────── */}
-      {!isDailyPathDone && (
+      {!isDailyPathDone && (!skyshipEnabled || skyshipEngineComplete) && (
         <DailyBloomPath
           adventure={dailyAdventure}
           theme={theme}

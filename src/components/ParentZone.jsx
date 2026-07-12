@@ -500,6 +500,25 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
               </div>
             </div>
 
+            {/* Adaptive mastery journey */}
+            {Object.keys(progress.learningJourney?.skills || {}).length > 0 && (
+              <div className="rounded-3xl p-4 shadow" style={{ background: theme.card }}>
+                <p className="font-bubble text-lg" style={{ color: theme.text }}>Learning Journey 🧭</p>
+                <p className="font-round text-xs opacity-65 mb-3" style={{ color: theme.text }}>Difficulty adapts from independent accuracy, repeated success and recent struggles.</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {Object.entries(progress.learningJourney.skills).sort((a,b)=>(b[1].lastPlayedAt||0)-(a[1].lastPlayedAt||0)).slice(0,10).map(([id,skill])=>{
+                    const info=MODULES_INFO.find(m=>m.id===id)
+                    const status=skill.mastery>=85?'Mastered':skill.mastery>=65?'Secure':skill.mastery>=40?'Developing':'Building'
+                    return <div key={id} className="rounded-2xl p-3" style={{background:`${theme.primary}10`,border:`1px solid ${theme.primary}25`}}>
+                      <div className="flex items-center justify-between gap-2"><p className="font-bubble text-sm" style={{color:theme.text}}>{info?.emoji||'🎯'} {info?.label||id}</p><span className="font-round text-[10px] font-black" style={{color:theme.primary}}>LEVEL {skill.difficulty||1}</span></div>
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-black/10"><div className="h-full rounded-full" style={{width:`${skill.mastery||0}%`,background:theme.primary}}/></div>
+                      <div className="mt-1 flex justify-between font-round text-[10px] opacity-65" style={{color:theme.text}}><span>{status} · {skill.mastery||0}%</span><span>{skill.lastAccuracy||0}% last session</span></div>
+                    </div>
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* 7-day heatmap */}
             <div className="rounded-3xl p-4 shadow" style={{ background: theme.card }}>
               <p className="font-bubble text-base mb-3" style={{ color: theme.text }}>Last 7 Days 📅</p>

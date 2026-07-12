@@ -9,7 +9,6 @@ import SkillHint, { getHint } from '../components/SkillHint'
 import BuddyCompanion, { useBuddyMood } from '../components/BuddyCompanion'
 import MatchingActivity from '../components/MatchingActivity'
 import SubitisingFlash from '../components/SubitisingFlash'
-import YaagviCharacter from '../components/YaagviCharacter'
 
 // ── Avatar object sets ────────────────────────────────────────────────────────
 const OBJECT_SETS = {
@@ -551,15 +550,6 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
   const awardedRef = useRef(false)
   const matchAwardedRef = useRef(false)
 
-  const [yaagviState, setYaagviState] = useState('idle')
-  const yaagviRef = useRef(null)
-  useEffect(() => {
-    if (!feedback) return
-    clearTimeout(yaagviRef.current)
-    setYaagviState(feedback.type === 'correct' ? 'celebrate' : 'think')
-    yaagviRef.current = setTimeout(() => setYaagviState('idle'), 2000)
-    return () => clearTimeout(yaagviRef.current)
-  }, [feedback])
   const timersRef  = useRef(new Set())
   const askedRef   = useRef(new Set())
   const seedStepRef = useRef(0)
@@ -1156,10 +1146,6 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
         />
       )}
 
-      {/* Yaagvi reacts to correct/wrong answers */}
-      <div style={{ position: 'fixed', bottom: 12, left: 12, zIndex: 40, pointerEvents: 'none' }}>
-        <YaagviCharacter state={yaagviState} size={90} />
-      </div>
     </div>
   )
 }

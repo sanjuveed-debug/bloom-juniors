@@ -10,19 +10,24 @@ const TAGLINES = [
 export default function SplashScreen({ onDone }) {
   const [phase, setPhase] = useState(0) // 0=logo, 1=tagline, 2=out
   const doneRef = React.useRef(false)
+  const onDoneRef = React.useRef(onDone)
+
+  useEffect(() => {
+    onDoneRef.current = onDone
+  }, [onDone])
 
   const dismiss = React.useCallback(() => {
     if (doneRef.current) return
     doneRef.current = true
     setPhase(2)
-    setTimeout(onDone, 350)
-  }, [onDone])
+    window.setTimeout(() => onDoneRef.current?.(), 350)
+  }, [])
 
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase(1), 900)
-    const t2 = setTimeout(() => setPhase(2), 2200)
-    const t3 = setTimeout(() => dismiss(), 2700)
-    return () => [t1, t2, t3].forEach(clearTimeout)
+    const t1 = window.setTimeout(() => setPhase(1), 900)
+    const t2 = window.setTimeout(() => setPhase(2), 2200)
+    const t3 = window.setTimeout(dismiss, 2700)
+    return () => [t1, t2, t3].forEach(window.clearTimeout)
   }, [dismiss])
 
   return (
@@ -148,7 +153,7 @@ export default function SplashScreen({ onDone }) {
             animate={{ opacity: phase >= 1 ? 1 : 0 }}
             transition={{ delay: 0.5 }}
           >
-            UK British Curriculum · Ages 3–8 · EYFS & KS1 🇬🇧
+            UK British Curriculum · Ages 3–9 · EYFS, KS1 & Early KS2 🇬🇧
           </motion.p>
         </motion.div>
       )}

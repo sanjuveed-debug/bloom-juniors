@@ -29,6 +29,38 @@ const CSS = `
   .yaagvi-img.fade-out { opacity: 0; }
   .yaagvi-img.fade-in  { opacity: 1; }
 
+  /* Dashboard presentation — crop the source art into a living character portal. */
+  .yaagvi-dashboard {
+    border-radius: 50%;
+    isolation: isolate;
+  }
+  .yaagvi-dashboard::before,
+  .yaagvi-dashboard::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .yaagvi-dashboard::before {
+    background: conic-gradient(from 0deg, #FDE047, #38BDF8, #F472B6, #FDE047);
+    animation: yaagvi-orbit 5s linear infinite;
+    z-index: -2;
+  }
+  .yaagvi-dashboard::after {
+    inset: -3px;
+    background: rgba(255,255,255,0.82);
+    z-index: -1;
+    box-shadow: 0 14px 38px rgba(15,23,42,0.28), 0 0 28px rgba(253,224,71,0.28);
+  }
+  .yaagvi-dashboard .yaagvi-img {
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: 50% 18%;
+    clip-path: circle(49% at 50% 50%);
+  }
+  @keyframes yaagvi-orbit { to { transform: rotate(360deg); } }
+
   /* Idle — gentle float */
   .yaagvi-anim-idle {
     animation: yaagvi-float 3s ease-in-out infinite;
@@ -161,6 +193,7 @@ const CSS = `
     .yaagvi-anim-clap {
       animation: none;
     }
+    .yaagvi-dashboard::before { animation: none; }
   }
 `
 

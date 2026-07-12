@@ -522,7 +522,7 @@ export default function JarvisOrb({ avatar, profileName, progress, assistantOver
       </AnimatePresence>
 
       <div
-        className="fixed z-[100] flex flex-col items-end gap-2"
+        className="fixed z-[100] flex flex-col items-end gap-2 lg:hidden"
         style={{
           bottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)',
           right: 14,

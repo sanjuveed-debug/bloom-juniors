@@ -483,3 +483,24 @@ button, [role="button"], a {
   -webkit-overflow-scrolling: touch;
   padding-bottom: max(1rem, env(safe-area-inset-bottom, 1rem));
 }
+
+/* Shared tactile and accessibility polish for every game, ages 3–9. */
+.game-experience main button:not(:disabled) {
+  touch-action: manipulation;
+  transition: transform 160ms ease, filter 160ms ease, box-shadow 160ms ease;
+}
+.game-experience main button:not(:disabled):hover { filter: brightness(1.055) saturate(1.04); }
+.game-experience main button:not(:disabled):focus-visible { outline: 4px solid #ffd24a; outline-offset: 3px; }
+.game-experience main button:not(:disabled):active { transform: scale(.96); }
+.game-experience[data-age="toddler"] main button { min-height: 56px; }
+.game-experience[data-age="early"] main button { min-height: 48px; }
+.game-ambient {
+  background-image: radial-gradient(circle at 12% 18%, rgba(255,255,255,.18) 0 2px, transparent 3px), radial-gradient(circle at 82% 34%, rgba(255,214,91,.16) 0 3px, transparent 4px);
+  background-size: 86px 86px, 130px 130px;
+  animation: adventure-ambient 16s linear infinite;
+}
+@keyframes adventure-ambient { from { transform: translate3d(0,0,0) } to { transform: translate3d(40px,-28px,0) } }
+@media (prefers-reduced-motion: reduce) {
+  .game-ambient { animation: none }
+  .game-experience main button { transition: none }
+}

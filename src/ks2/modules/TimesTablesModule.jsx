@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
-import { dailySeedFor, seededShuffle } from '../../utils/seededRandom'
+import { sessionSeedFor, seededShuffle } from '../../utils/seededRandom'
 import { useSpeech } from '../../hooks/useSpeech'
 import MatchingActivity from '../../components/MatchingActivity'
 
@@ -17,9 +17,9 @@ function getTimerSeconds(played) {
   return played >= 6 ? 8 : 10
 }
 
-function buildQuestions(table) {
+function buildQuestions(table, played = 0) {
   const qs = Array.from({ length: 10 }, (_, i) => ({ a: table, b: i + 1, ans: table * (i + 1) }))
-  return seededShuffle(qs, dailySeedFor('timestables-' + table))
+  return seededShuffle(qs, sessionSeedFor('timestables-' + table, played))
 }
 
 function wrongOptions(ans) {
@@ -121,7 +121,7 @@ export default function TimesTablesModule({ theme, onDone, onBack, played = 0 })
 
   const startMatch = () => {
     const t = availableTables[Math.floor(Math.random() * availableTables.length)]
-    const facts = buildQuestions(t).slice(0, 6)
+    const facts = buildQuestions(t, played).slice(0, 6)
     completedRef.current = false
     setTable(t)
     setMatchPairs(facts.map((f, i) => ({ id: `m${i}`, question: `${f.a} × ${f.b}`, answer: String(f.ans) })))

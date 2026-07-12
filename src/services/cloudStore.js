@@ -79,6 +79,23 @@ function mergeProgress(local, cloud) {
     }
   }
 
+  // Adaptive mastery lives inside the existing progress JSON. Merge per skill
+  // so a newer session on one device does not erase another device's journey.
+  const localSkills = local.learningJourney?.skills || {}
+  const cloudSkills = cloud.learningJourney?.skills || {}
+  const mergedSkills = {}
+  for (const key of new Set([...Object.keys(cloudSkills), ...Object.keys(localSkills)])) {
+    const l = localSkills[key] || {}, c = cloudSkills[key] || {}
+    const newest = (l.lastPlayedAt || 0) >= (c.lastPlayedAt || 0) ? l : c
+    mergedSkills[key] = {
+      ...c, ...l, ...newest,
+      attempts: Math.max(l.attempts || 0, c.attempts || 0),
+      correct: Math.max(l.correct || 0, c.correct || 0),
+      recentQuestions: [...new Set([...(l.recentQuestions || []), ...(c.recentQuestions || [])])].slice(0, 80),
+      misconceptions: { ...(c.misconceptions || {}), ...(l.misconceptions || {}) },
+    }
+  }
+
   return {
     ...cloud,
     ...local,
@@ -86,6 +103,13 @@ function mergeProgress(local, cloud) {
     sessions:   merged.slice(-50),
     totalStars: Math.max(local.totalStars || 0, cloud.totalStars || 0),
     stars:      Math.max(local.stars      || 0, cloud.stars      || 0),
+    learningJourney: {
+      ...(cloud.learningJourney || {}),
+      ...(local.learningJourney || {}),
+      version: 1,
+      updatedAt: Math.max(local.learningJourney?.updatedAt || 0, cloud.learningJourney?.updatedAt || 0),
+      skills: mergedSkills,
+    },
   }
 }
 

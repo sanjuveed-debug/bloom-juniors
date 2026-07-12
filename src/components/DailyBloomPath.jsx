@@ -200,29 +200,50 @@ export default function DailyBloomPath({ adventure, theme, onNavigate }) {
   const allDone   = steps.length > 0 && doneCount >= steps.length
 
   return (
-    <section className="mx-auto mt-4 max-w-lg">
-      {/* Header */}
-      <div className="mb-4 px-5">
-        <p className="font-round text-xs font-black uppercase tracking-[0.16em] mb-0.5" style={{ color: `${theme.text}66` }}>
-          Today's Bloom Path
-        </p>
-        <p className="font-bubble text-2xl" style={{ color: theme.text }}>
-          {doneCount === 0 ? 'Start here 👇' : allDone ? 'All done! 🎉' : 'Keep going! 🌱'}
-        </p>
-      </div>
+    <section className="mx-auto mt-5 max-w-6xl px-4 md:px-6 xl:px-8">
+      <div className="relative overflow-hidden rounded-[34px] border-2 p-5 shadow-xl"
+        style={{ backgroundImage: 'linear-gradient(rgba(255,247,237,.18),rgba(255,237,213,.18)),url(/treasure-map-bg.png)', backgroundSize:'cover', backgroundPosition:'center', borderColor: 'rgba(146,64,14,.32)', boxShadow: '0 18px 45px rgba(66,32,6,.18)' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background:'linear-gradient(90deg,rgba(255,247,237,.78),rgba(255,247,237,.18) 42%,rgba(255,247,237,.08))' }} />
+        <div className="relative z-10 flex items-start justify-between gap-4">
+          <div>
+            <p className="font-round text-xs font-black uppercase tracking-[0.18em]" style={{ color:'#9A3412' }}>Today's treasure map</p>
+            <h2 className="font-bubble mt-1 text-3xl" style={{ color:'#422006' }}>
+              {allDone ? 'Treasure found!' : doneCount ? 'Follow the trail!' : 'Ready, explorer?'}
+            </h2>
+            <p className="font-round mt-1 text-sm font-bold" style={{ color:'rgba(66,32,6,.6)' }}>Help Yaagvi reach the treasure — one adventure at a time.</p>
+          </div>
+          <motion.span className="text-5xl" animate={{ rotate:[-4,4,-4], y:[0,-4,0] }} transition={{ duration:2,repeat:Infinity }}>🗺️</motion.span>
+        </div>
 
-      {/* Stepping-stone path */}
-      <div>
-        {steps.map((step, idx) => {
-          const state = step.done ? 'done' : idx === doneCount ? 'current' : 'locked'
-          return (
-            <React.Fragment key={step.id || idx}>
-              <PathNode step={step} state={state} idx={idx} onTap={onNavigate} theme={theme} />
-              <PathConnector done={step.done} color={theme.primary} />
-            </React.Fragment>
-          )
-        })}
-        <ArcadeGate locked={!allDone} onTap={onNavigate} theme={theme} />
+        <div className="relative z-10 mt-6 grid grid-cols-2 gap-x-8 gap-y-10 md:grid-cols-4 md:items-center">
+          {steps.map((step, idx) => {
+            const state = step.done ? 'done' : idx === doneCount ? 'current' : 'locked'
+            const locked = state === 'locked'
+            return <motion.button key={step.id || idx} disabled={locked} onClick={() => !locked && onNavigate(step.id)}
+              whileTap={!locked ? { scale:.92 } : {}} animate={state === 'current' ? { y:[0,-7,0] } : {}}
+              transition={{ duration:1.8,repeat:state === 'current' ? Infinity : 0 }}
+              className={`relative flex flex-col items-center text-center ${idx % 2 ? 'md:mt-16' : 'md:mb-10'}`}>
+              {state === 'current' && <motion.div className="absolute -inset-3 rounded-full border-4 border-orange-400"
+                animate={{ scale:[.8,1.2],opacity:[.8,0] }} transition={{duration:1.4,repeat:Infinity}} />}
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-full border-4 text-4xl shadow-lg"
+                style={{ background:step.done?'linear-gradient(135deg,#FDE68A,#F59E0B)':locked?'#E7D8C5':'linear-gradient(135deg,#F97316,#DB2777)', borderColor:'#FFF7ED', filter:locked?'grayscale(.8)':'none', opacity:locked?.55:1 }}>
+                {step.done ? '✅' : getEmoji(step.id)}
+                <span className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white font-bubble text-xs" style={{color:'#9A3412'}}>{idx+1}</span>
+              </div>
+              <p className="font-bubble mt-2 rounded-lg px-2 py-0.5 text-base leading-tight"
+                style={{ color:locked?'rgba(66,32,6,.78)':'#422006', background:'rgba(255,247,237,.58)', textShadow:'0 1px 0 rgba(255,255,255,.8)' }}>{step.label}</p>
+              <p className="font-round rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider"
+                style={{ color:state==='current'?'#9A3412':'rgba(66,32,6,.72)', background:'rgba(255,247,237,.66)' }}>{step.done?'Found':state==='current'?'Go here!':'Locked'}</p>
+            </motion.button>
+          })}
+          <motion.button disabled={!allDone} onClick={() => allDone && onNavigate('arcade')} whileTap={allDone?{scale:.9}:{}}
+            className="relative flex flex-col items-center text-center md:mt-14">
+            <motion.div className="text-6xl" animate={allDone?{y:[0,-8,0],rotate:[-3,3,-3]}:{}} transition={{duration:1.4,repeat:Infinity}} style={{filter:allDone?'none':'grayscale(1)',opacity:allDone?1:.5}}>🧰</motion.div>
+            <p className="font-bubble rounded-lg bg-orange-50/70 px-2 py-0.5 text-base" style={{color:allDone?'#422006':'rgba(66,32,6,.78)'}}>Treasure Arcade</p>
+          </motion.button>
+        </div>
+        <motion.div className="absolute bottom-3 left-4 flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-orange-100 text-3xl shadow-md"
+          animate={{x:[0,12,0],y:[0,-3,0]}} transition={{duration:2.8,repeat:Infinity,ease:'easeInOut'}}>🧭</motion.div>
       </div>
     </section>
   )

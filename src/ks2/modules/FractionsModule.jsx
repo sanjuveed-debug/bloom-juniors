@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
-import { dailySeedFor, seededShuffle } from '../../utils/seededRandom'
+import { sessionSeedFor, seededShuffle } from '../../utils/seededRandom'
 
 // SVG fraction bar — shaded n out of d parts
 function FractionBar({ n, d, color = '#22C55E' }) {
@@ -70,9 +70,9 @@ const HARDER_QUESTIONS = [
 
 function getQuestions(played) {
   if (played >= 3) {
-    return seededShuffle([...EASY_QUESTIONS, ...HARDER_QUESTIONS], dailySeedFor('fractions-hard')).slice(0, 12)
+    return seededShuffle([...EASY_QUESTIONS, ...HARDER_QUESTIONS], sessionSeedFor('fractions-hard', played)).slice(0, 12)
   }
-  return seededShuffle([...EASY_QUESTIONS], dailySeedFor('fractions'))
+  return seededShuffle([...EASY_QUESTIONS], sessionSeedFor('fractions', played))
 }
 
 export default function FractionsModule({ theme, onDone, onBack, played = 0 }) {

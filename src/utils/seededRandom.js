@@ -26,6 +26,13 @@ export function dailySeedFor(namespace = '') {
   return hashStr(dateStr + namespace)
 }
 
+// A stable daily seed that also advances after every completed session.
+// This prevents a child replaying a module on the same day from receiving the
+// identical deck while keeping sessions reproducible for debugging.
+export function sessionSeedFor(namespace = '', played = 0, round = 0) {
+  return (dailySeedFor(namespace) + (Number(played) || 0) * 2654435761 + (Number(round) || 0) * 2246822519) >>> 0
+}
+
 // Fisher-Yates shuffle driven by a deterministic seed
 export function seededShuffle(arr, seed) {
   const rng = mulberry32(seed)

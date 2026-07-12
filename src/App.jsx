@@ -19,6 +19,7 @@ import { formatLocalDate, formatYesterdayLocalDate } from './utils/date.js'
 import { shouldSendAutoDigest, markDigestSent, buildDigestPayload, sendDigestEmail, sendNudgeEmail } from './utils/weeklyDigest.js'
 import { getClassroomLesson, setClassroomLesson } from './utils/classroomLesson.js'
 import { getTodayWorldEvent, isEventBonusCollected, markEventBonusCollected, WORLD_EVENT_BONUS } from './utils/worldEvent.js'
+import { recordAdaptiveSession } from './utils/adaptiveLearning.js'
 import { CLASS_SESSION_KEY, loadCloudClassLesson } from './services/cloudStore.js'
 import { getAssistant } from './assistants'
 
@@ -31,6 +32,8 @@ import SplashScreen    from './components/SplashScreen'
 import AvatarSelector  from './components/AvatarSelector'
 import Dashboard       from './components/Dashboard'
 import JarvisOrb       from './components/JarvisOrb'
+import ModuleArrival   from './components/ModuleArrival'
+import AdventureModuleFrame from './components/AdventureModuleFrame'
 import ParentZone      from './components/ParentZone'
 import ProfileSelector from './components/ProfileSelector'
 import SessionTimer    from './components/SessionTimer'
@@ -110,7 +113,7 @@ function FloatingParticles({ avatar }) {
   )
 }
 
-function Screen({ id, current, children }) {
+function Screen({ id, current, children, onMap }) {
   return (
     <AnimatePresence mode="wait">
       {current === id && (
@@ -122,7 +125,9 @@ function Screen({ id, current, children }) {
           transition={{ duration: 0.22, ease: 'easeInOut' }}
           className="relative z-10 min-h-screen"
         >
-          {children}
+          {GAME_SCREENS.includes(id)
+            ? <AdventureModuleFrame moduleId={id} ageGroup="early" onMap={onMap}>{children}</AdventureModuleFrame>
+            : children}
         </motion.div>
       )}
     </AnimatePresence>
@@ -266,6 +271,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
           ensureDailyChallenges, setAvatar, addSticker, setDailyChallenge, resetProgress } = useProgress(profileId)
 
   const [screen, setScreen] = useState('splash')
+  const [moduleArrival, setModuleArrival] = useState(null)
   const [newMonster, setNewMonster] = useState(null)
   const [celebrating, setCelebrating] = useState(false)
   const [sharing, setSharing] = useState(false)
@@ -446,7 +452,12 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
         return
       }
     }
-    if (GAME_SCREENS.includes(to)) screenEntryRef.current = Date.now()
+    if (GAME_SCREENS.includes(to)) {
+      screenEntryRef.current = Date.now()
+      setModuleArrival(to)
+    } else {
+      setModuleArrival(null)
+    }
     setScreen(to)
   }, [resume, progress, sessionLocked])
 
@@ -472,6 +483,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
       screenEntryRef.current = stayOnModule ? Date.now() : null
       const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0
       logSession({ module, stars: count, total, correct, accuracy, duration, date: Date.now(), struggles })
+      update(p => recordAdaptiveSession(p, module, { total, correct, struggles, duration, questionSignatures: sessionData.questionSignatures || [] }))
       tickChallenge({ module, stars: count, accuracy, total, correct })
       window.dispatchEvent(new CustomEvent('yaagvi:celebrate', { detail: { module, stars: count } }))
     }
@@ -550,6 +562,14 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
       addSticker({ type: 'challenge', emoji: '🏆' })
       speak(`You completed the daily challenge! AMAZING ${profileName}!`, { mood: 'celebrate' })
     }
+    const skyshipEngineMissionActive =
+      module === 'math' &&
+      latest.adventure?.skyship?.engineMissionStarted &&
+      !latest.adventure?.skyship?.engineColour
+    if (!stayOnModule && skyshipEngineMissionActive) {
+      defer(() => setScreen('home'), 1500)
+      return
+    }
     if (!stayOnModule) {
       // Adventure bridge — guide child from step 1 to step 2 without returning to the menu
       const [focusId, secondId] = getTodayAdventureModules(latest, classroomLessonRef.current, hasAllAccessRef.current)
@@ -606,6 +626,14 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
       {progress.avatar && screen !== 'splash' && <FloatingParticles avatar={progress.avatar} />}
 
       <AnimatePresence>
+        {moduleArrival && screen === moduleArrival && (
+          <ModuleArrival
+            moduleId={moduleArrival}
+            profileName={profileName}
+            onStart={() => setModuleArrival(null)}
+            onBack={() => { setModuleArrival(null); setScreen('home') }}
+          />
+        )}
         {adventureBridge && (
           <AdventureStepBridge
             key="bridge"
@@ -653,51 +681,52 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
           onSwitchProfiles={onSwitchProfiles}
           onQuickSwitch={onQuickSwitch}
           onAddStars={handleAddStars}
+          onUpdateProgress={handleUpdateProgress}
           profiles={profiles}
           activeProfileId={profileId}
         />
       </Screen>
 
       <React.Suspense fallback={<LoadingSpinner />}>
-      <Screen id="phonics" current={screen}>
+      <Screen id="phonics" current={screen} onMap={() => navigate('home')}>
         <SoundPop avatar={progress.avatar} progress={progress}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="math" current={screen}>
+      <Screen id="math" current={screen} onMap={() => navigate('home')}>
         <NumberWorld avatar={progress.avatar} progress={progress}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="tricky" current={screen}>
+      <Screen id="tricky" current={screen} onMap={() => navigate('home')}>
         <StarCatch avatar={progress.avatar} progress={progress}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="story" current={screen}>
+      <Screen id="story" current={screen} onMap={() => navigate('home')}>
         <StoryRoom avatar={progress.avatar} progress={progress}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')}
           onUpdateProgress={handleUpdateProgress} />
       </Screen>
 
-      <Screen id="logic" current={screen}>
+      <Screen id="logic" current={screen} onMap={() => navigate('home')}>
         <DirectionalPuzzle avatar={progress.avatar} progress={progress}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="shop" current={screen}>
+      <Screen id="shop" current={screen} onMap={() => navigate('home')}>
         <ShopGame avatar={progress.avatar} progress={progress}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')}
           onUpdateProgress={handleUpdateProgress} />
       </Screen>
 
-      <Screen id="piggybank" current={screen}>
+      <Screen id="piggybank" current={screen} onMap={() => navigate('home')}>
         <PiggyBankGame
           ageGroup="early"
           avatar={progress.avatar}
@@ -711,13 +740,13 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
         />
       </Screen>
 
-      <Screen id="shapes" current={screen}>
+      <Screen id="shapes" current={screen} onMap={() => navigate('home')}>
         <ShapeWorld avatar={progress.avatar} progress={progress}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="davinci" current={screen}>
+      <Screen id="davinci" current={screen} onMap={() => navigate('home')}>
         <LittleDaVinci avatar={progress.avatar} progress={progress}
           profileName={profileName}
           onAddStars={handleAddStars}
@@ -725,37 +754,37 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
           onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="anatomy" current={screen}>
+      <Screen id="anatomy" current={screen} onMap={() => navigate('home')}>
         <BodyParts avatar={progress.avatar}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="science" current={screen}>
+      <Screen id="science" current={screen} onMap={() => navigate('home')}>
         <CuriousScience avatar={progress.avatar}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="worldgk" current={screen}>
+      <Screen id="worldgk" current={screen} onMap={() => navigate('home')}>
         <WorldGK avatar={progress.avatar}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="exercise" current={screen}>
+      <Screen id="exercise" current={screen} onMap={() => navigate('home')}>
         <FunExercise avatar={progress.avatar}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="planets" current={screen}>
+      <Screen id="planets" current={screen} onMap={() => navigate('home')}>
         <PlanetWorld avatar={progress.avatar}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="arcade" current={screen}>
+      <Screen id="arcade" current={screen} onMap={() => navigate('home')}>
         <GameArcade avatar={progress.avatar} progress={progress}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')}
@@ -763,7 +792,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
           onUpdateProgress={handleUpdateProgress} />
       </Screen>
 
-      <Screen id="sacred" current={screen}>
+      <Screen id="sacred" current={screen} onMap={() => navigate('home')}>
         <SacredStories avatar={progress.avatar}
           profileName={profileName}
           profileId={profileId}
