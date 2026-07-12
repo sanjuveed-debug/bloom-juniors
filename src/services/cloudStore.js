@@ -1,4 +1,5 @@
 import { isSupabaseConfigured, supabase } from '../lib/supabase.js'
+import { mergeWonderWorld } from '../utils/wonderWorld.js'
 
 function isMissingAuthSession(error) {
   const message = String(error?.message || '').toLowerCase()
@@ -123,6 +124,7 @@ function mergeProgress(local, cloud) {
       items: mergedTreasureItems.sort((a,b)=>(a.earnedAt||0)-(b.earnedAt||0)),
       claims: { ...(cloudTreasures.claims || {}), ...(localTreasures.claims || {}) },
     },
+    wonderWorld: mergeWonderWorld(local.wonderWorld, cloud.wonderWorld),
   }
 }
 

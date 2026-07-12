@@ -69,3 +69,12 @@ The primary success metric should be voluntary next-day return after a completed
 - Treasure claims are keyed by profile, age journey, and date or story. Cloud merging unions claims and unique items so refreshes and multiple devices do not remove earned objects.
 - The 3–4 and 7–9 dashboards now lead with the current Living Adventure, reward claim, and Treasure Shelf. Their large all-games maps are secondary, collapsed behind “Explore more games” or “Open full expedition atlas”.
 - On the 4–6 dashboard, secondary event and hand-off cards stay hidden while the Living Adventure is active, reducing simultaneous calls to action.
+
+## Persistent return loop: Yaagvi's Secret World
+
+- Every completed Living Adventure chapter and claimed daily treasure grants one uniquely identified Wonder Seed.
+- A child chooses between Rainbow, Moonberry, Giggle and Cloud seeds and plants it in one of three world plots.
+- A seed cannot reveal its surprise on the same local day. On a later visit it becomes a tappable discovery, creating anticipation without timers, loss, wilting or punishment.
+- Discoveries are permanently named and saved in the child's world. Each seed family has multiple possible discoveries, so the child is making a personal collection rather than filling a fixed checklist.
+- Seed awards, planted plots and discoveries merge through the existing per-profile cloud progress record; duplicate offline awards are suppressed by their learning-reward identity.
+- The Secret World is reachable from all 3–4, 4–6 and 7–9 dashboards and uses the same progress model across age transitions.

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { formatLocalDate } from '../utils/date.js'
 import { TREASURE_ITEMS, TreasureChestReward } from './TreasureCollection.jsx'
+import { grantWonderSeed } from '../utils/wonderWorld.js'
 
 const STORIES={
   toddler:{title:'The Sleepy Rainbow Egg',chapters:[
@@ -45,13 +46,25 @@ export default function LivingAdventure({ageGroup='early',profileName,progress,o
 
   useEffect(()=>{if(!saved||saved.storyId!=='moon-egg-v1')onUpdateProgress?.({livingAdventure:state})},[]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(()=>{
+    let nextWorld=progress.wonderWorld
+    for(const completedChapter of completed){
+      nextWorld=grantWonderSeed(nextWorld,`chapter:${state.storyId}:${ageGroup}:${completedChapter}`,'living-adventure')
+    }
+    const beforeCount=Object.keys(progress.wonderWorld?.seedClaims||{}).length
+    const afterCount=Object.keys(nextWorld?.seedClaims||{}).length
+    if(afterCount>beforeCount)onUpdateProgress?.({wonderWorld:nextWorld})
+  },[completed.length,ageGroup]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(()=>{
     if(!state.launched||finished||completed.includes(chapterIndex))return
     const moduleProgress=progress[chapter.module]||{}
     const sessionDone=(progress.sessions||[]).some(s=>s.module===chapter.module&&(s.date||0)>=state.launched.at)
     const playDone=(moduleProgress.played||0)>(state.launched.played||0)
     const dateDone=moduleProgress.lastPlayedDate===today&&state.launched.date===today
     if(!sessionDone&&!playDone&&!dateDone)return
-    onUpdateProgress?.({livingAdventure:{...state,completed:[...completed,chapterIndex],lastCompletedDate:today,launched:null,lastReward:{chapter:chapterIndex,at:Date.now()}}})
+    onUpdateProgress?.({
+      livingAdventure:{...state,completed:[...completed,chapterIndex],lastCompletedDate:today,launched:null,lastReward:{chapter:chapterIndex,at:Date.now()}},
+      wonderWorld:grantWonderSeed(progress.wonderWorld,`chapter:${state.storyId}:${ageGroup}:${chapterIndex}`,'living-adventure'),
+    })
   },[progress.sessions,progress[chapter.module]?.played,progress[chapter.module]?.lastPlayedDate]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const choose=choice=>onUpdateProgress?.({livingAdventure:{...state,choice}})

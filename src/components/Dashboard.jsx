@@ -21,7 +21,9 @@ import StreakCard from './StreakCard'
 import SkyshipAdventure from './SkyshipAdventure'
 import LivingAdventure from './LivingAdventure'
 import { TreasureChestReward, TreasureShelf, TreasureShelfButton, nextTreasure } from './TreasureCollection'
+import { WonderWorldButton } from './WonderWorld'
 import { formatLocalDate } from '../utils/date.js'
+import { grantWonderSeed } from '../utils/wonderWorld.js'
 
 // ── Module registry ───────────────────────────────────────────────────────────
 const PREMIUM_IDS = new Set(['worldgk','science','planets','anatomy','sacred','shapes','shop','logic'])
@@ -1172,7 +1174,10 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
   const claimTreasure = () => {
     if (treasureClaimed || !onUpdateProgress) return
     const item = nextTreasure(treasureCollection.items || [])
-    onUpdateProgress({ treasureCollection: { items: [...(treasureCollection.items || []), { ...item, earnedAt: Date.now(), source: 'daily-path' }], claims: { ...(treasureCollection.claims || {}), [treasureClaimKey]: item.id } } })
+    onUpdateProgress({
+      treasureCollection: { items: [...(treasureCollection.items || []), { ...item, earnedAt: Date.now(), source: 'daily-path' }], claims: { ...(treasureCollection.claims || {}), [treasureClaimKey]: item.id } },
+      wonderWorld: grantWonderSeed(progress.wonderWorld, `daily:${treasureClaimKey}`, 'daily-path'),
+    })
     setRewardTreasure(item)
   }
   const handleGatedNavigate = (to) => {
@@ -1317,6 +1322,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
 
       <LivingAdventure ageGroup="early" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress}/>
       <TreasureShelfButton count={treasureCollection.items?.length || 0} onClick={() => setShowTreasureShelf(true)}/>
+      <WonderWorldButton progress={progress} onClick={() => onNavigate('wonderworld')}/>
 
       {skyshipEnabled && !livingAdventureActive && (
         <SkyshipAdventure

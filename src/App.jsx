@@ -45,6 +45,7 @@ import SchoolsPage from './pages/SchoolsPage'
 import ClassroomDashboard from './components/ClassroomDashboard'
 import CurriculumMap from './pages/CurriculumMap'
 import ClassLogin from './components/ClassLogin'
+import WonderWorld from './components/WonderWorld'
 
 import MonsterReward, { MONSTERS } from './components/MonsterReward'
 
@@ -786,6 +787,10 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
           progress={progress}
           onUpdateProgress={handleUpdateProgress}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
+      </Screen>
+
+      <Screen id="wonderworld" current={screen}>
+        <WonderWorld progress={progress} profileName={profileName} onUpdateProgress={handleUpdateProgress} onBack={() => navigate('home')} />
       </Screen>
       </React.Suspense>
 
