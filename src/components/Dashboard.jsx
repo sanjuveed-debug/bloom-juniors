@@ -20,6 +20,8 @@ import FeedbackPrompt, { shouldShowFeedback } from './FeedbackPrompt'
 import StreakCard from './StreakCard'
 import SkyshipAdventure from './SkyshipAdventure'
 import LivingAdventure from './LivingAdventure'
+import { TreasureChestReward, TreasureShelf, TreasureShelfButton, nextTreasure } from './TreasureCollection'
+import { formatLocalDate } from '../utils/date.js'
 
 // ── Module registry ───────────────────────────────────────────────────────────
 const PREMIUM_IDS = new Set(['worldgk','science','planets','anatomy','sacred','shapes','shop','logic'])
@@ -1103,6 +1105,8 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
     () => sessionStorage.getItem('bloomCelebration') === 'true'
   )
   const [showFeedback, setShowFeedback] = useState(() => shouldShowFeedback(progress))
+  const [rewardTreasure, setRewardTreasure] = useState(null)
+  const [showTreasureShelf, setShowTreasureShelf] = useState(false)
   const arcadeStatus = getArcadeUnlockStatus(progress)
 
   // Yaagvi greeting: wave on arrival → settle into mood-based state
@@ -1162,6 +1166,15 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
   const skyshipEnabled = Boolean(onUpdateProgress)
   const skyshipEngineComplete = Boolean(progress.adventure?.skyship?.engineColour)
   const livingAdventureActive = Boolean(onUpdateProgress) && (progress.livingAdventure?.completed?.length || 0) < 5
+  const treasureCollection = progress.treasureCollection || { items: [], claims: {} }
+  const treasureClaimKey = `early:${formatLocalDate()}`
+  const treasureClaimed = Boolean(treasureCollection.claims?.[treasureClaimKey])
+  const claimTreasure = () => {
+    if (treasureClaimed || !onUpdateProgress) return
+    const item = nextTreasure(treasureCollection.items || [])
+    onUpdateProgress({ treasureCollection: { items: [...(treasureCollection.items || []), { ...item, earnedAt: Date.now(), source: 'daily-path' }], claims: { ...(treasureCollection.claims || {}), [treasureClaimKey]: item.id } } })
+    setRewardTreasure(item)
+  }
   const handleGatedNavigate = (to) => {
     const mod = MODULE_MAP[to]
     if (mod?.premium && !fullAccess) {
@@ -1303,6 +1316,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
       </div>
 
       <LivingAdventure ageGroup="early" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress}/>
+      <TreasureShelfButton count={treasureCollection.items?.length || 0} onClick={() => setShowTreasureShelf(true)}/>
 
       {skyshipEnabled && !livingAdventureActive && (
         <SkyshipAdventure
@@ -1314,12 +1328,14 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
       )}
 
       {/* ── PHASE 1: DAILY BLOOM PATH (path not done) ────────────────────────── */}
-      {!livingAdventureActive && !isDailyPathDone && (!skyshipEnabled || skyshipEngineComplete) && (
+      {!livingAdventureActive && (!isDailyPathDone || !treasureClaimed) && (!skyshipEnabled || skyshipEngineComplete) && (
         <DailyBloomPath
           adventure={dailyAdventure}
           theme={theme}
           onNavigate={handleGatedNavigate}
           profileName={profileName}
+          onClaimTreasure={claimTreasure}
+          treasureClaimed={treasureClaimed}
         />
       )}
 
@@ -1469,20 +1485,22 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
         </>
       )}
 
-      <WorldEventCard
-        progress={progress}
-        profileId={activeProfileId}
-        fullAccess={fullAccess}
-        theme={theme}
-        onNavigate={handleGatedNavigate}
-      />
+      {!livingAdventureActive && <>
+        <WorldEventCard
+          progress={progress}
+          profileId={activeProfileId}
+          fullAccess={fullAccess}
+          theme={theme}
+          onNavigate={handleGatedNavigate}
+        />
 
-      <ParentHandoff
-        progress={progress}
-        profileName={profileName}
-        arcadeStatus={arcadeStatus}
-        theme={theme}
-      />
+        <ParentHandoff
+          progress={progress}
+          profileName={profileName}
+          arcadeStatus={arcadeStatus}
+          theme={theme}
+        />
+      </>}
 
       {/* ── PARENT ZONE CTA ───────────────────────────────────────────────────── */}
       <motion.button
@@ -1514,6 +1532,8 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
 
       {/* Monster collection overlay */}
       <AnimatePresence>
+        {rewardTreasure && <TreasureChestReward item={rewardTreasure} onClose={() => setRewardTreasure(null)}/>}
+        {showTreasureShelf && <TreasureShelf collection={treasureCollection.items || []} onClose={() => setShowTreasureShelf(false)}/>}
         {showMonsters && (
           <MonsterCollection totalStars={totalStars} onClose={() => setShowMonsters(false)} />
         )}
@@ -1526,7 +1546,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
       </AnimatePresence>
 
       <AnimatePresence>
-        {showFeedback && (
+        {showFeedback && !livingAdventureActive && (
           <FeedbackPrompt
             profileName={profileName}
             theme={theme}

@@ -190,7 +190,7 @@ function ArcadeGate({ locked, onTap, theme }) {
   )
 }
 
-export default function DailyBloomPath({ adventure, theme, onNavigate }) {
+export default function DailyBloomPath({ adventure, theme, onNavigate, onClaimTreasure, treasureClaimed=false }) {
   const steps = (adventure?.steps || []).map(s => ({
     id:    s.module?.id    ?? s.id    ?? '',
     label: s.module?.label ?? s.label ?? '',
@@ -236,10 +236,10 @@ export default function DailyBloomPath({ adventure, theme, onNavigate }) {
                 style={{ color:state==='current'?'#9A3412':'rgba(66,32,6,.72)', background:'rgba(255,247,237,.66)' }}>{step.done?'Found':state==='current'?'Go here!':'Locked'}</p>
             </motion.button>
           })}
-          <motion.button disabled={!allDone} onClick={() => allDone && onNavigate('arcade')} whileTap={allDone?{scale:.9}:{}}
+          <motion.button disabled={!allDone} onClick={() => allDone && (treasureClaimed ? onNavigate('arcade') : onClaimTreasure?.())} whileTap={allDone?{scale:.9}:{}}
             className="relative flex flex-col items-center text-center md:mt-14">
             <motion.div className="text-6xl" animate={allDone?{y:[0,-8,0],rotate:[-3,3,-3]}:{}} transition={{duration:1.4,repeat:Infinity}} style={{filter:allDone?'none':'grayscale(1)',opacity:allDone?1:.5}}>🧰</motion.div>
-            <p className="font-bubble rounded-lg bg-orange-50/70 px-2 py-0.5 text-base" style={{color:allDone?'#422006':'rgba(66,32,6,.78)'}}>Treasure Arcade</p>
+            <p className="font-bubble rounded-lg bg-orange-50/70 px-2 py-0.5 text-base" style={{color:allDone?'#422006':'rgba(66,32,6,.78)'}}>{allDone&&!treasureClaimed?'Open my treasure!':treasureClaimed?'Treasure collected ✓':'Treasure chest'}</p>
           </motion.button>
         </div>
         <motion.div className="absolute bottom-3 left-4 flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-orange-100 text-3xl shadow-md"

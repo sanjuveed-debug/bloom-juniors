@@ -60,3 +60,12 @@ Audited the child-facing route, implementation and state transitions for 44 play
 ## Product metric
 
 The primary success metric should be voluntary next-day return after a completed Living Adventure chapter. Secondary metrics: mission completion, independent accuracy, hint use, repeated-question rate and child-selected replay.
+
+## Treasure promise and dashboard hierarchy
+
+- The treasure map now ends in a claimable, persistent reward instead of only stars or completion copy.
+- The first daily reward is the animated Explorer Yaagvi Dolly. Named rewards continue with an adventure bag, Starlight Fox, telescope, pocket elephant and story crown; uniquely numbered Star Crystals keep the collection expandable after those are owned.
+- Completing the five-chapter Living Adventure reveals and saves the Starlight Fox through an explicit “Open the final treasure” action.
+- Treasure claims are keyed by profile, age journey, and date or story. Cloud merging unions claims and unique items so refreshes and multiple devices do not remove earned objects.
+- The 3–4 and 7–9 dashboards now lead with the current Living Adventure, reward claim, and Treasure Shelf. Their large all-games maps are secondary, collapsed behind “Explore more games” or “Open full expedition atlas”.
+- On the 4–6 dashboard, secondary event and hand-off cards stay hidden while the Living Adventure is active, reducing simultaneous calls to action.

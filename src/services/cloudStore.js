@@ -95,6 +95,15 @@ function mergeProgress(local, cloud) {
       misconceptions: { ...(c.misconceptions || {}), ...(l.misconceptions || {}) },
     }
   }
+  const localTreasures = local.treasureCollection || { items: [], claims: {} }
+  const cloudTreasures = cloud.treasureCollection || { items: [], claims: {} }
+  const mergedTreasureItems = []
+  const seenTreasureKeys = new Set()
+  for (const item of [...(localTreasures.items || []), ...(cloudTreasures.items || [])]) {
+    const key = item.id
+    if (!item.id || seenTreasureKeys.has(key)) continue
+    seenTreasureKeys.add(key); mergedTreasureItems.push(item)
+  }
 
   return {
     ...cloud,
@@ -109,6 +118,10 @@ function mergeProgress(local, cloud) {
       version: 1,
       updatedAt: Math.max(local.learningJourney?.updatedAt || 0, cloud.learningJourney?.updatedAt || 0),
       skills: mergedSkills,
+    },
+    treasureCollection: {
+      items: mergedTreasureItems.sort((a,b)=>(a.earnedAt||0)-(b.earnedAt||0)),
+      claims: { ...(cloudTreasures.claims || {}), ...(localTreasures.claims || {}) },
     },
   }
 }
