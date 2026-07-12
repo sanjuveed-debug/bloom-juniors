@@ -1161,6 +1161,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
     (dailyAdventure?.steps?.length > 0 && dailyAdventure.steps.every(s => s.done))
   const skyshipEnabled = Boolean(onUpdateProgress)
   const skyshipEngineComplete = Boolean(progress.adventure?.skyship?.engineColour)
+  const livingAdventureActive = Boolean(onUpdateProgress) && (progress.livingAdventure?.completed?.length || 0) < 5
   const handleGatedNavigate = (to) => {
     const mod = MODULE_MAP[to]
     if (mod?.premium && !fullAccess) {
@@ -1301,9 +1302,9 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
         </div>
       </div>
 
-      <LivingAdventure ageGroup="early" profileName={profileName} progress={progress} onNavigate={handleGatedNavigate} onUpdateProgress={onUpdateProgress}/>
+      <LivingAdventure ageGroup="early" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress}/>
 
-      {skyshipEnabled && (
+      {skyshipEnabled && !livingAdventureActive && (
         <SkyshipAdventure
           progress={progress}
           profileName={profileName}
@@ -1313,7 +1314,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
       )}
 
       {/* ── PHASE 1: DAILY BLOOM PATH (path not done) ────────────────────────── */}
-      {!isDailyPathDone && (!skyshipEnabled || skyshipEngineComplete) && (
+      {!livingAdventureActive && !isDailyPathDone && (!skyshipEnabled || skyshipEngineComplete) && (
         <DailyBloomPath
           adventure={dailyAdventure}
           theme={theme}

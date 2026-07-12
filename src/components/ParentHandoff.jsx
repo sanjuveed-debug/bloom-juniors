@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useSpeech } from '../hooks/useSpeech'
 import { shareSuccessCard } from '../utils/successCardImage.js'
 import { trackEvent } from '../utils/analytics.js'
 
@@ -210,14 +209,12 @@ function ShareCard({ data, profileName, onClose }) {
 
 export default function ParentHandoff({ progress, profileName, arcadeStatus, theme }) {
   const [showShare, setShowShare] = useState(false)
-  const { speak } = useSpeech()
 
   const data = buildAchievementData(progress, profileName, arcadeStatus)
   if (!data) return null
 
   const handleShow = () => {
     setShowShare(true)
-    speak(`Show this to someone you love!`, { mood: 'celebrate' })
   }
 
   return (

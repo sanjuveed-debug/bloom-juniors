@@ -274,7 +274,6 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
   const [moduleArrival, setModuleArrival] = useState(null)
   const [newMonster, setNewMonster] = useState(null)
   const [celebrating, setCelebrating] = useState(false)
-  const [sharing, setSharing] = useState(false)
   const [adventureBridge, setAdventureBridge] = useState(null)
   const [sessionLocked, setSessionLocked] = useState(false)
   const [lockPinInput, setLockPinInput] = useState('')
@@ -454,7 +453,9 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
     }
     if (GAME_SCREENS.includes(to)) {
       screenEntryRef.current = Date.now()
-      setModuleArrival(to)
+      let skipArrival = false
+      try { skipArrival = sessionStorage.getItem('bloom_living_launch') === to; if (skipArrival) sessionStorage.removeItem('bloom_living_launch') } catch {}
+      setModuleArrival(skipArrival ? null : to)
     } else {
       setModuleArrival(null)
     }
@@ -599,14 +600,6 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
         return
       }
     }
-    if (!stayOnModule) {
-      const shareKey = `shared_${profileId}`
-      if (!sessionStorage.getItem(shareKey) && Math.random() < 0.33) {
-        sessionStorage.setItem(shareKey, '1')
-        defer(() => { setScreen('home'); setSharing(true) }, 1500)
-        return
-      }
-    }
     defer(() => setScreen(stayOnModule ? module : 'home'), 1500)
   }, [addStars, logSession, tickChallenge, update, addSticker, speak, profileName, profileId, defer])
 
@@ -653,13 +646,6 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
             profileName={profileName}
             avatar={progress.avatar}
             onDone={() => setCelebrating(false)}
-          />
-        )}
-        {sharing && (
-          <SharePrompt
-            profileName={profileName}
-            avatar={progress.avatar}
-            onDone={() => setSharing(false)}
           />
         )}
       </AnimatePresence>

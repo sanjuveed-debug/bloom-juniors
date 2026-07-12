@@ -51,6 +51,7 @@ export default function LivingAdventure({ageGroup='early',profileName,progress,o
   const choose=choice=>onUpdateProgress?.({livingAdventure:{...state,choice}})
   const launch=()=>{
     onUpdateProgress?.({livingAdventure:{...state,launched:{module:chapter.module,at:Date.now(),date:today,played:progress[chapter.module]?.played||0}}})
+    try { sessionStorage.setItem('bloom_living_launch',chapter.module) } catch {}
     onNavigate(chapter.module)
   }
   const sceneLabel=useMemo(()=>state.choice==='river'?'Waterfall route':state.choice==='forest'?'Forest route':'Choose your route',[state.choice])

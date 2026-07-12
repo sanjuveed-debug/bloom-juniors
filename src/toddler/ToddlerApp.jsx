@@ -1171,7 +1171,9 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
   const [moduleArrival, setModuleArrival] = useState(null)
   const openModule = useCallback((to) => {
     setScreen(to)
-    if (['colours','shapes','numbers','animals','fruits','bodyparts','alphabet'].includes(to)) setModuleArrival(to)
+    let skipArrival = false
+    try { skipArrival = sessionStorage.getItem('bloom_living_launch') === to; if (skipArrival) sessionStorage.removeItem('bloom_living_launch') } catch {}
+    if (!skipArrival && ['colours','shapes','numbers','animals','fruits','bodyparts','alphabet'].includes(to)) setModuleArrival(to)
   }, [])
 
   // Auto-assign default buddy on first visit so child skips the buddy picker

@@ -598,7 +598,9 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
   const gatedNavigate = useCallback((to) => {
     if (!hasAllAccess && PREMIUM_KS2_MODULES.has(to)) { setLockedModule(to); return }
     setScreen(to)
-    if (['timestables','fractions','reading','spelling','wordproblems','piggybank','grammar','science','worldmap','spirituality','games','exercise'].includes(to)) setModuleArrival(to)
+    let skipArrival = false
+    try { skipArrival = sessionStorage.getItem('bloom_living_launch') === to; if (skipArrival) sessionStorage.removeItem('bloom_living_launch') } catch {}
+    if (!skipArrival && ['timestables','fractions','reading','spelling','wordproblems','piggybank','grammar','science','worldmap','spirituality','games','exercise'].includes(to)) setModuleArrival(to)
   }, [hasAllAccess])
   // Per-session idempotency guard: moduleId:date → only one completion per module per day
   const completedModulesRef = useRef(new Set())
