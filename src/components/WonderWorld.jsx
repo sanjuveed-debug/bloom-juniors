@@ -41,16 +41,6 @@ function SeedPlant({ seedId, ready = false }) {
   return <motion.div className="relative h-20 w-20" animate={{x:[-3,3,-3],y:[0,-3,0]}} transition={{duration:2.5,repeat:Infinity}}><div className="absolute bottom-0 left-1/2 h-11 w-2 -translate-x-1/2 rounded-full bg-teal-600"/><div className="absolute left-1 top-2 h-10 w-16 rounded-full bg-white shadow-[0_0_20px_#bae6fd]"><span className="absolute -top-3 left-4 h-8 w-8 rounded-full bg-white"/><span className="absolute -top-2 right-2 h-7 w-7 rounded-full bg-sky-50"/></div><span className="absolute bottom-0 left-4 text-lg">💧</span><span className="absolute bottom-1 right-3 text-lg">💧</span></motion.div>
 }
 
-export function WonderWorldButton({ progress, onClick }) {
-  const world = normalizeWonderWorld(progress?.wonderWorld)
-  const seeds = getAvailableSeedAwards(world).length
-  const growing = world.plots.filter(Boolean).length
-  const ready = world.plots.filter(plot => isWonderPlotReady(plot)).length
-  return <motion.button whileTap={{scale:.97}} onClick={onClick} className="mx-auto mt-4 flex w-[calc(100%-2rem)] max-w-6xl items-center gap-3 rounded-2xl border-2 border-emerald-600/25 bg-gradient-to-r from-[#e9ffd7] to-[#dff7ff] p-3 text-left shadow-lg">
-    <span className="text-4xl">🌱</span><span className="flex-1"><span className="block font-bubble text-lg text-[#274116]">Yaagvi&apos;s Secret World</span><span className="block font-round text-xs font-bold text-[#53723e]">{ready?`${ready} surprise${ready===1?' is':'s are'} ready!`:seeds?`${seeds} Wonder Seed${seeds===1?'':'s'} ready to plant`:growing?'Something is growing for tomorrow':world.discoveries.length?`${world.discoveries.length} magical discoveries`:'Complete today’s adventure to earn a seed'}</span></span><span className="font-bubble text-xl text-emerald-700">→</span>
-  </motion.button>
-}
-
 export default function WonderWorld({ progress, profileName, onUpdateProgress, onBack }) {
   const today = formatLocalDate()
   const world = normalizeWonderWorld(progress?.wonderWorld)

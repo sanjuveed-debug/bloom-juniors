@@ -16,6 +16,7 @@ await page.goto(`${BASE_URL}/test-dashboard.html?scenario=path0`, { waitUntil: '
 await page.waitForTimeout(1000)
 await page.screenshot({ path: 'tests/uat_phase0_path.png' })
 check('Phase 0: "Today\'s treasure map" visible', await page.getByText("Today's treasure map", { exact: false }).count() > 0)
+check('Phase 0: new Secret World action is visible inside the main adventure', await page.getByRole('button', { name: /open my secret world/i }).count() > 0)
 check('Phase 0: "Play More" tab NOT visible', await page.getByText('Play More').count() === 0)
 check('Phase 0: celebration screen NOT visible', await page.getByText('Your learning path is complete!').count() === 0)
 

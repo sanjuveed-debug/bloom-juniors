@@ -10,7 +10,7 @@ import ModuleArrival from '../components/ModuleArrival'
 import AdventureModuleFrame from '../components/AdventureModuleFrame'
 import LivingAdventure from '../components/LivingAdventure'
 import { TreasureChestReward, TreasureShelf, TreasureShelfButton, nextTreasure } from '../components/TreasureCollection'
-import WonderWorld, { WonderWorldButton } from '../components/WonderWorld'
+import WonderWorld from '../components/WonderWorld'
 import { formatLocalDate } from '../utils/date.js'
 import { grantWonderSeed } from '../utils/wonderWorld.js'
 import { shouldSendAutoDigest, markDigestSent, buildDigestPayload, sendDigestEmail, sendNudgeEmail } from '../utils/weeklyDigest.js'
@@ -1159,11 +1159,10 @@ function ToddlerDashboard({ profileName, progress, onNavigate, onSwitchProfiles,
   const claimTreasure=()=>{if(treasureClaimed||dailyPath.doneCount<2)return;const item=nextTreasure(treasureCollection.items||[]);onUpdateProgress?.({treasureCollection:{items:[...(treasureCollection.items||[]),{...item,earnedAt:Date.now(),source:'toddler-path'}],claims:{...(treasureCollection.claims||{}),[claimKey]:item.id}},wonderWorld:grantWonderSeed(progress.wonderWorld,`daily:${claimKey}`,'toddler-path')});setRewardTreasure(item)}
   return <div className="min-h-screen bg-[#fff0d6] pb-16 text-[#3b1607]">
     <header className="border-b-2 border-[#9a4b20]/15 bg-[#fff4dc] px-4 py-3 shadow-sm"><div className="mx-auto flex max-w-6xl items-center gap-3"><div className="mascot-video relative h-20 w-24 shrink-0"><img src="/yaagvi-3d-wave.png" alt="Yaagvi waving" className="absolute inset-0 h-full w-full object-contain drop-shadow-lg"/><video className="absolute inset-0 h-full w-full object-contain drop-shadow-lg" autoPlay muted loop playsInline preload="metadata" poster="/yaagvi-3d-wave.png" aria-hidden="true"><source src="/yaagvi-3d-wave.webm" type="video/webm"/></video></div><div className="min-w-0 flex-1"><p className="font-round text-xs font-black uppercase tracking-[.15em] text-[#b44b20]">Yaagvi’s little treasure hunt</p><h1 className="truncate font-bubble text-2xl sm:text-3xl">Hi, {profileName}! 👋</h1><p className="font-round text-sm font-bold text-[#8a5435]">Find two treasures, then celebrate.</p></div><div className="rounded-2xl bg-[#ffe29a] px-3 py-2 text-center"><p>⭐</p><p className="font-bubble text-lg leading-none">{totalStars}</p></div>{onSwitchProfiles&&<button onClick={onSwitchProfiles} className="hidden rounded-xl bg-white/70 px-3 py-2 font-bubble text-sm sm:block">Switch</button>}</div></header>
-    <LivingAdventure ageGroup="toddler" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress}/>
+    <LivingAdventure ageGroup="toddler" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress} onOpenWonderWorld={onWonderWorld}/>
     <div className="mx-auto mt-4 max-w-6xl px-4">
       {dailyPath.doneCount>=2&&!treasureClaimed&&<motion.button whileTap={{scale:.96}} onClick={claimTreasure} className="min-h-16 w-full rounded-2xl bg-gradient-to-r from-[#ff7b29] to-[#ef3f83] font-bubble text-xl text-white shadow-xl">🧰 OPEN MY REAL TREASURE!</motion.button>}
       <TreasureShelfButton count={treasureCollection.items?.length||0} onClick={()=>setShowShelf(true)}/>
-      <WonderWorldButton progress={progress} onClick={onWonderWorld}/>
       <button onClick={()=>setShowExploreMap(value=>!value)} className="mt-4 min-h-14 w-full rounded-2xl border-2 border-[#d58a46]/30 bg-white/75 font-bubble text-lg text-[#7a351b] shadow-sm">{showExploreMap?'Hide extra games ↑':'🗺️ Explore more games ↓'}</button>
     </div>
     {showExploreMap&&<section className="mx-auto mt-5 max-w-6xl px-3 sm:px-5"><div className="relative min-h-[590px] overflow-hidden rounded-[34px] border-4 border-[#d58a46] bg-cover bg-center shadow-2xl sm:min-h-[650px]" style={{backgroundImage:'url(/treasure-map-bg.png)'}}><div className="absolute inset-0 bg-[#fff1cb]/15"/>

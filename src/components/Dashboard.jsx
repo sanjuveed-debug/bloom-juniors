@@ -21,7 +21,6 @@ import StreakCard from './StreakCard'
 import SkyshipAdventure from './SkyshipAdventure'
 import LivingAdventure from './LivingAdventure'
 import { TreasureChestReward, TreasureShelf, TreasureShelfButton, nextTreasure } from './TreasureCollection'
-import { WonderWorldButton } from './WonderWorld'
 import { formatLocalDate } from '../utils/date.js'
 import { grantWonderSeed } from '../utils/wonderWorld.js'
 
@@ -1320,9 +1319,8 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
         </div>
       </div>
 
-      <LivingAdventure ageGroup="early" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress}/>
+      <LivingAdventure ageGroup="early" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress} onOpenWonderWorld={() => onNavigate('wonderworld')}/>
       <TreasureShelfButton count={treasureCollection.items?.length || 0} onClick={() => setShowTreasureShelf(true)}/>
-      <WonderWorldButton progress={progress} onClick={() => onNavigate('wonderworld')}/>
 
       {skyshipEnabled && !livingAdventureActive && (
         <SkyshipAdventure
