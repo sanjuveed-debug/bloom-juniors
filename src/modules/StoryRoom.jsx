@@ -626,6 +626,8 @@ export default function StoryRoom({ avatar, progress, onAddStars, onBack, profil
   }, [clearStoryTimers, speak, stopSpeaking])
 
   const handleStorySelect = useCallback((story) => {
+    clearStoryTimers()
+    stopSpeaking()
     completedRef.current = false
     introSpokenRef.current = false
     setSelectedStory(story)
@@ -646,7 +648,7 @@ export default function StoryRoom({ avatar, progress, onAddStars, onBack, profil
       readPage(story, 0)
     }, 2200)
     timersRef.current.push(id)
-  }, [readPage, speak])
+  }, [clearStoryTimers, readPage, speak, stopSpeaking])
 
   const handleWordTap = useCallback((word, idx) => {
     const clean = word.replace(/[^a-zA-Z]/g, '').toLowerCase()
@@ -681,6 +683,8 @@ export default function StoryRoom({ avatar, progress, onAddStars, onBack, profil
 
   const nextPage = useCallback(() => {
     if (!selectedStory) return
+    clearStoryTimers()
+    stopSpeaking()
     if (page < selectedStory.pages.length - 1) {
       const next = page + 1
       setPage(next)
@@ -712,10 +716,12 @@ export default function StoryRoom({ avatar, progress, onAddStars, onBack, profil
       }, 2000)
       timersRef.current.push(id)
     }
-  }, [selectedStory, page, readPage, speak, onAddStars, foundPhonics, profileName])
+  }, [clearStoryTimers, selectedStory, page, readPage, speak, stopSpeaking, onAddStars, foundPhonics, profileName])
 
   const prevPage = useCallback(() => {
     if (page > 0) {
+      clearStoryTimers()
+      stopSpeaking()
       const prev = page - 1
       setPage(prev)
       const id = window.setTimeout(() => {
@@ -724,7 +730,7 @@ export default function StoryRoom({ avatar, progress, onAddStars, onBack, profil
       }, 400)
       timersRef.current.push(id)
     }
-  }, [page, selectedStory, readPage])
+  }, [clearStoryTimers, page, selectedStory, readPage, stopSpeaking])
 
   // Auto-play
   useEffect(() => {

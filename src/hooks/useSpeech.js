@@ -53,6 +53,36 @@ async function fetchAzureTTS(text, ratePercent, voice = AZURE_VOICE, ssmlInner =
   return blob
 }
 
+async function fetchAzureTTSWithRetry(text, ratePercent, voice, ssmlInner) {
+  let lastError
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      return await fetchAzureTTS(text, ratePercent, voice, ssmlInner)
+    } catch (error) {
+      lastError = error
+      if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 350))
+    }
+  }
+  throw lastError
+}
+
+function allowBrowserVoiceFallback() {
+  try {
+    return ['localhost', '127.0.0.1'].includes(window.location.hostname)
+  } catch {
+    return false
+  }
+}
+
+function reportAzureFailure(error) {
+  console.error('[TTS] Azure voice unavailable', error)
+  try {
+    window.dispatchEvent(new CustomEvent('bloom:tts-unavailable', {
+      detail: { message: String(error?.message || 'Azure voice unavailable') },
+    }))
+  } catch {}
+}
+
 function getPreferredSpeechLang() {
   const lang = (navigator.language || 'en-US').toLowerCase()
   return lang.startsWith('en') ? lang : 'en-us'
@@ -184,7 +214,19 @@ export function useSpeech() {
     audioRef.current = audio
     audio.play().catch(() => {})
 
-    fetchAzureTTS(prepared, ratePercent, voice, ssmlInner)
+    let voiceFailureHandled = false
+    const handleVoiceFailure = (error) => {
+      if (voiceFailureHandled) return
+      voiceFailureHandled = true
+      reportAzureFailure(error)
+      if (audioRef.current === audio) audioRef.current = null
+      // Never substitute a robotic browser voice on the live child experience.
+      // Local development keeps the fallback so games remain testable offline.
+      if (allowBrowserVoiceFallback()) speakWithBrowser()
+      else finishSpeech()
+    }
+
+    fetchAzureTTSWithRetry(prepared, ratePercent, voice, ssmlInner)
       .then((blob) => {
         if (!isMounted.current || audioRef.current !== audio) return
         const url = URL.createObjectURL(blob)
@@ -202,21 +244,16 @@ export function useSpeech() {
         }
         audio.onerror = () => {
           URL.revokeObjectURL(url)
-          if (audioRef.current === audio) audioRef.current = null
-          speakWithBrowser()
+          handleVoiceFailure(new Error('Azure returned audio the browser could not play'))
         }
         audio.src = url
         audio.load()
         audio.play().catch(() => {
           URL.revokeObjectURL(url)
-          if (audioRef.current === audio) audioRef.current = null
-          speakWithBrowser()
+          handleVoiceFailure(new Error('Azure audio playback was blocked'))
         })
       })
-      .catch(() => {
-        if (audioRef.current === audio) audioRef.current = null
-        speakWithBrowser()
-      })
+      .catch(handleVoiceFailure)
   }, [stopSpeaking, defaultVoice])
 
   const listen = useCallback((onResult, onEnd) => {

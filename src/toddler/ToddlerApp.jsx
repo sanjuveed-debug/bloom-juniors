@@ -1181,6 +1181,12 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
   const [screen, setScreen] = useState(classroomMode || moodLoggedToday ? 'home' : 'mood')
   const [rewardInfo, setRewardInfo] = useState(null)
   const [moduleArrival, setModuleArrival] = useState(null)
+  const rewardTimerRef = useRef(null)
+
+  useEffect(() => () => {
+    if (rewardTimerRef.current) clearTimeout(rewardTimerRef.current)
+  }, [])
+
   const openModule = useCallback((to) => {
     setScreen(to)
     let skipArrival = false
@@ -1250,7 +1256,11 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
     const mod = TODDLER_MODULES.find(m => m.id === moduleId)
     setScreen('home')
     setRewardInfo({ mod, stars, treasure: firstTreasureToday ? 5 : 0 })
-    setTimeout(() => setRewardInfo(null), 3000)
+    if (rewardTimerRef.current) clearTimeout(rewardTimerRef.current)
+    rewardTimerRef.current = window.setTimeout(() => {
+      rewardTimerRef.current = null
+      setRewardInfo(null)
+    }, 3000)
   }, [update, progress])
 
   if (screen === 'avatar') {
