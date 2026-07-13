@@ -27,6 +27,15 @@ const ALLOWED_VOICES = [
   'en-US-GuyNeural',
 ]
 
+export function normalizeAzureKey(value = '') {
+  let key = String(value || '').trim()
+  key = key.replace(/^AZURE_TTS_KEY\s*=\s*/i, '').trim()
+  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+    key = key.slice(1, -1).trim()
+  }
+  return key.replace(/[^\x20-\x7E]/g, '')
+}
+
 export function getAzureRegionCandidates(configuredRegion = '', extraRegions = '') {
   const configured = String(configuredRegion || '').trim().toLowerCase()
   const extras = String(extraRegions || '')
@@ -96,7 +105,7 @@ function textResponse(message, status) {
 
 export async function onRequestPost(context) {
   const { request, env } = context
-  const key = (env.AZURE_TTS_KEY || '').trim().replace(/[^\x20-\x7E]/g, '')
+  const key = normalizeAzureKey(env.AZURE_TTS_KEY)
   const regions = getAzureRegionCandidates(env.AZURE_TTS_REGION, env.AZURE_TTS_FALLBACK_REGIONS)
 
   if (!key) return textResponse('Azure speech is not configured', 503)

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { getAzureRegionCandidates, onRequestPost } from '../functions/api/tts.js'
+import { getAzureRegionCandidates, normalizeAzureKey, onRequestPost } from '../functions/api/tts.js'
 
 function makeRequest(text = 'Hello explorer') {
   return new Request('https://bloomjuniors.com/api/tts', {
@@ -18,6 +18,11 @@ test('Azure region candidates keep configured region first and remove duplicates
     getAzureRegionCandidates('EastUS', 'uaenorth, eastus'),
     ['eastus', 'uaenorth', 'uksouth', 'centralindia']
   )
+})
+
+test('Azure key normalization recovers common quoted Cloudflare secret formats', () => {
+  assert.equal(normalizeAzureKey(' "speech-key" '), 'speech-key')
+  assert.equal(normalizeAzureKey("AZURE_TTS_KEY='speech-key'"), 'speech-key')
 })
 
 test('TTS worker returns Azure audio and reports the successful region', async () => {
