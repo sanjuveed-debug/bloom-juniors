@@ -22,7 +22,7 @@ export default defineConfig({
       includeAssets: ['favicon.ico', 'bm-apple-touch-icon.png', 'masked-icon.svg', 'offline.html'],
       workbox: {
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//],
+        navigateFallbackDenylist: [/^\/api\//, /^\/blog\//],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
