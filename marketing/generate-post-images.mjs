@@ -70,7 +70,7 @@ function body(lines, startY, size = 40, lh = 58, color = SOFT) {
 function footer() {
   return `
     <rect x="90" y="962" width="900" height="2.5" fill="${SOFT}" fill-opacity=".22"/>
-    <text x="90" y="1016" font-family="${FONT}" font-size="29" font-weight="700" fill="${SOFT}">@bloomjuniors</text>
+    <text x="90" y="1016" font-family="${FONT}" font-size="29" font-weight="700" fill="${SOFT}">@bloom_juniors</text>
     <text x="990" y="1016" font-family="${FONT}" font-size="29" font-weight="700" fill="${ACCENT}" text-anchor="end">bloomjuniors.com</text>`
 }
 
@@ -109,6 +109,15 @@ function base(content) {
 
 // ── Slide definitions ─────────────────────────────────────────────────────────
 const slides = []
+
+// POST 1 — founder story cover (single image, use if no personal photo)
+slides.push(['post1-cover', base(`
+  ${header(1, 1)} ${chip(`A DAD'S STORY`)}
+  <text x="90" y="400" font-family="${FONT}" font-size="150" font-weight="800" fill="${AMBER}">&#8220;</text>
+  ${headline([['Dad, does our app'], ['have this kind'], ['of games?']], 460, 78, 98)}
+  ${body(['— my 5-year-old, after watching YouTube.'], 760, 40)}
+  ${body(['So I built her something better.', 'Free. Ad-free. Forever.'], 850, 44, 62, INK)}
+  ${footer()}`)])
 
 // POST 2 — pure sounds
 slides.push(['post2-slide1', base(`
