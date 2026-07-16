@@ -3,6 +3,10 @@ import { isSupabaseConfigured } from '../lib/supabase.js'
 import { loadCloudProgress, saveCloudProgress } from '../services/cloudStore.js'
 import { formatLocalDate, formatYesterdayLocalDate } from '../utils/date.js'
 import { reportSyncError, reportSyncSuccess } from '../utils/syncStatus.js'
+import { normalizeWonderWorld } from '../utils/wonderWorld.js'
+import { normalizeCompanionPowers } from '../utils/companionPowers.js'
+import { normalizeAdventureDirector } from '../utils/adventureDirector.js'
+import { normalizeDreamProject } from '../utils/dreamProject.js'
 
 function getStorageKey(profileId) {
   if (profileId) return `eduapp_progress_${profileId}`
@@ -86,6 +90,11 @@ export const defaultProgress = {
   sessionMinutes: 30,
   loginStreak: 0,
   lastLoginDate: '',
+  wonderWorld: normalizeWonderWorld(),
+  companionPowers: normalizeCompanionPowers(),
+  adventureDirector: normalizeAdventureDirector(),
+  dreamProject: normalizeDreamProject(),
+  treasureCollection: { items: [], claims: {}, equipped: {}, history: [], eggHatches: [], sparkleDust: 0, claimStreak: 0, lastClaimDate: '' },
 }
 
 export function hydrateProgressData(parsed = {}) {
@@ -116,6 +125,19 @@ export function hydrateProgressData(parsed = {}) {
     sessions: Array.isArray(source.sessions) ? source.sessions : [],
     struggles: source.struggles && typeof source.struggles === 'object' ? source.struggles : {},
     autoChallenge: source.autoChallenge || { date: '', challenges: [] },
+    wonderWorld: normalizeWonderWorld(source.wonderWorld),
+    companionPowers: normalizeCompanionPowers(source.companionPowers),
+    adventureDirector: normalizeAdventureDirector(source.adventureDirector),
+    dreamProject: normalizeDreamProject(source.dreamProject),
+    treasureCollection: {
+      ...defaultProgress.treasureCollection,
+      ...(source.treasureCollection || {}),
+      items: Array.isArray(source.treasureCollection?.items) ? source.treasureCollection.items : [],
+      claims: source.treasureCollection?.claims || {},
+      equipped: source.treasureCollection?.equipped || {},
+      history: Array.isArray(source.treasureCollection?.history) ? source.treasureCollection.history : [],
+      eggHatches: Array.isArray(source.treasureCollection?.eggHatches) ? source.treasureCollection.eggHatches : [],
+    },
   }
 }
 

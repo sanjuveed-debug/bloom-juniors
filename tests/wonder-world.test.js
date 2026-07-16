@@ -2,7 +2,9 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   getAvailableSeedAwards,
+  getWonderGrowthStage,
   grantWonderSeed,
+  interactWithWonderDiscovery,
   isWonderPlotReady,
   mergeWonderWorld,
   plantWonderSeed,
@@ -24,6 +26,15 @@ test('a planted seed grows only after the local date changes', () => {
   assert.equal(isWonderPlotReady(planted.plots[0], '2026-07-13'), true)
 })
 
+test('a planted seed has three clear growth stages', () => {
+  const rewarded = grantWonderSeed({}, 'daily:stages')
+  const planted = plantWonderSeed(rewarded, 0, 'cloud', '2026-07-12')
+  const plantedAt = planted.plots[0].plantedAt
+  assert.equal(getWonderGrowthStage(planted.plots[0], '2026-07-12', plantedAt).id, 'seed')
+  assert.equal(getWonderGrowthStage(planted.plots[0], '2026-07-12', plantedAt + (31 * 60 * 1000)).id, 'sprout')
+  assert.equal(getWonderGrowthStage(planted.plots[0], '2026-07-13', plantedAt).id, 'ready')
+})
+
 test('revealing a grown plot permanently adds a discovery and frees the plot', () => {
   const rewarded = grantWonderSeed({}, 'chapter:two')
   const planted = plantWonderSeed(rewarded, 1, 'moonberry', '2026-07-12')
@@ -32,6 +43,9 @@ test('revealing a grown plot permanently adds a discovery and frees the plot', (
   assert.equal(world.plots[1], null)
   assert.equal(world.discoveries.length, 1)
   assert.equal(world.discoveries[0].awardId, 'chapter:two')
+  const playedWith = interactWithWonderDiscovery(world, discovery.id, 123)
+  assert.equal(playedWith.discoveries[0].interactionCount, 1)
+  assert.equal(playedWith.discoveries[0].lastInteractedAt, 123)
 })
 
 test('cloud merge does not duplicate awards and a revealed discovery beats an old planted plot', () => {

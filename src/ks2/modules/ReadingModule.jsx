@@ -177,7 +177,7 @@ export default function ReadingModule({ theme, onDone, onBack }) {
         </AnimatePresence>
         <div className="flex flex-col gap-3 w-full max-w-sm">
           {curr.opts.map(opt => (
-            <motion.button key={opt} whileTap={{ scale: 0.96 }} onClick={() => handle(opt)}
+            <motion.button key={opt} data-companion-answer={opt === curr.ans ? 'correct' : 'wrong'} whileTap={{ scale: 0.96 }} onClick={() => handle(opt)}
               className="py-4 px-5 rounded-2xl font-round text-white text-sm text-left"
               style={{
                 background: feedback && opt === curr.ans ? '#22C55E30' : theme.card,

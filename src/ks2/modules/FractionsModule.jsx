@@ -149,7 +149,7 @@ export default function FractionsModule({ theme, onDone, onBack, played = 0 }) {
 
         <div className="grid grid-cols-3 gap-4 w-full max-w-sm">
           {current.opts.map(opt => (
-            <motion.button key={opt} whileTap={{ scale: 0.88 }} onClick={() => handle(opt)}
+            <motion.button key={opt} data-companion-answer={String(opt) === String(current.ans) ? 'correct' : 'wrong'} whileTap={{ scale: 0.88 }} onClick={() => handle(opt)}
               className="py-5 rounded-2xl font-bubble text-white text-xl"
               style={{
                 background: feedback && String(opt) === String(current.ans) ? '#22C55E40' : theme.card,

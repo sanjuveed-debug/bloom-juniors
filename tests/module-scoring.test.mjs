@@ -27,6 +27,19 @@ test('hydrateProgressData migrates legacy world explorer progress', () => {
   assert.equal(Object.hasOwn(hydrated, 'gk'), false)
 })
 
+test('hydrateProgressData preserves planted Secret World plots', () => {
+  const hydrated = hydrateProgressData({
+    wonderWorld: {
+      seedClaims: { 'daily:one': { at: 1, source: 'test' } },
+      plots: [{ awardId: 'daily:one', seedId: 'rainbow', plantedDate: '2026-07-13', plantedAt: 2 }, null, null],
+      discoveries: [],
+    },
+  })
+
+  assert.equal(hydrated.wonderWorld.plots[0].seedId, 'rainbow')
+  assert.equal(hydrated.wonderWorld.plots[0].awardId, 'daily:one')
+})
+
 test('buildSoundPopCompletion keeps accuracy tied to correct answers, not bonus stars', () => {
   const result = buildSoundPopCompletion({
     totalRounds: 10,

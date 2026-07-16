@@ -1,5 +1,8 @@
 import { isSupabaseConfigured, supabase } from '../lib/supabase.js'
 import { mergeWonderWorld } from '../utils/wonderWorld.js'
+import { mergeCompanionPowers } from '../utils/companionPowers.js'
+import { mergeAdventureDirector } from '../utils/adventureDirector.js'
+import { mergeDreamProject } from '../utils/dreamProject.js'
 
 function isMissingAuthSession(error) {
   const message = String(error?.message || '').toLowerCase()
@@ -105,6 +108,23 @@ function mergeProgress(local, cloud) {
     if (!item.id || seenTreasureKeys.has(key)) continue
     seenTreasureKeys.add(key); mergedTreasureItems.push(item)
   }
+  const treasureHistory = []
+  const seenTreasureClaims = new Set()
+  for (const entry of [...(cloudTreasures.history || []), ...(localTreasures.history || [])]) {
+    const key = entry.claimKey || `${entry.id}:${entry.earnedAt || 0}`
+    if (!entry.id || seenTreasureClaims.has(key)) continue
+    seenTreasureClaims.add(key); treasureHistory.push(entry)
+  }
+  const newestTreasureState = (localTreasures.lastClaimDate || '') >= (cloudTreasures.lastClaimDate || '')
+    ? localTreasures
+    : cloudTreasures
+  const eggHatches = []
+  const seenEggHatches = new Set()
+  for (const hatch of [...(cloudTreasures.eggHatches || []), ...(localTreasures.eggHatches || [])]) {
+    const key = hatch.id || `${hatch.companionId}:${(hatch.claimKeys || []).join('|')}`
+    if (!key || seenEggHatches.has(key)) continue
+    seenEggHatches.add(key); eggHatches.push(hatch)
+  }
 
   return {
     ...cloud,
@@ -123,8 +143,17 @@ function mergeProgress(local, cloud) {
     treasureCollection: {
       items: mergedTreasureItems.sort((a,b)=>(a.earnedAt||0)-(b.earnedAt||0)),
       claims: { ...(cloudTreasures.claims || {}), ...(localTreasures.claims || {}) },
+      equipped: { ...(cloudTreasures.equipped || {}), ...(localTreasures.equipped || {}) },
+      history: treasureHistory.sort((a,b)=>(a.earnedAt||0)-(b.earnedAt||0)).slice(-90),
+      eggHatches: eggHatches.sort((a,b)=>(a.earnedAt||0)-(b.earnedAt||0)).slice(-30),
+      sparkleDust: Math.max(localTreasures.sparkleDust || 0, cloudTreasures.sparkleDust || 0),
+      claimStreak: newestTreasureState.claimStreak || 0,
+      lastClaimDate: newestTreasureState.lastClaimDate || '',
     },
     wonderWorld: mergeWonderWorld(local.wonderWorld, cloud.wonderWorld),
+    companionPowers: mergeCompanionPowers(local.companionPowers, cloud.companionPowers),
+    adventureDirector: mergeAdventureDirector(local.adventureDirector, cloud.adventureDirector),
+    dreamProject: mergeDreamProject(local.dreamProject, cloud.dreamProject),
   }
 }
 

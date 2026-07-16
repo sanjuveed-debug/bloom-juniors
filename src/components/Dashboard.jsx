@@ -13,16 +13,18 @@ import { useSpeech } from '../hooks/useSpeech'
 import PhonicsMap from './PhonicsMap'
 import BloomGarden from './BloomGarden'
 import ParentHandoff from './ParentHandoff'
-import DailyBloomPath from './DailyBloomPath'
 import CelebrationScreen from './CelebrationScreen'
 import InviteFriendsCard from './InviteFriendsCard'
 import FeedbackPrompt, { shouldShowFeedback } from './FeedbackPrompt'
 import StreakCard from './StreakCard'
 import SkyshipAdventure from './SkyshipAdventure'
 import LivingAdventure from './LivingAdventure'
-import { TreasureChestReward, TreasureShelf, TreasureShelfButton, nextTreasure } from './TreasureCollection'
+import { TreasureChestReward, TreasureShelf } from './TreasureCollection'
+import OneDailyJourney from './OneDailyJourney'
+import NeverFinishedAdventure from './NeverFinishedAdventure'
 import { formatLocalDate } from '../utils/date.js'
 import { grantWonderSeed } from '../utils/wonderWorld.js'
+import { claimTreasureReward, equipTreasureReward } from '../utils/treasureRewards.js'
 
 // ── Module registry ───────────────────────────────────────────────────────────
 const PREMIUM_IDS = new Set(['worldgk','science','planets','anatomy','sacred','shapes','shop','logic'])
@@ -1108,6 +1110,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
   const [showFeedback, setShowFeedback] = useState(() => shouldShowFeedback(progress))
   const [rewardTreasure, setRewardTreasure] = useState(null)
   const [showTreasureShelf, setShowTreasureShelf] = useState(false)
+  const [showJourneyExplore, setShowJourneyExplore] = useState(false)
   const arcadeStatus = getArcadeUnlockStatus(progress)
 
   // Yaagvi greeting: wave on arrival → settle into mood-based state
@@ -1161,24 +1164,28 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
   const doneCount        = challenges.filter(c => c.completed).length
   const challengeStreak  = progress.challengeStreak || 0
   const dailyAdventure   = buildDailyAdventure(progress, challenges, arcadeStatus, fullAccess)
+  const dailyJourneySteps = dailyAdventure.steps.slice(0, 2)
+  const dailyJourneyDoneCount = dailyJourneySteps.filter(step => step.done).length
+  const dailyJourneyNext = dailyJourneySteps.find(step => !step.done) || dailyJourneySteps[dailyJourneySteps.length - 1]
   const dailyAccess      = getAdventureAccess(dailyAdventure)
   const isDailyPathDone = arcadeStatus?.unlocked === true ||
     (dailyAdventure?.steps?.length > 0 && dailyAdventure.steps.every(s => s.done))
   const skyshipEnabled = Boolean(onUpdateProgress)
-  const skyshipEngineComplete = Boolean(progress.adventure?.skyship?.engineColour)
   const livingAdventureActive = Boolean(onUpdateProgress) && (progress.livingAdventure?.completed?.length || 0) < 5
   const treasureCollection = progress.treasureCollection || { items: [], claims: {} }
   const treasureClaimKey = `early:${formatLocalDate()}`
   const treasureClaimed = Boolean(treasureCollection.claims?.[treasureClaimKey])
   const claimTreasure = () => {
-    if (treasureClaimed || !onUpdateProgress) return
-    const item = nextTreasure(treasureCollection.items || [])
+    if (treasureClaimed || dailyJourneyDoneCount < 2 || !onUpdateProgress) return
+    const reward = claimTreasureReward(treasureCollection, { claimKey: treasureClaimKey, source: 'daily-path' })
+    if (!reward.claimed || !reward.item) return
     onUpdateProgress({
-      treasureCollection: { items: [...(treasureCollection.items || []), { ...item, earnedAt: Date.now(), source: 'daily-path' }], claims: { ...(treasureCollection.claims || {}), [treasureClaimKey]: item.id } },
+      treasureCollection: reward.collection,
       wonderWorld: grantWonderSeed(progress.wonderWorld, `daily:${treasureClaimKey}`, 'daily-path'),
     })
-    setRewardTreasure(item)
+    setRewardTreasure(reward)
   }
+  const equipTreasure = item => onUpdateProgress?.({ treasureCollection: equipTreasureReward(treasureCollection, item) })
   const handleGatedNavigate = (to) => {
     const mod = MODULE_MAP[to]
     if (mod?.premium && !fullAccess) {
@@ -1248,20 +1255,6 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
               >
                 {profileName || 'Superstar'}! ✨
               </motion.h1>
-              {loginStreak >= 2 && (
-                <motion.div
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mt-1"
-                  style={{ background: 'rgba(255,154,60,0.25)', border: '1px solid rgba(255,154,60,0.4)' }}
-                  animate={{ scale: [1, 1.04, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <span>🔥</span>
-                  <span className="font-bubble text-sm" style={{ color: '#FBBF24' }}>
-                    {loginStreak} day streak!
-                  </span>
-                </motion.div>
-              )}
-
               {profiles && profiles.length > 1 && onQuickSwitch ? (
                 <div className="mt-3 flex flex-wrap gap-2">
                   {profiles.filter(p => p.id !== activeProfileId).map(p => (
@@ -1319,10 +1312,11 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
         </div>
       </div>
 
-      <LivingAdventure ageGroup="early" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress} onOpenWonderWorld={() => onNavigate('wonderworld')}/>
-      <TreasureShelfButton count={treasureCollection.items?.length || 0} onClick={() => setShowTreasureShelf(true)}/>
+      <OneDailyJourney ageGroup="early" profileName={profileName} steps={dailyJourneySteps} nextAdventure={arcadeStatus.unlocked ? MODULE_MAP.arcade : dailyJourneyNext?.module} doneCount={dailyJourneyDoneCount} required={2} claimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} onPlayNext={() => handleGatedNavigate((treasureClaimed && arcadeStatus.unlocked ? MODULE_MAP.arcade : dailyJourneyNext?.module)?.id || 'phonics')} onClaimTreasure={claimTreasure} onOpenTreasureRoom={() => setShowTreasureShelf(true)} onOpenWorld={() => onNavigate('wonderworld')} exploreOpen={showJourneyExplore} onToggleExplore={() => setShowJourneyExplore(value => !value)}/>
+      {showJourneyExplore && <ForYouFeed theme={theme} progress={progress} challenges={challenges} arcadeStatus={arcadeStatus} dailyAdventure={dailyAdventure} onNavigate={handleGatedNavigate} />}
+      {!showJourneyExplore && <><LivingAdventure ageGroup="early" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress} onOpenWonderWorld={() => onNavigate('wonderworld')}/><NeverFinishedAdventure ageGroup="early" progress={progress} active={treasureClaimed} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress}/></>}
 
-      {skyshipEnabled && !livingAdventureActive && (
+      {showJourneyExplore && skyshipEnabled && !livingAdventureActive && (
         <SkyshipAdventure
           progress={progress}
           profileName={profileName}
@@ -1332,17 +1326,6 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
       )}
 
       {/* ── PHASE 1: DAILY BLOOM PATH (path not done) ────────────────────────── */}
-      {!livingAdventureActive && (!isDailyPathDone || !treasureClaimed) && (!skyshipEnabled || skyshipEngineComplete) && (
-        <DailyBloomPath
-          adventure={dailyAdventure}
-          theme={theme}
-          onNavigate={handleGatedNavigate}
-          profileName={profileName}
-          onClaimTreasure={claimTreasure}
-          treasureClaimed={treasureClaimed}
-        />
-      )}
-
       {/* ── PHASE 2: CELEBRATION SCREEN ───────────────────────────────────────── */}
       <AnimatePresence>
         {showCelebration && (
@@ -1536,8 +1519,8 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
 
       {/* Monster collection overlay */}
       <AnimatePresence>
-        {rewardTreasure && <TreasureChestReward item={rewardTreasure} onClose={() => setRewardTreasure(null)}/>}
-        {showTreasureShelf && <TreasureShelf collection={treasureCollection.items || []} onClose={() => setShowTreasureShelf(false)}/>}
+        {rewardTreasure && <TreasureChestReward item={rewardTreasure.item} duplicate={rewardTreasure.duplicate} weekly={rewardTreasure.weekly} onClose={() => setRewardTreasure(null)}/>}
+        {showTreasureShelf && <TreasureShelf collection={treasureCollection} profileName={profileName} onEquip={equipTreasure} onClose={() => setShowTreasureShelf(false)}/>}
         {showMonsters && (
           <MonsterCollection totalStars={totalStars} onClose={() => setShowMonsters(false)} />
         )}

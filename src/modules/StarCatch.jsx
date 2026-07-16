@@ -111,7 +111,7 @@ function SentenceMatchPhase({ theme, speak, onComplete }) {
       </div>
       <div className="grid grid-cols-2 gap-6 w-full max-w-xs">
         {current.options.map(opt => (
-          <motion.button key={opt} whileTap={{ scale: 0.85 }} onClick={() => handlePick(opt)}
+          <motion.button key={opt} data-companion-answer={opt === current.match ? 'correct' : 'wrong'} whileTap={{ scale: 0.85 }} onClick={() => handlePick(opt)}
             className="aspect-square rounded-3xl flex items-center justify-center text-6xl shadow-xl"
             style={{
               background: feedback === 'correct' && opt === current.match ? '#22C55E55' : theme.card,

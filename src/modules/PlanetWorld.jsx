@@ -545,7 +545,7 @@ function PlanetQuiz({ onBack, onDone, speak, onAddStars }) {
           const isWrong    = selected === opt && opt !== q.a
           const isNeutral  = selected && opt !== q.a && opt !== selected
           return (
-            <motion.button key={`${qIdx}-${i}`}
+            <motion.button key={`${qIdx}-${i}`} data-companion-answer={opt === q.a ? 'correct' : 'wrong'}
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{
                 scale: isCorrect ? [1, 1.08, 1] : isWrong ? [1, 0.93, 1] : 1,

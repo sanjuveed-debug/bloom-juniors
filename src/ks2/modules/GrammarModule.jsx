@@ -144,7 +144,7 @@ export default function GrammarModule({ theme, onDone, onBack, played = 0 }) {
 
         <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
           {opts[q].map(type => (
-            <motion.button key={type} whileTap={{ scale: 0.88 }} onClick={() => handle(type)}
+            <motion.button key={type} data-companion-answer={type === curr.type ? 'correct' : 'wrong'} whileTap={{ scale: 0.88 }} onClick={() => handle(type)}
               className="py-4 px-3 rounded-2xl flex flex-col items-center gap-1"
               style={{
                 background: feedback && type === curr.type

@@ -223,6 +223,8 @@ export default function YaagviCharacter({
   autoIdle = null,
   style = {},
   className = '',
+  imageStyle = {},
+  imageClassName = '',
 }) {
   const [currentState, setCurrentState] = useState(state)
   const [visible, setVisible] = useState(true)
@@ -267,7 +269,8 @@ export default function YaagviCharacter({
       <img
         src={currentSrc}
         alt="Yaagvi"
-        className={`yaagvi-img yaagvi-anim-${currentState} ${visible ? 'fade-in' : 'fade-out'}`}
+        className={`yaagvi-img yaagvi-anim-${currentState} ${visible ? 'fade-in' : 'fade-out'} ${imageClassName}`}
+        style={imageStyle}
         draggable={false}
       />
       {speech && visible && (

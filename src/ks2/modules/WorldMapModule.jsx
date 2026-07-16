@@ -104,7 +104,7 @@ export default function WorldMapModule({ theme, onDone, onBack, played = 0 }) {
 
         <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
           {curr.opts.map(opt => (
-            <motion.button key={opt} whileTap={{ scale: 0.88 }} onClick={() => handle(opt)}
+            <motion.button key={opt} data-companion-answer={opt === curr.capital ? 'correct' : 'wrong'} whileTap={{ scale: 0.88 }} onClick={() => handle(opt)}
               className="py-4 rounded-2xl font-round text-white text-sm text-center"
               style={{
                 background: feedback && opt === curr.capital ? '#22C55E30' : theme.card,

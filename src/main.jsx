@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { registerSW } from 'virtual:pwa-register'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
+import VoiceStatusToast from './components/VoiceStatusToast.jsx'
 import { initErrorMonitor } from './utils/errorMonitor.js'
 import './index.css'
 
@@ -33,5 +34,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <ErrorBoundary>
       <App />
     </ErrorBoundary>
+    <VoiceStatusToast />
   </React.StrictMode>,
 )

@@ -304,7 +304,7 @@ export default function TimesTablesModule({ theme, onDone, onBack, played = 0 })
 
         <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
           {options.map(opt => (
-            <motion.button key={opt} whileTap={{ scale: 0.88 }} onClick={() => handleAnswer(opt)}
+            <motion.button key={opt} data-companion-answer={opt === current.ans ? 'correct' : 'wrong'} whileTap={{ scale: 0.88 }} onClick={() => handleAnswer(opt)}
               className="py-5 rounded-2xl font-bubble text-white text-2xl"
               style={{
                 background: feedback && opt === current.ans ? '#22C55E40' : theme.card,

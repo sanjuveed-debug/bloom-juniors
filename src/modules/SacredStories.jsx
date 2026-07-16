@@ -661,6 +661,7 @@ function QuizScreen({ question, quizIdx, total, selectedOption, theme, onAnswer,
             return (
               <motion.button
                 key={i}
+                data-companion-answer={correct ? 'correct' : 'wrong'}
                 whileTap={{ scale: selectedOption ? 1 : 0.97 }}
                 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.07 }}

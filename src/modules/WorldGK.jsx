@@ -558,7 +558,7 @@ export default function WorldGK({ avatar, onAddStars, onBack, profileName }) {
                 else if (isChosen) { bg = '#ef444418'; borderColor = '#ef4444' }
               }
               return (
-                <motion.button key={optionKey}
+                <motion.button key={optionKey} data-companion-answer={isCorrect ? 'correct' : 'wrong'}
                   whileTap={{ scale: chosen ? 1 : 0.93 }}
                   onClick={() => handleAnswer(opt)}
                   className="rounded-2xl p-3 flex flex-col items-center gap-1.5 shadow transition-all"

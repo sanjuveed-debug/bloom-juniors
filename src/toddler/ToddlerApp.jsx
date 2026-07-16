@@ -9,7 +9,9 @@ import ParentZone from '../components/ParentZone'
 import ModuleArrival from '../components/ModuleArrival'
 import AdventureModuleFrame from '../components/AdventureModuleFrame'
 import LivingAdventure from '../components/LivingAdventure'
-import { TreasureChestReward, TreasureShelf, TreasureShelfButton, nextTreasure } from '../components/TreasureCollection'
+import { TreasureChestReward, TreasureShelf } from '../components/TreasureCollection'
+import OneDailyJourney from '../components/OneDailyJourney'
+import NeverFinishedAdventure from '../components/NeverFinishedAdventure'
 import WonderWorld from '../components/WonderWorld'
 import { formatLocalDate } from '../utils/date.js'
 import { grantWonderSeed } from '../utils/wonderWorld.js'
@@ -20,6 +22,8 @@ import { trackActivityComplete } from '../utils/analytics.js'
 import { dailySeedFor, seededShuffle, getToddlerLevel, getToddlerSessionSize } from '../utils/seededRandom'
 import { speakThenAdvance } from '../utils/speechAdvance'
 import { recordAdaptiveSession } from '../utils/adaptiveLearning.js'
+import { claimTreasureReward, equipTreasureReward } from '../utils/treasureRewards.js'
+import { stopAllSpeech } from '../lib/speechController.js'
 
 // ── Toddler themes (3–4 year olds) ───────────────────────────────────────────
 const TODDLER_THEMES = {
@@ -273,7 +277,7 @@ function ColoursModule({ theme, onDone, onBack, played }) {
       </div>
       <div className="grid grid-cols-3 gap-4 w-full max-w-xs">
         {current.options.map(opt => (
-          <motion.button key={opt} whileTap={{ scale: 0.85 }} onClick={() => handleAnswer(opt)}
+          <motion.button key={opt} data-companion-answer={opt === current.colour ? 'correct' : 'wrong'} whileTap={{ scale: 0.85 }} onClick={() => handleAnswer(opt)}
             className="py-4 rounded-2xl font-bubble text-white text-lg shadow-lg"
             style={{
               background: feedback === 'correct' && opt === current.colour
@@ -376,7 +380,7 @@ function ShapesModule({ theme, onDone, onBack, played }) {
       </div>
       <div className="grid grid-cols-3 gap-4 w-full max-w-xs">
         {current.options.map(opt => (
-          <motion.button key={opt} whileTap={{ scale: 0.85 }} onClick={() => handleAnswer(opt)}
+          <motion.button key={opt} data-companion-answer={opt === current.shape ? 'correct' : 'wrong'} whileTap={{ scale: 0.85 }} onClick={() => handleAnswer(opt)}
             className="py-4 rounded-2xl font-bubble text-white text-base shadow-lg"
             style={{
               background: feedback && opt === current.shape ? '#22C55E' : 'rgba(255,255,255,0.25)',
@@ -480,7 +484,7 @@ function NumbersModule({ theme, onDone, onBack, played }) {
       </div>
       <div className="grid grid-cols-3 gap-4 w-full max-w-xs">
         {current.options.map(opt => (
-          <motion.button key={opt} whileTap={{ scale: 0.85 }} onClick={() => handleAnswer(opt)}
+          <motion.button key={opt} data-companion-answer={opt === current.count ? 'correct' : 'wrong'} whileTap={{ scale: 0.85 }} onClick={() => handleAnswer(opt)}
             className="py-5 rounded-2xl font-bubble text-white text-3xl shadow-lg"
             style={{
               background: feedback && opt === current.count ? '#22C55E' : 'rgba(255,255,255,0.25)',
@@ -581,7 +585,7 @@ function AnimalsModule({ theme, onDone, onBack, played }) {
       </div>
       <div className="grid grid-cols-3 gap-4 w-full max-w-xs">
         {current.options.map(opt => (
-          <motion.button key={opt} whileTap={{ scale: 0.85 }} onClick={() => handleAnswer(opt)}
+          <motion.button key={opt} data-companion-answer={opt === current.animal ? 'correct' : 'wrong'} whileTap={{ scale: 0.85 }} onClick={() => handleAnswer(opt)}
             className="py-4 rounded-2xl font-bubble text-white text-base shadow-lg"
             style={{
               background: feedback && opt === current.animal ? '#22C55E' : 'rgba(255,255,255,0.25)',
@@ -662,7 +666,7 @@ function FruitsModule({ theme, onDone, onBack, played }) {
       </div>
       <div className="grid grid-cols-3 gap-4 w-full max-w-xs">
         {current.options.map(opt => (
-          <motion.button key={opt} whileTap={{ scale: 0.85 }} onClick={() => handleAnswer(opt)}
+          <motion.button key={opt} data-companion-answer={opt === current.fruit ? 'correct' : 'wrong'} whileTap={{ scale: 0.85 }} onClick={() => handleAnswer(opt)}
             className="py-4 rounded-2xl font-bubble text-white text-base shadow-lg"
             style={{ background: feedback && opt === current.fruit ? '#22C55E' : 'rgba(255,255,255,0.25)', border: '3px solid rgba(255,255,255,0.4)' }}>
             {opt}
@@ -740,7 +744,7 @@ function BodyPartsModule({ theme, onDone, onBack, played }) {
       </div>
       <div className="grid grid-cols-3 gap-4 w-full max-w-xs">
         {current.options.map(opt => (
-          <motion.button key={opt} whileTap={{ scale: 0.85 }} onClick={() => handleAnswer(opt)}
+          <motion.button key={opt} data-companion-answer={opt === current.part ? 'correct' : 'wrong'} whileTap={{ scale: 0.85 }} onClick={() => handleAnswer(opt)}
             className="py-4 rounded-2xl font-bubble text-white text-base shadow-lg"
             style={{ background: feedback && opt === current.part ? '#22C55E' : 'rgba(255,255,255,0.25)', border: '3px solid rgba(255,255,255,0.4)' }}>
             {opt}
@@ -871,7 +875,7 @@ function AlphabetModule({ theme, onDone, onBack, played }) {
       </div>
       <div className="grid grid-cols-3 gap-4 w-full max-w-xs">
         {current.options.map(opt => (
-          <motion.button key={opt} whileTap={{ scale: 0.85 }} onClick={() => handleAnswer(opt)}
+          <motion.button key={opt} data-companion-answer={opt === current.letter ? 'correct' : 'wrong'} whileTap={{ scale: 0.85 }} onClick={() => handleAnswer(opt)}
             className="py-4 rounded-2xl font-bubble text-white text-3xl shadow-lg"
             style={{ background: feedback && opt === current.letter ? '#22C55E' : 'rgba(255,255,255,0.25)', border: '3px solid rgba(255,255,255,0.4)' }}>
             {opt}
@@ -1151,25 +1155,22 @@ function LegacyToddlerDashboard({ theme, profileId, profileName, progress, onNav
 // ── Main toddler app ──────────────────────────────────────────────────────────
 const TODDLER_MAP_POSITIONS = { colours:['17%','42%'], shapes:['35%','69%'], numbers:['49%','43%'], animals:['65%','68%'], fruits:['82%','42%'], bodyparts:['8%','70%'], alphabet:['91%','70%'] }
 
-function ToddlerDashboard({ profileName, progress, onNavigate, onSwitchProfiles, onParent, onUpdateProgress, onWonderWorld }) {
+export function ToddlerDashboard({ profileName, progress, onNavigate, onSwitchProfiles, onParent, onUpdateProgress, onWonderWorld }) {
   const totalStars=TODDLER_MODULES.reduce((sum,m)=>sum+(progress[m.id]?.stars||0),0), dailyPath=getToddlerDailyPath(progress)
   const nextId=dailyPath.next?.module?.id||dailyPath.steps[0]?.module?.id, nextModule=TODDLER_MODULES.find(m=>m.id===nextId)||TODDLER_MODULES[0]
   const [rewardTreasure,setRewardTreasure]=useState(null),[showShelf,setShowShelf]=useState(false),[showExploreMap,setShowExploreMap]=useState(false)
   const treasureCollection=progress.treasureCollection||{items:[],claims:{}},claimKey=`toddler:${formatLocalDate()}`,treasureClaimed=Boolean(treasureCollection.claims?.[claimKey])
-  const claimTreasure=()=>{if(treasureClaimed||dailyPath.doneCount<2)return;const item=nextTreasure(treasureCollection.items||[]);onUpdateProgress?.({treasureCollection:{items:[...(treasureCollection.items||[]),{...item,earnedAt:Date.now(),source:'toddler-path'}],claims:{...(treasureCollection.claims||{}),[claimKey]:item.id}},wonderWorld:grantWonderSeed(progress.wonderWorld,`daily:${claimKey}`,'toddler-path')});setRewardTreasure(item)}
+  const claimTreasure=()=>{if(treasureClaimed||dailyPath.doneCount<2)return;const reward=claimTreasureReward(treasureCollection,{claimKey,source:'toddler-path'});if(!reward.claimed||!reward.item)return;onUpdateProgress?.({treasureCollection:reward.collection,wonderWorld:grantWonderSeed(progress.wonderWorld,`daily:${claimKey}`,'toddler-path')});setRewardTreasure(reward)}
+  const equipTreasure=item=>onUpdateProgress?.({treasureCollection:equipTreasureReward(treasureCollection,item)})
   return <div className="min-h-screen bg-[#fff0d6] pb-16 text-[#3b1607]">
     <header className="border-b-2 border-[#9a4b20]/15 bg-[#fff4dc] px-4 py-3 shadow-sm"><div className="mx-auto flex max-w-6xl items-center gap-3"><div className="mascot-video relative h-20 w-24 shrink-0"><img src="/yaagvi-3d-wave.png" alt="Yaagvi waving" className="absolute inset-0 h-full w-full object-contain drop-shadow-lg"/><video className="absolute inset-0 h-full w-full object-contain drop-shadow-lg" autoPlay muted loop playsInline preload="metadata" poster="/yaagvi-3d-wave.png" aria-hidden="true"><source src="/yaagvi-3d-wave.webm" type="video/webm"/></video></div><div className="min-w-0 flex-1"><p className="font-round text-xs font-black uppercase tracking-[.15em] text-[#b44b20]">Yaagvi’s little treasure hunt</p><h1 className="truncate font-bubble text-2xl sm:text-3xl">Hi, {profileName}! 👋</h1><p className="font-round text-sm font-bold text-[#8a5435]">Find two treasures, then celebrate.</p></div><div className="rounded-2xl bg-[#ffe29a] px-3 py-2 text-center"><p>⭐</p><p className="font-bubble text-lg leading-none">{totalStars}</p></div>{onSwitchProfiles&&<button onClick={onSwitchProfiles} className="hidden rounded-xl bg-white/70 px-3 py-2 font-bubble text-sm sm:block">Switch</button>}</div></header>
-    <LivingAdventure ageGroup="toddler" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress} onOpenWonderWorld={onWonderWorld}/>
-    <div className="mx-auto mt-4 max-w-6xl px-4">
-      {dailyPath.doneCount>=2&&!treasureClaimed&&<motion.button whileTap={{scale:.96}} onClick={claimTreasure} className="min-h-16 w-full rounded-2xl bg-gradient-to-r from-[#ff7b29] to-[#ef3f83] font-bubble text-xl text-white shadow-xl">🧰 OPEN MY REAL TREASURE!</motion.button>}
-      <TreasureShelfButton count={treasureCollection.items?.length||0} onClick={()=>setShowShelf(true)}/>
-      <button onClick={()=>setShowExploreMap(value=>!value)} className="mt-4 min-h-14 w-full rounded-2xl border-2 border-[#d58a46]/30 bg-white/75 font-bubble text-lg text-[#7a351b] shadow-sm">{showExploreMap?'Hide extra games ↑':'🗺️ Explore more games ↓'}</button>
-    </div>
+    <OneDailyJourney ageGroup="toddler" profileName={profileName} steps={dailyPath.steps} doneCount={dailyPath.doneCount} required={2} claimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} streak={progress.loginStreak||0} onPlayNext={()=>onNavigate(nextModule.id)} onClaimTreasure={claimTreasure} onOpenTreasureRoom={()=>setShowShelf(true)} onOpenWorld={onWonderWorld} exploreOpen={showExploreMap} onToggleExplore={()=>setShowExploreMap(value=>!value)}/>
+    {!showExploreMap&&<><LivingAdventure ageGroup="toddler" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress} onOpenWonderWorld={onWonderWorld}/><NeverFinishedAdventure ageGroup="toddler" progress={progress} active={treasureClaimed} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress}/></>}
     {showExploreMap&&<section className="mx-auto mt-5 max-w-6xl px-3 sm:px-5"><div className="relative min-h-[590px] overflow-hidden rounded-[34px] border-4 border-[#d58a46] bg-cover bg-center shadow-2xl sm:min-h-[650px]" style={{backgroundImage:'url(/treasure-map-bg.png)'}}><div className="absolute inset-0 bg-[#fff1cb]/15"/>
       <div className="absolute left-4 right-4 top-4 z-20 rounded-[24px] bg-[#fff8e8]/90 p-4 shadow-lg backdrop-blur-sm sm:left-7 sm:right-auto sm:w-[430px]"><p className="font-round text-xs font-black uppercase tracking-[.16em] text-[#b74818]">Start here</p><div className="mt-1 flex items-center gap-3"><span className="text-5xl">{nextModule.emoji}</span><div><h2 className="font-bubble text-2xl sm:text-3xl">Let’s find {nextModule.label}</h2><p className="font-round text-sm font-bold text-[#805033]">One tiny game. Yaagvi comes too!</p></div></div><motion.button whileTap={{scale:.94}} onClick={()=>onNavigate(nextModule.id)} className="mt-3 min-h-14 w-full rounded-2xl bg-gradient-to-r from-[#ff7b29] to-[#ef3f83] font-bubble text-xl text-white shadow-lg">PLAY →</motion.button></div>
       {TODDLER_MODULES.filter(m=>!m.comingSoon).map((mod,idx)=>{const [left,top]=TODDLER_MAP_POSITIONS[mod.id]||['50%','50%'],done=progress[mod.id]?.lastPlayedDate===todayStamp(),active=mod.id===nextId;return <motion.button key={mod.id} onClick={()=>onNavigate(mod.id)} whileTap={{scale:.9}} initial={{scale:0}} animate={{scale:1}} transition={{delay:.08*idx,type:'spring'}} className="absolute z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center" style={{left,top}}><motion.div className={`grid h-20 w-20 place-items-center rounded-full border-4 text-4xl shadow-xl sm:h-24 sm:w-24 sm:text-5xl ${done?'border-[#2f9d67] bg-[#eaffd9]':active?'border-white bg-gradient-to-br from-[#ff792f] to-[#ee3f82] ring-8 ring-[#ffd35b]/65':'border-[#fff4d9] bg-[#fff8e8]'}`} animate={active?{scale:[1,1.08,1]}:{}} transition={{duration:1.6,repeat:Infinity}}>{done?'✅':mod.emoji}</motion.div><span className="mt-1 rounded-full bg-[#fff8e8]/95 px-3 py-1 font-bubble text-sm shadow-md">{mod.label}</span></motion.button>})}
     </div></section>}<div className="mx-auto mt-4 flex max-w-6xl justify-end gap-2 px-4">{onSwitchProfiles&&<button onClick={onSwitchProfiles} className="rounded-full bg-white px-4 py-2 font-bubble text-sm shadow sm:hidden">Switch</button>}{onParent&&<button onClick={onParent} className="rounded-full bg-white/70 px-4 py-2 font-round text-xs font-bold">🔒 Grown-ups</button>}</div>
-    <AnimatePresence>{rewardTreasure&&<TreasureChestReward item={rewardTreasure} onClose={()=>setRewardTreasure(null)}/>} {showShelf&&<TreasureShelf collection={treasureCollection.items||[]} onClose={()=>setShowShelf(false)}/>}</AnimatePresence>
+    <AnimatePresence>{rewardTreasure&&<TreasureChestReward item={rewardTreasure.item} duplicate={rewardTreasure.duplicate} weekly={rewardTreasure.weekly} onClose={()=>setRewardTreasure(null)}/>} {showShelf&&<TreasureShelf collection={treasureCollection} profileName={profileName} onEquip={equipTreasure} onClose={()=>setShowShelf(false)}/>}</AnimatePresence>
   </div>
 }
 
@@ -1188,6 +1189,7 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
   }, [])
 
   const openModule = useCallback((to) => {
+    stopAllSpeech('navigation')
     setScreen(to)
     let skipArrival = false
     try { skipArrival = sessionStorage.getItem('bloom_living_launch') === to; if (skipArrival) sessionStorage.removeItem('bloom_living_launch') } catch {}
@@ -1296,7 +1298,7 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
   }
 
   if (screen === 'wonderworld') {
-    return <WonderWorld progress={progress} profileName={profileName} onUpdateProgress={(patch)=>update(p=>({...p,...patch}))} onBack={()=>setScreen('home')}/>
+    return <WonderWorld ageGroup="toddler" progress={progress} profileName={profileName} onUpdateProgress={(patch)=>update(p=>({...p,...(typeof patch==='function'?patch(p):patch)}))} onBack={()=>setScreen('home')}/>
   }
 
   const moduleMap = {
@@ -1312,7 +1314,7 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
   if (moduleMap[screen]) {
     return (
       <VoiceContext.Provider value="en-US-AnaNeural">
-        <AdventureModuleFrame moduleId={screen} ageGroup="toddler" onMap={() => { setModuleArrival(null); setScreen('home') }}>{moduleMap[screen]}</AdventureModuleFrame>
+        <AdventureModuleFrame moduleId={screen} ageGroup="toddler" progress={progress} onUpdateProgress={update} onMap={() => { setModuleArrival(null); setScreen('home') }}>{moduleMap[screen]}</AdventureModuleFrame>
         <AnimatePresence>
           {moduleArrival === screen && <ModuleArrival ageGroup="toddler" moduleId={screen} profileName={profileName} onStart={() => setModuleArrival(null)} onBack={() => { setModuleArrival(null); setScreen('home') }} />}
         </AnimatePresence>

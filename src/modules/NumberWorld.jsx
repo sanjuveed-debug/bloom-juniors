@@ -6,9 +6,10 @@ import { dailySeedFor, mulberry32 } from '../utils/seededRandom'
 import { speakThenAdvance } from '../utils/speechAdvance'
 import { THEMES } from '../themes'
 import SkillHint, { getHint } from '../components/SkillHint'
-import BuddyCompanion, { useBuddyMood } from '../components/BuddyCompanion'
+import InteractiveYaagvi, { useYaagviReactions } from '../components/InteractiveYaagvi'
 import MatchingActivity from '../components/MatchingActivity'
 import SubitisingFlash from '../components/SubitisingFlash'
+import { buildNumberLineWindow } from '../utils/numberLine'
 
 // ── Avatar object sets ────────────────────────────────────────────────────────
 const OBJECT_SETS = {
@@ -174,14 +175,15 @@ function MiniTenFrame({ count, colour }) {
 }
 
 // ── Number Line strip ─────────────────────────────────────────────────────────
-function NumberLine({ current, answer, max }) {
-  const nums = Array.from({ length: max + 1 }, (_, i) => i)
+function NumberLine({ current, answer, revealAnswer = false }) {
+  const nums = buildNumberLineWindow(current, answer)
   return (
     <div className="w-full overflow-x-auto py-3">
       <div className="flex items-end gap-0 min-w-max mx-auto px-2">
-        {nums.map(n => {
+        {nums.map((n, index) => {
           const isCurrent = n === current
           const isAnswer  = n === answer
+          const answerVisible = isAnswer && revealAnswer
           return (
             <div key={n} className="flex flex-col items-center" style={{ minWidth: 32 }}>
               {/* Arrow above answer */}
@@ -201,16 +203,16 @@ function NumberLine({ current, answer, max }) {
               <motion.div
                 className="w-8 h-8 rounded-full flex items-center justify-center font-bubble text-sm"
                 style={{
-                  background: isCurrent ? '#FF9A3C' : isAnswer ? '#22C55E' : 'rgba(0,0,0,0.07)',
-                  color: isCurrent || isAnswer ? 'white' : '#374151',
-                  border: isCurrent ? '2.5px solid #FF6B00' : isAnswer ? '2.5px solid #16A34A' : '2px solid rgba(0,0,0,0.1)',
+                  background: isCurrent ? '#FF9A3C' : answerVisible ? '#22C55E' : isAnswer ? 'white' : 'rgba(0,0,0,0.07)',
+                  color: isCurrent || answerVisible ? 'white' : isAnswer ? '#22C55E' : '#374151',
+                  border: isCurrent ? '2.5px solid #FF6B00' : answerVisible ? '2.5px solid #16A34A' : isAnswer ? '2.5px dashed #22C55E' : '2px solid rgba(0,0,0,0.1)',
                   scale: isCurrent || isAnswer ? 1.2 : 1,
                 }}
                 initial={{ scale: 0.5 }}
                 animate={{ scale: isCurrent || isAnswer ? 1.2 : 1 }}
-                transition={{ delay: n * 0.03, type: 'spring' }}
+                transition={{ delay: index * 0.03, type: 'spring' }}
               >
-                {n}
+                {isAnswer && !revealAnswer ? '?' : n}
               </motion.div>
 
               {/* Track line */}
@@ -420,8 +422,7 @@ function CountVisual({ n, emoji, colour }) {
 }
 
 // ── Number bond diagram for one more / one less ───────────────────────────────
-function OneMorLessVisual({ n, answer, type, colour }) {
-  const max = Math.min(n + 2, 15)
+function OneMorLessVisual({ n, answer, type, colour, revealAnswer = false }) {
   return (
     <div className="flex flex-col items-center gap-4">
       {/* Number bond */}
@@ -465,7 +466,7 @@ function OneMorLessVisual({ n, answer, type, colour }) {
       </div>
 
       {/* Number line */}
-      <NumberLine current={n} answer={answer} max={max} />
+      <NumberLine current={n} answer={answer} revealAnswer={revealAnswer} />
     </div>
   )
 }
@@ -539,6 +540,17 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
   const [answered,         setAnswered]          = useState(false)
   const totalRounds = 10
 
+  const { reaction: yaagviReaction, react: reactYaagvi } = useYaagviReactions({
+    activityKey: `${selectedOp || 'menu'}-${round}-${question?.q || ''}`,
+    active: Boolean(
+      selectedOp &&
+      !['flash', 'match'].includes(selectedOp) &&
+      question &&
+      !answered &&
+      round <= totalRounds
+    ),
+  })
+
   const [matchPairs,  setMatchPairs]  = useState([])
   const [matchResult, setMatchResult] = useState(null)
   const [flashResult, setFlashResult] = useState(null)
@@ -546,7 +558,6 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
   const flashAwardedRef = useRef(false)
 
   const opPlayed = progress?.math?.opPlayed || {}
-  const buddy = useBuddyMood()
   const awardedRef = useRef(false)
   const matchAwardedRef = useRef(false)
 
@@ -583,17 +594,18 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
     setSelected(null)
     setFeedback(null)
     setAnswered(false)
+    reactYaagvi('question')
     defer(() => speak(q.q, { mood: 'instruct' }), 500)
-  }, [speak, defer])
+  }, [speak, defer, reactYaagvi])
 
   const completeMath = useCallback((finalScore) => {
     if (awardedRef.current) return
     awardedRef.current = true
-    buddy.onGameEnd()
+    reactYaagvi('complete')
     onAddStars('math', finalScore, {
       total: totalRounds, correct: finalScore, struggles: wrongAnswers, op: selectedOp,
     })
-  }, [buddy, onAddStars, selectedOp, totalRounds, wrongAnswers])
+  }, [onAddStars, selectedOp, totalRounds, wrongAnswers, reactYaagvi])
 
   const OP_OBJECTIVES = {
     count:    'Count the objects carefully, then tap the matching number.',
@@ -619,8 +631,8 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
     newQuestion(op, maxNum)
     const levelMsg = level > 1 ? ` Level ${level}!` : ''
     speak(`${OPS[op].label}! ${OP_OBJECTIVES[op]}${levelMsg}`, { mood: 'instruct' })
-    buddy.onGameStart()
-  }, [newQuestion, speak, buddy, opPlayed])
+    reactYaagvi('start')
+  }, [newQuestion, speak, opPlayed, reactYaagvi])
 
   const handleMatchSelect = useCallback(() => {
     matchAwardedRef.current = false
@@ -631,8 +643,8 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
     setMatchResult(null)
     setSelectedOp('match')
     speak(`${MATCH_CONFIG.label}! ${MATCH_CONFIG.desc}`, { mood: 'instruct' })
-    buddy.onGameStart()
-  }, [opPlayed, speak, buddy])
+    reactYaagvi('start')
+  }, [opPlayed, speak, reactYaagvi])
 
   const handleFlashSelect = useCallback(() => {
     flashAwardedRef.current = false
@@ -640,29 +652,29 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
     setFlashKey(k => k + 1)
     setSelectedOp('flash')
     speak('Flash Count! Watch closely — the objects vanish fast. How many did you see?', { mood: 'instruct' })
-    buddy.onGameStart()
-  }, [speak, buddy])
+    reactYaagvi('start')
+  }, [speak, reactYaagvi])
 
   const handleFlashComplete = useCallback((correct, total) => {
     if (flashAwardedRef.current) return
     flashAwardedRef.current = true
-    buddy.onGameEnd()
+    reactYaagvi('complete')
     confetti({ particleCount: 80, spread: 100, origin: { y: 0.5 } })
     speak(`Super speedy eyes, ${profileName || 'superstar'}!`, { mood: 'celebrate' })
     onAddStars('math', correct, { total, correct, struggles: [], op: 'flash' })
     setFlashResult({ correct, total })
-  }, [buddy, onAddStars, profileName, speak])
+  }, [onAddStars, profileName, speak, reactYaagvi])
 
   const handleMatchComplete = useCallback((misses, total) => {
     if (matchAwardedRef.current) return
     matchAwardedRef.current = true
     const finalScore = Math.max(0, total - misses)
-    buddy.onGameEnd()
+    reactYaagvi('complete')
     confetti({ particleCount: 80, spread: 100, origin: { y: 0.5 } })
     speak(`Amazing matching, ${profileName || 'superstar'}!`, { mood: 'celebrate' })
     onAddStars('math', finalScore, { total, correct: finalScore, struggles: [], op: 'match' })
     setMatchResult({ finalScore, total })
-  }, [buddy, onAddStars, profileName, speak])
+  }, [onAddStars, profileName, speak, reactYaagvi])
 
   const handleChoice = useCallback((choice) => {
     if (selected !== null || answered) return
@@ -675,9 +687,12 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
       setConsecutiveWrong(0)
       setFeedback({ type: 'correct', msg: `✅ ${question.a}! Brilliant!` })
       confetti({ particleCount: 55, spread: 75, origin: { x: 0.5, y: 0.6 }, colors: ['#FFD700','#22C55E','#4D96FF'] })
-      buddy.onCorrect()
 
       const finalScore = score + 1
+      reactYaagvi('correct', {
+        streak: finalScore % 3 === 0 ? 3 : 1,
+        isFinal: round >= totalRounds,
+      })
       speakThenAdvance(speak, `Yes! ${question.a} is correct! Well done ${profileName || 'superstar'}!`, { mood: 'celebrate' }, () => {
         if (round >= totalRounds) {
           setRound(totalRounds + 1)
@@ -692,7 +707,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
       setConsecutiveWrong(newWrong)
       setWrongAnswers(prev => [...prev, question.q])
       setFeedback({ type: 'wrong', msg: `The answer is ${question.a}! Look at the picture!` })
-      buddy.onWrong(newWrong >= 2)
+      reactYaagvi('wrong', { attempt: newWrong })
 
       speakThenAdvance(speak, `Not quite. The answer is ${question.a}. Look at the picture carefully.`, { mood: 'instruct' }, () => {
         if (newWrong >= 2) {
@@ -709,7 +724,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
       }, timersRef, { minMs: 1600, maxMs: 6000 })
     }
   }, [selected, answered, question, round, totalRounds, score, wrongAnswers,
-      consecutiveWrong, selectedOp, currentMaxNum, speak, newQuestion, completeMath, profileName, buddy])
+      consecutiveWrong, selectedOp, currentMaxNum, speak, newQuestion, completeMath, profileName, reactYaagvi])
 
   // ── Op selector screen ──────────────────────────────────────────────────────
   if (!selectedOp) {
@@ -724,6 +739,10 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
             <h1 className="font-bubble text-3xl shimmer-text">Number World 🔢</h1>
             <p className="font-round text-sm opacity-60" style={{ color: theme.text }}>What shall we learn today?</p>
           </div>
+        </div>
+
+        <div className="px-4">
+          <InteractiveYaagvi reaction={yaagviReaction} placement="strip" />
         </div>
 
         <div className="grid grid-cols-2 gap-4 px-4">
@@ -787,6 +806,9 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
         </div>
 
         <div className="flex-1 overflow-y-auto scroll-ios pb-32 pt-2">
+          <div className="px-4">
+            <InteractiveYaagvi reaction={yaagviReaction} placement="strip" />
+          </div>
           {!flashResult ? (
             <SubitisingFlash
               key={flashKey}
@@ -823,10 +845,6 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
             </motion.div>
           )}
         </div>
-
-        <div className="fixed bottom-safe-buddy left-2 z-30 pointer-events-none">
-          <BuddyCompanion avatar={avatar} mood={buddy.mood} speak={buddy.speak} size={80} side="right" autoSpeak />
-        </div>
       </div>
     )
   }
@@ -853,6 +871,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
         </div>
 
         <div className="flex-1 overflow-y-auto scroll-ios px-4 pb-32">
+          <InteractiveYaagvi reaction={yaagviReaction} placement="strip" />
           {!matchResult && (
             <>
               <p className="font-round text-sm text-center mb-4 opacity-70" style={{ color: theme.text }}>
@@ -899,10 +918,6 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
             </motion.div>
           )}
         </div>
-
-        <div className="fixed bottom-safe-buddy left-2 z-30 pointer-events-none">
-          <BuddyCompanion avatar={avatar} mood={buddy.mood} speak={buddy.speak} size={80} side="right" autoSpeak />
-        </div>
       </div>
     )
   }
@@ -916,6 +931,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
         style={{ background: `linear-gradient(160deg, ${theme.bg}, ${theme.card})` }}>
         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 300, damping: 16 }}>
+          <InteractiveYaagvi reaction={yaagviReaction} placement="inline" />
           <motion.div className="text-8xl mb-3"
             animate={{ rotate: [0, 20, -20, 0], scale: [1, 1.2, 1] }}
             transition={{ duration: 1, repeat: Infinity, repeatDelay: 2 }}>
@@ -1036,18 +1052,21 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
                     answer={question.a}
                     type={question.display === 'onemore' ? 'more' : 'less'}
                     colour={opColour}
+                    revealAnswer={answered}
                   />
                 )}
                 {question.display === 'add1' && (
-                  <OneMorLessVisual n={question.n1} answer={question.a} type="more" colour={opColour} />
+                  <OneMorLessVisual n={question.n1} answer={question.a} type="more" colour={opColour} revealAnswer={answered} />
                 )}
                 {question.display === 'sub1' && (
-                  <OneMorLessVisual n={question.n1} answer={question.a} type="less" colour={opColour} />
+                  <OneMorLessVisual n={question.n1} answer={question.a} type="less" colour={opColour} revealAnswer={answered} />
                 )}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
+
+        <InteractiveYaagvi reaction={yaagviReaction} placement="strip" />
 
         {/* ── Answer choices ── */}
         <div className="grid grid-cols-2 gap-3">
@@ -1061,6 +1080,8 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
             return (
               <motion.button
                 key={`${round}-${ci}`}
+                data-answer-choice={choice}
+                data-correct-answer={isCorrect ? 'true' : 'false'}
                 initial={{ opacity: 0, y: 18, scale: 0.85 }}
                 animate={{
                   opacity: 1, y: 0,
@@ -1101,47 +1122,21 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
         </div>
       </div>
 
-      {/* ── Feedback toast ── */}
-      <AnimatePresence>
-        {feedback && (
-          <motion.div
-            initial={{ opacity: 0, y: 40, scale: 0.85 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-safe-toast left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl shadow-2xl z-50"
-            style={{
-              background: feedback.type === 'correct' ? '#22C55E' : '#F97316',
-              maxWidth: 'calc(100vw - 32px)',
-            }}
-          >
-            <p className="font-bubble text-white text-lg text-center">{feedback.msg}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Avatar buddy ── */}
-      <div className="fixed bottom-safe-buddy left-2 z-30 pointer-events-none">
-        <BuddyCompanion
-          avatar={avatar}
-          mood={buddy.mood}
-          speak={buddy.speak}
-          size={80}
-          side="right"
-          autoSpeak
-        />
-      </div>
-
       {/* ── Skill hint (after 2 wrong) ── */}
       {showHint && (
         <SkillHint
           hint={getHint('math', selectedOp)}
-          onClose={() => setShowHint(false)}
+          onClose={() => {
+            setShowHint(false)
+            reactYaagvi('question')
+          }}
           onTryAgain={() => {
             setShowHint(false)
             setConsecutiveWrong(0)
             setSelected(null)
             setFeedback(null)
             setAnswered(false)
+            reactYaagvi('start')
           }}
         />
       )}

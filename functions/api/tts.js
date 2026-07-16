@@ -45,7 +45,7 @@ export function getAzureRegionCandidates(configuredRegion = '', extraRegions = '
 
   // Speech keys only work in the region where their Azure resource was made.
   // Prefer the configured region, then try regions used by earlier Bloom setups.
-  return [...new Set([configured, ...extras, 'uksouth', 'eastus', 'centralindia'].filter(Boolean))]
+  return [...new Set([configured, ...extras, 'uaenorth', 'uksouth', 'eastus', 'centralindia'].filter(Boolean))]
 }
 
 async function synthesizeWithAzure({ key, region, ssml }) {

@@ -77,19 +77,22 @@ export default function LivingAdventure({ageGroup='early',profileName,progress,o
     if(!finished||storyTreasureClaimed||!storyTreasure)return
     const alreadyOwned=(treasureCollection.items||[]).some(item=>item.id===storyTreasure.id)
     onUpdateProgress?.({treasureCollection:{
+      ...treasureCollection,
       items:alreadyOwned?(treasureCollection.items||[]):[...(treasureCollection.items||[]),{...storyTreasure,earnedAt:Date.now(),source:'living-adventure'}],
       claims:{...(treasureCollection.claims||{}),[storyClaimKey]:storyTreasure.id},
+      history:[...(treasureCollection.history||[]),{id:storyTreasure.id,claimKey:storyClaimKey,source:'living-adventure',earnedAt:Date.now(),duplicate:alreadyOwned}].slice(-90),
+      sparkleDust:(treasureCollection.sparkleDust||0)+(alreadyOwned?10:0),
     }})
-    setStoryReward(storyTreasure)
+    setStoryReward({item:storyTreasure,duplicate:alreadyOwned})
   }
   const sceneLabel=useMemo(()=>state.choice==='river'?'Waterfall route':state.choice==='forest'?'Forest route':'Choose your route',[state.choice])
   return <section className="mx-auto mt-5 max-w-6xl px-4 md:px-6 xl:px-8">
     <div className="relative overflow-hidden rounded-[30px] border-2 border-[#a85b2a]/30 bg-cover bg-center shadow-xl" style={{backgroundImage:'linear-gradient(90deg,rgba(35,16,8,.88),rgba(35,16,8,.44)),url(/treasure-map-bg.png)'}}>
       <div className="relative grid min-h-[330px] items-center gap-4 p-5 text-white sm:grid-cols-[1fr_300px] sm:p-7">
         <div><p className="font-round text-xs font-black uppercase tracking-[.2em] text-[#ffd36a]">This week’s living adventure · {Math.min(completed.length+1,5)}/5</p><h2 className="mt-1 font-bubble text-3xl sm:text-4xl">{story.title}</h2>
-          {onOpenWonderWorld&&<motion.button whileTap={{scale:.95}} onClick={onOpenWonderWorld} className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-[#d9ff86]/60 bg-[#e8ffd5] px-4 font-bubble text-sm text-[#274116] shadow-lg"><span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] text-white">NEW</span>🌱 Open My Secret World →</motion.button>}
+          {onOpenWonderWorld&&<motion.button whileTap={{scale:.95}} onClick={onOpenWonderWorld} className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-[#d9ff86]/60 bg-[#e8ffd5] px-4 font-bubble text-sm text-[#274116] shadow-lg"><span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] text-white">GROWS</span>🌍 Open My Living World →</motion.button>}
           {finished?<><p className="mt-3 max-w-xl font-round text-lg font-bold">You followed every clue. The moon egg has hatched into a tiny starlight fox—and it remembers every place you explored together.</p>{storyTreasureClaimed?<div className="mt-4 inline-flex rounded-2xl bg-[#ffd36a] px-5 py-3 font-bubble text-[#431d0d]">🦊 Starlight Fox is on your shelf!</div>:<motion.button whileTap={{scale:.95}} onClick={claimStoryTreasure} className="mt-5 min-h-14 w-full max-w-md rounded-2xl bg-gradient-to-r from-[#ffd34f] to-[#ff8a38] font-bubble text-xl text-[#431d0d] shadow-lg">🧰 OPEN THE FINAL TREASURE</motion.button>}</>:
-          completedToday?<><p className="mt-3 font-bubble text-2xl text-[#ffd36a]">Chapter complete!</p><p className="mt-2 max-w-lg font-round text-lg font-bold">{CLIFFHANGERS[chapterIndex]}</p><p className="mt-4 rounded-xl bg-white/10 p-3 font-round text-sm"><b>Try it away from the screen:</b> {OFFLINE[chapterIndex]}</p><p className="mt-3 font-round text-sm text-white/65">The next chapter opens tomorrow.</p></>:
+          completedToday?<><p className="mt-3 font-bubble text-2xl text-[#ffd36a]">Chapter complete!</p><p className="mt-2 max-w-lg font-round text-lg font-bold">{CLIFFHANGERS[chapterIndex]}</p><p className="mt-4 rounded-xl bg-white/10 p-3 font-round text-sm"><b>Try it away from the screen:</b> {OFFLINE[chapterIndex]}</p><p className="mt-3 font-round text-sm text-white/75">Tomorrow continues this story. Your unlimited exploration remains open below.</p></>:
           <><p className="mt-3 font-round text-sm font-black uppercase tracking-wider text-white/60">Chapter {chapterIndex+1} · {sceneLabel}</p><div className="mt-2 flex items-center gap-3"><span className="text-5xl">{chapter.icon}</span><div><h3 className="font-bubble text-2xl">{chapter.title}</h3><p className="max-w-lg font-round text-sm font-bold text-white/80">{chapter.mission}</p></div></div>
           {!state.choice&&<div className="mt-4 flex gap-2"><button onClick={()=>choose('forest')} className="rounded-xl bg-white/15 px-4 py-2 font-bubble">🌳 Forest trail</button><button onClick={()=>choose('river')} className="rounded-xl bg-white/15 px-4 py-2 font-bubble">💧 Waterfall trail</button></div>}
           <motion.button whileTap={{scale:.96}} onClick={launch} className="mt-5 min-h-14 w-full max-w-md rounded-2xl bg-gradient-to-r from-orange-500 to-pink-500 font-bubble text-xl shadow-lg">START TODAY’S CHAPTER →</motion.button></>}
@@ -97,6 +100,6 @@ export default function LivingAdventure({ageGroup='early',profileName,progress,o
         <div className="relative mx-auto h-56 w-64"><motion.div className="absolute left-1/2 top-1/2 text-8xl" animate={finished?{scale:[1,1.12,1],rotate:[-4,4,-4]}:{y:[0,-8,0],filter:['drop-shadow(0 0 8px #fff3)','drop-shadow(0 0 24px #ffd54f)','drop-shadow(0 0 8px #fff3)']}} transition={{duration:2.5,repeat:Infinity}}>{finished?'🦊':'🥚'}</motion.div>{[0,1,2,3,4].map(i=><div key={i} className={`absolute h-4 w-4 rounded-full ${i<completed.length?'bg-[#ffd34f] shadow-[0_0_16px_#ffd34f]':'bg-white/20'}`} style={{left:`${10+i*20}%`,bottom:`${8+Math.abs(2-i)*8}%`}}/>)}</div>
       </div>
     </div>
-    <AnimatePresence>{storyReward&&<TreasureChestReward item={storyReward} onClose={()=>setStoryReward(null)}/>}</AnimatePresence>
+    <AnimatePresence>{storyReward&&<TreasureChestReward item={storyReward.item} duplicate={storyReward.duplicate} onClose={()=>setStoryReward(null)}/>}</AnimatePresence>
   </section>
 }

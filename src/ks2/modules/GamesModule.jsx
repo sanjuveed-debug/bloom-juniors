@@ -311,6 +311,7 @@ function TowerBuilderGame({ theme, onDone }) {
         {options.map((option) => (
           <motion.button
             key={option}
+            data-companion-answer={option === current.a ? 'correct' : 'wrong'}
             whileTap={{ scale: 0.92 }}
             onClick={() => choose(option)}
             className="py-5 rounded-2xl font-bubble text-white text-2xl"

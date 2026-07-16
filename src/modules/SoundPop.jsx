@@ -5,10 +5,10 @@ import { useSpeech } from '../hooks/useSpeech'
 import { dailySeedFor, seededShuffle, mulberry32 } from '../utils/seededRandom'
 import { THEMES } from '../themes'
 import SkillHint, { getHint } from '../components/SkillHint'
-import BuddyCompanion, { useBuddyMood } from '../components/BuddyCompanion'
 import { buildSoundPopCompletion } from '../utils/moduleScoring'
 import { speakThenAdvance } from '../utils/speechAdvance'
-import YaagviCharacter from '../components/YaagviCharacter'
+import InteractiveYaagvi, { useYaagviReactions } from '../components/InteractiveYaagvi'
+import AdventureCompleteBanner from '../components/AdventureCompleteBanner'
 
 // ── RWI-aligned phonics sound bank ────────────────────────────────────────────
 // Set 0 Letter Sounds   : m  a  s  d  t  i  n  p  g  o  c  k  u  b  f  e  l  h  r  j  v  y  w  z  x
@@ -908,18 +908,11 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
   const [consecutiveWrong, setConsecutiveWrong] = useState(0)
   const [showHint,         setShowHint]         = useState(false)
   const totalRounds = 10
-  const buddy = useBuddyMood()
   const timersRef = useRef(new Set())
-
-  const [yaagviState, setYaagviState] = useState('idle')
-  const yaagviRef = useRef(null)
-  useEffect(() => {
-    if (!feedback) return
-    clearTimeout(yaagviRef.current)
-    setYaagviState(feedback.type === 'correct' ? 'clap' : 'think')
-    yaagviRef.current = setTimeout(() => setYaagviState('idle'), 2000)
-    return () => clearTimeout(yaagviRef.current)
-  }, [feedback])
+  const { reaction: yaagviReaction, react: reactYaagvi } = useYaagviReactions({
+    activityKey: `${mode || 'menu'}-${round}-${question?.targetKey || ''}-${selected || ''}`,
+    active: mode === 'pop' && Boolean(question) && selected === null,
+  })
 
   useEffect(() => () => {
     timersRef.current.forEach(clearTimeout)
@@ -960,7 +953,8 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
     setQuestion(q)
     setSelected(null)
     setFeedback(null)
-  }, [pickNextSound])
+    reactYaagvi('question')
+  }, [pickNextSound, reactYaagvi])
 
   useEffect(() => {
     speak(avatarTheme.intro + ' Choose your game!', { mood: 'instruct', voice: 'gb' })
@@ -971,6 +965,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
     setMode('pop')
     nextRound(pickNextSound())
     speak('Listen for the sound and tap the right word!', { mood: 'instruct', voice: 'gb' })
+    reactYaagvi('listen')
   }
 
   // ── Sound Buttons Blending state ──
@@ -998,6 +993,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
     setBlendPicked(null)
     setBlendPhase('tap')
     speak('Sound buttons! Tap each sound button, then squash them together to make a word!', { mood: 'instruct', voice: 'gb' })
+    reactYaagvi('blend')
   }
 
   const handleSoundTap = (i) => {
@@ -1007,7 +1003,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
     if (i === blendTapped) {
       const done = i + 1 === blendWord.sounds.length
       setBlendTapped(i + 1)
-      if (done) buddy.onCorrect()
+      reactYaagvi(done ? 'correct' : 'blend')
     }
   }
 
@@ -1029,6 +1025,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
   const handleBlend = () => {
     if (!blendWord) return
     setBlendPhase('blend')
+    reactYaagvi('listen')
     speak(
       `${blendWord.sounds.map(getSoundDisplay).join(', ')}, ${blendWord.word}!`,
       { mood: 'phonics', voice: 'gb', ssmlInner: buildBlendSSML(blendWord.sounds, blendWord.word) }
@@ -1048,7 +1045,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
       const newScore = blendScore + 1
       setBlendScore(newScore)
       confetti({ particleCount: 70, spread: 90, origin: { x: 0.5, y: 0.5 }, colors: ['#FFD700', '#34D399', '#38BDF8'] })
-      buddy.onWow()
+      reactYaagvi('correct', { streak: newScore % 3 === 0 ? 3 : 1 })
       setBlendPhase('reveal')
       speakThenAdvance(speak, `Yes! ${blendWord.word}! You blended it!`, { mood: 'celebrate', voice: 'gb' }, () => {
         const next = blendRound + 1
@@ -1062,20 +1059,21 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
           })
           speak(`Amazing ${profileName || 'superstar'}! You blended ${newScore} words! You are a blending champion!`, { mood: 'celebrate' })
           onAddStars('phonics', completion.stars, completion.sessionData)
-          buddy.onGameEnd()
+          reactYaagvi('complete')
         } else {
           setBlendRound(next)
           setBlendWord(blendSessionRef.current[next])
           setBlendTapped(0)
           setBlendPicked(null)
           setBlendPhase('tap')
+          reactYaagvi('blend')
           defer(() => {
             speak('Tap each sound button in order', { mood: 'instruct', voice: 'gb' })
           }, 450)
         }
       }, timersRef, { minMs: 1800, maxMs: 6000 })
     } else {
-      buddy.onWrong(false)
+      reactYaagvi('wrong', { attempt: 1 })
       speakThenAdvance(speak, 'Not quite. Listen again!', { mood: 'phonics', voice: 'gb', ssmlInner: `Not quite.<break time="300ms"/>${buildBlendSSML(blendWord.sounds, blendWord.word)}` }, () => {
         setBlendPicked(null)
       }, timersRef, { minMs: 1000, maxMs: 6000 })
@@ -1107,7 +1105,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
       const msg = avatarTheme.correct[Math.floor(Math.random() * avatarTheme.correct.length)]
       setFeedback({ type: 'correct', msg: streak >= 2 ? `🔥 ${streak + 1} streak! ${msg}` : msg })
       confetti({ particleCount: 70, spread: 90, origin: { x: 0.5, y: 0.5 }, colors: ['#FFD700', '#FF6B9D', '#38BDF8'] })
-      streak >= 2 ? buddy.onWow() : buddy.onCorrect()
+      reactYaagvi('correct', { streak: streak + 1, isFinal: round >= totalRounds })
 
       // Reinforce phoneme awareness: "Can you hear /sh/ in shell?"
       speakThenAdvance(speak,
@@ -1125,7 +1123,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
             })
             speak(`Amazing ${name}! You scored ${newScore} stars! You are a phonics superstar!`, { mood: 'celebrate' })
             onAddStars('phonics', completion.stars, completion.sessionData)
-            buddy.onGameEnd()
+            reactYaagvi('complete')
           } else {
             setRound(r => r + 1)
             nextRound()
@@ -1138,7 +1136,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
       setWrongSounds(prev => [...prev, question.targetKey])
       const msg = avatarTheme.wrong[Math.floor(Math.random() * avatarTheme.wrong.length)]
       setFeedback({ type: 'wrong', msg })
-      buddy.onWrong(newWrong >= 2)
+      reactYaagvi('wrong', { attempt: newWrong })
 
       speakThenAdvance(speak,
         `Not quite. Listen for the ${getSoundSpeechCue(question.targetKey).prompt}. Can you find it?`,
@@ -1153,7 +1151,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
         }, timersRef, { minMs: 1600, maxMs: 6000 })
     }
   }, [selected, question, streak, score, correctAnswers, round, totalRounds, wrongSounds,
-      speak, nextRound, onAddStars, avatarTheme, profileName])
+      speak, nextRound, onAddStars, avatarTheme, profileName, reactYaagvi])
 
   const playInstruction = () => {
     if (!question) return
@@ -1174,7 +1172,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
           transition={{ type: 'spring', stiffness: 300, damping: 15 }}
           className="text-center"
         >
-          <YaagviCharacter state="dance" size={160} style={{ margin: '0 auto 8px' }} />
+          <InteractiveYaagvi reaction={yaagviReaction} placement="inline" />
           <h2 className="font-bubble text-4xl shimmer-text mb-2">
             {profileName ? `Amazing ${profileName}!` : 'Amazing!'}
           </h2>
@@ -1183,13 +1181,14 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
               ? <>You blended <span className="font-bold text-yellow-500">{blendScore} words ⭐</span>!</>
               : <>You scored <span className="font-bold text-yellow-500">{score} ⭐</span> stars!</>}
           </p>
+          <AdventureCompleteBanner icon="🎤" />
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={onBack}
             className="bubble-btn px-8 py-4 text-xl"
             style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}
           >
-            Back to Home 🏠
+            Return to Treasure Map →
           </motion.button>
         </motion.div>
       </div>
@@ -1210,6 +1209,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
         <div className="flex-1 flex flex-col items-center justify-center px-6 pb-16">
           <div className="text-6xl mb-2">🎤</div>
           <h2 className="font-bubble text-3xl mb-6 text-center" style={{ color: theme.text }}>Sound Pop</h2>
+          <InteractiveYaagvi reaction={yaagviReaction} placement="strip" className="max-w-sm" />
           <div className="w-full max-w-sm space-y-4">
             <motion.button
               whileTap={{ scale: 0.95 }}
@@ -1268,6 +1268,9 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
         </div>
 
         <div className="flex-1 overflow-y-auto scroll-ios pb-32">
+          <div className="px-4">
+            <InteractiveYaagvi reaction={yaagviReaction} placement="strip" />
+          </div>
           {/* Instruction */}
           <motion.div
             key={`blend-card-${blendRound}`}
@@ -1385,17 +1388,6 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
           )}
         </div>
 
-        {/* Avatar buddy */}
-        <div className="fixed bottom-safe-buddy left-2 z-30 pointer-events-none">
-          <BuddyCompanion
-            avatar={avatar}
-            mood={buddy.mood}
-            speak={buddy.speak}
-            size={80}
-            side="right"
-            autoSpeak
-          />
-        </div>
       </div>
     )
   }
@@ -1428,6 +1420,10 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
 
       {/* Scrollable content — pb-32 ensures answer buttons clear the fixed avatar on all phones */}
       <div className="flex-1 overflow-y-auto scroll-ios pb-32">
+
+      <div className="px-4">
+        <InteractiveYaagvi reaction={yaagviReaction} placement="strip" />
+      </div>
 
       {/* Sound instruction card */}
       <motion.div
@@ -1494,6 +1490,8 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
           return (
             <motion.button
               key={word}
+              data-sound-answer={word}
+              data-correct-answer={isCorrect ? 'true' : 'false'}
               whileTap={{ scale: selected === null ? 0.92 : 1 }}
               onClick={() => handleChoice(word)}
               disabled={selected !== null}
@@ -1504,7 +1502,11 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
                 minHeight: 130,
                 transition: 'background 0.25s, border-color 0.25s',
               }}
-              animate={{ scale: isSelected && isCorrect ? [1, 1.08, 1] : 1 }}
+              animate={isSelected && isCorrect
+                ? { scale: [1, 1.08, 1], rotate: [0, -2, 2, 0] }
+                : isSelected && !isCorrect
+                  ? { x: [0, -8, 8, -5, 5, 0], scale: 0.97 }
+                  : { scale: 1, x: 0 }}
               transition={{ duration: 0.3 }}
             >
               <span className="font-bubble text-3xl" style={{ color: textColor }}>{word}</span>
@@ -1526,53 +1528,24 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
         </motion.div>
       )}
 
-      {/* Feedback toast */}
-      <AnimatePresence>
-        {feedback && (
-          <motion.div
-            initial={{ opacity: 0, y: 30, scale: 0.8 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 30 }}
-            className={`fixed bottom-safe-toast left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl shadow-xl z-50 ${
-              feedback.type === 'correct' ? 'bg-green-400' : 'bg-orange-400'
-            }`}
-          >
-            <p className="font-bubble text-white text-lg text-center">{feedback.msg}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       </div>{/* end scrollable content */}
-
-      {/* ── Avatar buddy ── */}
-      <div className="fixed bottom-safe-buddy left-2 z-30 pointer-events-none">
-        <BuddyCompanion
-          avatar={avatar}
-          mood={buddy.mood}
-          speak={buddy.speak}
-          size={80}
-          side="right"
-          autoSpeak
-        />
-      </div>
 
       {showHint && (
         <SkillHint
           hint={getHint('phonics', question?.targetKey)}
-          onClose={() => setShowHint(false)}
+          onClose={() => {
+            setShowHint(false)
+            reactYaagvi('question')
+          }}
           onTryAgain={() => {
             setShowHint(false)
             setConsecutiveWrong(0)
             setSelected(null)
             setFeedback(null)
+            reactYaagvi('listen')
           }}
         />
       )}
-
-      {/* Yaagvi reacts to correct/wrong answers */}
-      <div style={{ position: 'fixed', bottom: 12, left: 12, zIndex: 40, pointerEvents: 'none' }}>
-        <YaagviCharacter state={yaagviState} size={90} />
-      </div>
     </div>
   )
 }

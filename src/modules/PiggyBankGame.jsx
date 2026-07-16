@@ -270,6 +270,7 @@ export default function PiggyBankGame({
                   {['yes', 'no'].map(option => (
                     <button
                       key={option}
+                      data-companion-answer={option === round.answer ? 'correct' : 'wrong'}
                       type="button"
                       onClick={() => answer(option)}
                       className="rounded-3xl px-4 py-6 font-bubble text-2xl text-white shadow"

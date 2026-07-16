@@ -4,6 +4,8 @@ import confetti from 'canvas-confetti'
 import { useSpeech } from '../hooks/useSpeech'
 import { useVisibilityTimers } from '../hooks/useVisibilityTimers'
 import { THEMES } from '../themes'
+import InteractiveYaagvi, { useYaagviReactions } from '../components/InteractiveYaagvi'
+import AdventureCompleteBanner from '../components/AdventureCompleteBanner'
 
 // ── 3D Shape data from school lesson ─────────────────────────────────────────
 const SHAPES = [
@@ -169,6 +171,12 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
   const [towerPicks, setTowerPicks] = useState(new Set())
   const [towerChecked, setTowerChecked] = useState(false)
 
+  const { reaction: yaagviReaction, react: reactYaagvi } = useYaagviReactions({
+    activityKey: `${mode}-${qIdx}-${currentShape}-${towerPicks.size}`,
+    active: (mode === 'quiz' && !feedback && qIdx < questions.length) ||
+      (mode === 'tower' && !towerChecked),
+  })
+
   const shape = SHAPES[currentShape]
   const question = questions[qIdx]
   const lockedRef = useRef(false)
@@ -178,6 +186,7 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
   // ── Speak on learn mode shape change ──
   useEffect(() => {
     if (mode === 'learn') {
+      reactYaagvi('shape')
       speak(`${shape.name}. ${shape.fun}. ${shape.example}`, { mood: 'instruct' })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -185,6 +194,7 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
 
   useEffect(() => {
     if (mode === 'quiz' && question) {
+      reactYaagvi('question')
       speak(question.question, { mood: 'question' })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -192,6 +202,7 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
 
   useEffect(() => {
     if (mode === 'tower') {
+      reactYaagvi('build')
       speak(TOWER_QUESTION.question, { mood: 'question' })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -215,7 +226,8 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
       setTowerChecked(false)
     }
     setMode(nextMode)
-  }, [])
+    reactYaagvi(nextMode === 'tower' ? 'build' : nextMode === 'learn' ? 'shape' : 'start')
+  }, [reactYaagvi])
 
   const handleAnswer = useCallback((opt) => {
     if (lockedRef.current || completedRef.current) return
@@ -225,9 +237,11 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
     if (opt.correct) {
       setFeedback('correct')
       setCorrect(nextCorrect)
+      reactYaagvi('correct', { streak: nextCorrect % 3 === 0 ? 3 : 1 })
       speak('Correct! Great thinking!', { mood: 'celebrate' })
     } else {
       setFeedback('wrong')
+      reactYaagvi('wrong', { attempt: 1 })
       speak(`Not quite. ${question.shape.fun}`, { mood: 'instruct' })
     }
     track(() => {
@@ -244,11 +258,12 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
           { mood: 'celebrate' }
         )
         confetti({ particleCount: 100, spread: 100, origin: { x: 0.5, y: 0.5 } })
+        reactYaagvi('complete')
         onAddStars('shapes', 3, { total, correct: nextCorrect, struggles: [] })
         setQIdx(total) // trigger isLast result screen
       }
     }, 1400)
-  }, [correct, qIdx, questions, speak, profileName, onAddStars, question, track])
+  }, [correct, qIdx, questions, speak, profileName, onAddStars, question, track, reactYaagvi])
 
   const checkTower = useCallback(() => {
     const correctAnswers = new Set(TOWER_QUESTION.answer)
@@ -256,13 +271,15 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
       && [...towerPicks].every(p => correctAnswers.has(p))
     setTowerChecked(true)
     if (allCorrect) {
+      reactYaagvi('complete')
       speak('Brilliant! Those flat shapes make the best base for a tower.', { mood: 'celebrate' })
       confetti({ particleCount: 80, spread: 80 })
       onAddStars('shapes', 2, { total: TOWER_QUESTION.answer.length, correct: TOWER_QUESTION.answer.length, struggles: [] })
     } else {
+      reactYaagvi('hint')
       speak('Not quite. Think about which shapes have flat bottoms and can balance.', { mood: 'instruct' })
     }
-  }, [towerPicks, speak, onAddStars])
+  }, [towerPicks, speak, onAddStars, reactYaagvi])
 
   // ── MENU ──────────────────────────────────────────────────────────────────
   if (mode === 'menu') {
@@ -276,6 +293,10 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
             <h1 className="font-bubble text-3xl shimmer-text">Shape World 🔷</h1>
             <p className="font-round text-sm opacity-60" style={{ color: theme.text }}>3D Shapes Explorer</p>
           </div>
+        </div>
+
+        <div className="px-4">
+          <InteractiveYaagvi reaction={yaagviReaction} placement="strip" />
         </div>
 
         <div className="px-4 mb-6 p-4 rounded-3xl mx-4"
@@ -340,6 +361,10 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
               style={{ background: i === currentShape ? shape.colour : theme.secondary }}
             />
           ))}
+        </div>
+
+        <div className="px-4">
+          <InteractiveYaagvi reaction={yaagviReaction} placement="strip" />
         </div>
 
         <AnimatePresence mode="wait">
@@ -419,14 +444,16 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
         <div className="min-h-screen flex flex-col items-center justify-center p-6"
           style={{ background: `linear-gradient(160deg, ${theme.bg}, ${theme.card})` }}>
           <div className="text-8xl mb-4">🏆</div>
+          <InteractiveYaagvi reaction={yaagviReaction} placement="inline" />
           <h2 className="font-bubble text-4xl shimmer-text mb-2">Shape Expert!</h2>
           <p className="font-round text-lg text-center mb-6" style={{ color: theme.text }}>
             {correct} / {questions.length} correct
           </p>
-          <motion.button whileTap={{ scale: 0.9 }} onClick={() => setMode('menu')}
+          <AdventureCompleteBanner icon="🔷" />
+          <motion.button whileTap={{ scale: 0.9 }} onClick={onBack}
             className="px-10 py-4 rounded-2xl font-bubble text-white text-xl shadow-lg"
             style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}>
-            Back to Menu 🏠
+            Return to Treasure Map →
           </motion.button>
         </div>
       )
@@ -451,6 +478,10 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
             style={{ background: `linear-gradient(90deg, ${theme.primary}, ${theme.accent})` }}
             animate={{ width: `${((qIdx) / questions.length) * 100}%` }}
             transition={{ duration: 0.5 }} />
+        </div>
+
+        <div className="px-4">
+          <InteractiveYaagvi reaction={yaagviReaction} placement="strip" />
         </div>
 
         {/* Shape display */}
@@ -478,7 +509,7 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
               const showRight = feedback && opt.correct
               const showWrong = feedback && isSel && !opt.correct
               return (
-                <motion.button key={i}
+                <motion.button key={i} data-companion-answer={opt.correct ? 'correct' : 'wrong'}
                   whileTap={{ scale: 0.93 }}
                   onClick={() => handleAnswer(opt)}
                   disabled={!!feedback}
@@ -500,6 +531,9 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
 
   // ── TOWER CHALLENGE ───────────────────────────────────────────────────────
   if (mode === 'tower') {
+    const towerPerfect = towerChecked &&
+      [...towerPicks].every(pick => TOWER_QUESTION.answer.includes(pick)) &&
+      TOWER_QUESTION.answer.every(answer => towerPicks.has(answer))
     return (
       <div className="min-h-screen flex flex-col" style={{ background: `linear-gradient(160deg, ${theme.bg}, ${theme.card})` }}>
         <div className="flex items-center px-4 pt-safe pb-3">
@@ -515,6 +549,42 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
           <p className="font-round text-white/80 text-sm mt-1">💡 {TOWER_QUESTION.hint}</p>
         </div>
 
+        <div className="px-4">
+          <InteractiveYaagvi reaction={yaagviReaction} placement="strip" />
+        </div>
+
+        <div
+          data-testid="shape-tower-preview"
+          className="mx-4 mb-4 min-h-[120px] rounded-3xl border-2 border-amber-200 bg-gradient-to-b from-sky-100 to-amber-50 flex flex-col-reverse items-center justify-start px-5 py-3 shadow-inner overflow-hidden"
+        >
+          {towerPicks.size === 0 ? (
+            <p className="font-round text-sm text-amber-900/60 my-auto">Your tower will appear here as you choose shapes.</p>
+          ) : (
+            <AnimatePresence initial={false}>
+              {[...towerPicks].map((name, index) => {
+                const pickedShape = SHAPES.find(item => item.name === name)
+                return (
+                  <motion.div
+                    layout
+                    key={name}
+                    initial={{ opacity: 0, y: -80, rotate: -14, scale: 0.65 }}
+                    animate={{ opacity: 1, y: 0, rotate: 0, scale: 1 }}
+                    exit={{ opacity: 0, x: 80, rotate: 16 }}
+                    transition={{ type: 'spring', stiffness: 320, damping: 19 }}
+                    className="h-10 rounded-xl border-2 border-white/80 flex items-center justify-center shadow-md font-bubble text-sm text-white"
+                    style={{
+                      background: pickedShape.colour,
+                      width: `${Math.max(45, 82 - index * 8)}%`,
+                    }}
+                  >
+                    <span className="text-xl mr-2">{pickedShape.emoji}</span>{pickedShape.name}
+                  </motion.div>
+                )
+              })}
+            </AnimatePresence>
+          )}
+        </div>
+
         <div className="px-4 grid grid-cols-2 gap-3 mb-4">
           {SHAPES.map(s => {
             const picked = towerPicks.has(s.name)
@@ -522,6 +592,7 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
             const showResult = towerChecked
             return (
               <motion.button key={s.name}
+                data-tower-shape={s.name}
                 whileTap={{ scale: 0.92 }}
                 onClick={() => {
                   if (towerChecked) return
@@ -573,10 +644,11 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
                 Best for the bottom: {TOWER_QUESTION.answer.join(', ')} — they have flat bases!
               </p>
             </div>
-            <motion.button whileTap={{ scale: 0.9 }} onClick={() => setMode('menu')}
+            {towerPerfect && <AdventureCompleteBanner icon="🏗️" />}
+            <motion.button whileTap={{ scale: 0.9 }} onClick={towerPerfect ? onBack : () => setMode('menu')}
               className="py-4 rounded-2xl font-bubble text-white text-lg shadow-lg"
               style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}>
-              Back to Menu 🏠
+              {towerPerfect ? 'Return to Treasure Map →' : 'Back to Menu 🏠'}
             </motion.button>
           </div>
         )}

@@ -20,6 +20,7 @@ import { shouldSendAutoDigest, markDigestSent, buildDigestPayload, sendDigestEma
 import { getClassroomLesson, setClassroomLesson } from './utils/classroomLesson.js'
 import { getTodayWorldEvent, isEventBonusCollected, markEventBonusCollected, WORLD_EVENT_BONUS } from './utils/worldEvent.js'
 import { recordAdaptiveSession } from './utils/adaptiveLearning.js'
+import { stopAllSpeech } from './lib/speechController.js'
 import { CLASS_SESSION_KEY, loadCloudClassLesson } from './services/cloudStore.js'
 import { getAssistant } from './assistants'
 
@@ -114,7 +115,7 @@ function FloatingParticles({ avatar }) {
   )
 }
 
-function Screen({ id, current, children, onMap }) {
+function Screen({ id, current, children, onMap, progress, onUpdateProgress }) {
   return (
     <AnimatePresence mode="wait">
       {current === id && (
@@ -127,7 +128,7 @@ function Screen({ id, current, children, onMap }) {
           className="relative z-10 min-h-screen"
         >
           {GAME_SCREENS.includes(id)
-            ? <AdventureModuleFrame moduleId={id} ageGroup="early" onMap={onMap}>{children}</AdventureModuleFrame>
+            ? <AdventureModuleFrame moduleId={id} ageGroup="early" progress={progress} onUpdateProgress={onUpdateProgress} onMap={onMap}>{children}</AdventureModuleFrame>
             : children}
         </motion.div>
       )}
@@ -166,7 +167,7 @@ function DayCelebration({ profileName, avatar, onDone }) {
           You finished your adventure today!
         </p>
         <p className="font-round text-sm opacity-60" style={{ color: theme.text }}>
-          Come back tomorrow for more! 🌟
+          Your adventure map has another trail ready! 🌟
         </p>
       </motion.div>
     </motion.div>
@@ -361,13 +362,6 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileId, guardianEmail])
 
-  useEffect(() => {
-    const load = () => window.speechSynthesis?.getVoices()
-    window.speechSynthesis?.addEventListener('voiceschanged', load)
-    load()
-    return () => window.speechSynthesis?.removeEventListener('voiceschanged', load)
-  }, [])
-
   // Intercept browser back button — push once on mount, reads current screen via ref to avoid
   // re-registering on every navigation (which stacks phantom history entries)
   useEffect(() => {
@@ -379,24 +373,6 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
     window.addEventListener('popstate', handlePop)
     return () => window.removeEventListener('popstate', handlePop)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // iOS Safari requires a user gesture before speechSynthesis works.
-  // Prime it silently on the very first touch so auto-greet speech works.
-  useEffect(() => {
-    const prime = () => {
-      if (!window.speechSynthesis) return
-      const u = new SpeechSynthesisUtterance(' ')
-      u.volume = 0
-      window.speechSynthesis.speak(u)
-      setTimeout(() => window.speechSynthesis.cancel(), 50)
-    }
-    document.addEventListener('touchstart', prime, { once: true, passive: true })
-    document.addEventListener('click', prime, { once: true })
-    return () => {
-      document.removeEventListener('touchstart', prime)
-      document.removeEventListener('click', prime)
-    }
   }, [])
 
   const todayKey = formatLocalDate()
@@ -437,6 +413,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
   const GATE_FREE_SCREENS = new Set(['phonics', 'math', 'story', 'tricky', 'shapes', 'logic'])
 
   const navigate = useCallback((to) => {
+    stopAllSpeech('navigation')
     resume()
     triggerHaptic('tap')
     if (sessionLocked && GAME_SCREENS.includes(to)) return
@@ -605,7 +582,10 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
   }, [addStars, logSession, tickChallenge, update, addSticker, speak, profileName, profileId, defer])
 
   const handleUpdateProgress = useCallback((patch) => {
-    update(p => ({ ...p, ...patch }))
+    update(p => {
+      const resolved = typeof patch === 'function' ? patch(p) : patch
+      return { ...p, ...resolved }
+    })
   }, [update])
 
   // JarvisOrb only shown on home — prevents blocking game answer buttons on mobile
@@ -675,45 +655,45 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
       </Screen>
 
       <React.Suspense fallback={<LoadingSpinner />}>
-      <Screen id="phonics" current={screen} onMap={() => navigate('home')}>
+      <Screen id="phonics" current={screen} progress={progress} onUpdateProgress={update} onMap={() => navigate('home')}>
         <SoundPop avatar={progress.avatar} progress={progress}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="math" current={screen} onMap={() => navigate('home')}>
+      <Screen id="math" current={screen} progress={progress} onUpdateProgress={update} onMap={() => navigate('home')}>
         <NumberWorld avatar={progress.avatar} progress={progress}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="tricky" current={screen} onMap={() => navigate('home')}>
+      <Screen id="tricky" current={screen} progress={progress} onUpdateProgress={update} onMap={() => navigate('home')}>
         <StarCatch avatar={progress.avatar} progress={progress}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="story" current={screen} onMap={() => navigate('home')}>
+      <Screen id="story" current={screen} progress={progress} onUpdateProgress={update} onMap={() => navigate('home')}>
         <StoryRoom avatar={progress.avatar} progress={progress}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')}
           onUpdateProgress={handleUpdateProgress} />
       </Screen>
 
-      <Screen id="logic" current={screen} onMap={() => navigate('home')}>
+      <Screen id="logic" current={screen} progress={progress} onUpdateProgress={update} onMap={() => navigate('home')}>
         <DirectionalPuzzle avatar={progress.avatar} progress={progress}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="shop" current={screen} onMap={() => navigate('home')}>
+      <Screen id="shop" current={screen} progress={progress} onUpdateProgress={update} onMap={() => navigate('home')}>
         <ShopGame avatar={progress.avatar} progress={progress}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')}
           onUpdateProgress={handleUpdateProgress} />
       </Screen>
 
-      <Screen id="piggybank" current={screen} onMap={() => navigate('home')}>
+      <Screen id="piggybank" current={screen} progress={progress} onUpdateProgress={update} onMap={() => navigate('home')}>
         <PiggyBankGame
           ageGroup="early"
           avatar={progress.avatar}
@@ -727,13 +707,13 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
         />
       </Screen>
 
-      <Screen id="shapes" current={screen} onMap={() => navigate('home')}>
+      <Screen id="shapes" current={screen} progress={progress} onUpdateProgress={update} onMap={() => navigate('home')}>
         <ShapeWorld avatar={progress.avatar} progress={progress}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="davinci" current={screen} onMap={() => navigate('home')}>
+      <Screen id="davinci" current={screen} progress={progress} onUpdateProgress={update} onMap={() => navigate('home')}>
         <LittleDaVinci avatar={progress.avatar} progress={progress}
           profileName={profileName}
           onAddStars={handleAddStars}
@@ -741,37 +721,37 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
           onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="anatomy" current={screen} onMap={() => navigate('home')}>
+      <Screen id="anatomy" current={screen} progress={progress} onUpdateProgress={update} onMap={() => navigate('home')}>
         <BodyParts avatar={progress.avatar}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="science" current={screen} onMap={() => navigate('home')}>
+      <Screen id="science" current={screen} progress={progress} onUpdateProgress={update} onMap={() => navigate('home')}>
         <CuriousScience avatar={progress.avatar}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="worldgk" current={screen} onMap={() => navigate('home')}>
+      <Screen id="worldgk" current={screen} progress={progress} onUpdateProgress={update} onMap={() => navigate('home')}>
         <WorldGK avatar={progress.avatar}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="exercise" current={screen} onMap={() => navigate('home')}>
+      <Screen id="exercise" current={screen} progress={progress} onUpdateProgress={update} onMap={() => navigate('home')}>
         <FunExercise avatar={progress.avatar}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="planets" current={screen} onMap={() => navigate('home')}>
+      <Screen id="planets" current={screen} progress={progress} onUpdateProgress={update} onMap={() => navigate('home')}>
         <PlanetWorld avatar={progress.avatar}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
-      <Screen id="arcade" current={screen} onMap={() => navigate('home')}>
+      <Screen id="arcade" current={screen} progress={progress} onUpdateProgress={update} onMap={() => navigate('home')}>
         <GameArcade avatar={progress.avatar} progress={progress}
           profileName={profileName}
           onAddStars={handleAddStars} onBack={() => navigate('home')}
@@ -779,7 +759,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
           onUpdateProgress={handleUpdateProgress} />
       </Screen>
 
-      <Screen id="sacred" current={screen} onMap={() => navigate('home')}>
+      <Screen id="sacred" current={screen} progress={progress} onUpdateProgress={update} onMap={() => navigate('home')}>
         <SacredStories avatar={progress.avatar}
           profileName={profileName}
           profileId={profileId}
@@ -790,7 +770,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
       </Screen>
 
       <Screen id="wonderworld" current={screen}>
-        <WonderWorld progress={progress} profileName={profileName} onUpdateProgress={handleUpdateProgress} onBack={() => navigate('home')} />
+        <WonderWorld ageGroup="early" progress={progress} profileName={profileName} onUpdateProgress={handleUpdateProgress} onBack={() => navigate('home')} />
       </Screen>
       </React.Suspense>
 

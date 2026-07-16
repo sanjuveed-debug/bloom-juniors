@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import Dashboard from './components/Dashboard'
 import { getTodayAdventureModules } from './utils/arcadeUnlock'
+import { formatLocalDate } from './utils/date'
 import './index.css'
 
 const params = new URLSearchParams(window.location.search)
@@ -11,7 +12,7 @@ const [mod1, mod2] = getTodayAdventureModules({}, null, true)
 window.__uatTodayModules = [mod1, mod2]
 
 let sessions = []
-if (scenario === 'path1') sessions = [{ module: mod1, date: Date.now() }]
+if (scenario === 'path1' || scenario === 'living1') sessions = [{ module: mod1, date: Date.now() }]
 if (scenario === 'done' || scenario === 'celebration') {
   sessions = [{ module: mod1, date: Date.now() }, { module: mod2, date: Date.now() }]
 }
@@ -27,7 +28,9 @@ const initialProgress = {
   totalStars: 12,
   loginStreak: 2,
   sessions,
-  livingAdventure: { storyId: 'moon-egg-v1', completed: [0, 1, 2, 3, 4] },
+  livingAdventure: scenario === 'living1'
+    ? { storyId: 'moon-egg-v1', completed: [0, 1], lastCompletedDate: formatLocalDate(), launched: null }
+    : { storyId: 'moon-egg-v1', completed: [0, 1, 2, 3, 4] },
   adventure: { skyship: { engineColour: 'orange' } },
 }
 

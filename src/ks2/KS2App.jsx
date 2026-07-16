@@ -30,9 +30,13 @@ import { recordAdaptiveSession } from '../utils/adaptiveLearning.js'
 import ModuleArrival from '../components/ModuleArrival'
 import AdventureModuleFrame from '../components/AdventureModuleFrame'
 import LivingAdventure from '../components/LivingAdventure'
-import { TreasureChestReward, TreasureShelf, TreasureShelfButton, nextTreasure } from '../components/TreasureCollection'
+import { TreasureChestReward, TreasureShelf } from '../components/TreasureCollection'
+import OneDailyJourney from '../components/OneDailyJourney'
+import NeverFinishedAdventure from '../components/NeverFinishedAdventure'
 import WonderWorld from '../components/WonderWorld'
 import { grantWonderSeed } from '../utils/wonderWorld.js'
+import { claimTreasureReward, equipTreasureReward } from '../utils/treasureRewards.js'
+import { stopAllSpeech } from '../lib/speechController.js'
 
 // ── Themes ────────────────────────────────────────────────────────────────────
 const KS2_THEMES = {
@@ -142,7 +146,7 @@ function getKS2DailyMission(progress = {}, todayKey, classroomLesson = null, ful
     ].filter(Boolean)
   }
 
-  const steps = picks.map(module => ({
+  const steps = picks.slice(0, DAILY_UNLOCK_TARGET).map(module => ({
     module,
     done: progress[module.id]?.lastPlayedDate === todayKey,
   }))
@@ -570,24 +574,21 @@ function LegacyKS2Dashboard({ theme, profileName, progress, todayKey, gamesUnloc
 // ── Main app ──────────────────────────────────────────────────────────────────
 const KS2_MAP_POSITIONS = [['12%','39%'],['31%','35%'],['50%','39%'],['70%','34%'],['88%','40%'],['20%','64%'],['39%','68%'],['59%','63%'],['79%','67%'],['10%','82%'],['50%','84%'],['90%','82%']]
 
-function KS2Dashboard({ profileName, progress, todayKey, gamesUnlocked, studyDoneCount, onNavigate, onSwitchProfiles, onParent, classroomLesson, fullAccess=true, onUpdateProgress }) {
+export function KS2Dashboard({ profileName, progress, todayKey, gamesUnlocked, studyDoneCount, onNavigate, onSwitchProfiles, onParent, classroomLesson, fullAccess=true, onUpdateProgress }) {
   const xp=progress.ks2Xp||0, level=getLevel(xp), levelPct=getLevelPct(xp), mission=getKS2DailyMission(progress,todayKey,classroomLesson,fullAccess)
   const next=mission.next?.module||mission.steps[0]?.module, nextLoc=MAP_LOCATIONS.find(l=>l.id===next?.id)||MAP_LOCATIONS[0]
   const [rewardTreasure,setRewardTreasure]=useState(null),[showShelf,setShowShelf]=useState(false),[showAtlas,setShowAtlas]=useState(false)
   const treasureCollection=progress.treasureCollection||{items:[],claims:{}},claimKey=`junior:${todayKey}`,treasureClaimed=Boolean(treasureCollection.claims?.[claimKey])
-  const claimTreasure=()=>{if(treasureClaimed||mission.doneCount<3)return;const item=nextTreasure(treasureCollection.items||[]);onUpdateProgress?.({treasureCollection:{items:[...(treasureCollection.items||[]),{...item,earnedAt:Date.now(),source:'junior-mission'}],claims:{...(treasureCollection.claims||{}),[claimKey]:item.id}},wonderWorld:grantWonderSeed(progress.wonderWorld,`daily:${claimKey}`,'junior-mission')});setRewardTreasure(item)}
+  const claimTreasure=()=>{if(treasureClaimed||mission.doneCount<2)return;const reward=claimTreasureReward(treasureCollection,{claimKey,source:'junior-mission'});if(!reward.claimed||!reward.item)return;onUpdateProgress?.({treasureCollection:reward.collection,wonderWorld:grantWonderSeed(progress.wonderWorld,`daily:${claimKey}`,'junior-mission')});setRewardTreasure(reward)}
+  const equipTreasure=item=>onUpdateProgress?.({treasureCollection:equipTreasureReward(treasureCollection,item)})
   return <div className="min-h-screen bg-[#f4e5c7] pb-16 text-[#28150d]">
-    <header className="border-b border-[#5d321d]/20 bg-[#2a1837] px-4 py-3 text-white shadow-lg"><div className="mx-auto flex max-w-7xl items-center gap-3"><div className="min-w-0 flex-1"><p className="font-round text-[11px] font-black uppercase tracking-[.2em] text-[#f4ba62]">Yaagvi expedition atlas</p><h1 className="truncate font-bubble text-2xl">Agent {profileName}</h1><div className="mt-1 flex items-center gap-2"><span className="font-round text-xs text-white/65">Level {level}</span><div className="h-1.5 max-w-md flex-1 overflow-hidden rounded-full bg-white/15"><div className="h-full bg-[#f4ba45]" style={{width:`${levelPct}%`}}/></div><span className="font-round text-xs text-white/55">{xp} XP</span></div></div><div className="rounded-xl border border-[#f4ba62]/30 bg-white/10 px-3 py-2 text-center"><p className="text-lg">🧭</p><p className="font-bubble text-sm">{studyDoneCount}/2</p></div>{onSwitchProfiles&&<button onClick={onSwitchProfiles} className="rounded-xl bg-[#f4ba62] px-3 py-2 font-bubble text-sm text-[#28150d]">Switch</button>}</div></header>
-    <LivingAdventure ageGroup="junior" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress} onOpenWonderWorld={()=>onNavigate('wonderworld')}/>
-    <div className="mx-auto mt-4 max-w-7xl px-4">
-      {mission.doneCount>=3&&!treasureClaimed&&<motion.button whileTap={{scale:.96}} onClick={claimTreasure} className="min-h-14 w-full rounded-2xl bg-gradient-to-r from-[#9c321d] to-[#5d285f] font-bubble text-lg text-white shadow-xl">🧰 OPEN EXPEDITION TREASURE</motion.button>}
-      <TreasureShelfButton count={treasureCollection.items?.length||0} onClick={()=>setShowShelf(true)}/>
-      <button onClick={()=>setShowAtlas(value=>!value)} className="mt-4 min-h-14 w-full rounded-2xl border-2 border-[#70401f]/25 bg-[#fff5df] font-bubble text-lg text-[#4a2414] shadow-sm">{showAtlas?'Close expedition atlas ↑':'🗺️ Open full expedition atlas ↓'}</button>
-    </div>
+    <header className="border-b border-[#5d321d]/20 bg-[#2a1837] px-4 py-3 text-white shadow-lg"><div className="mx-auto flex max-w-7xl items-center gap-3"><div className="min-w-0 flex-1"><p className="font-round text-[11px] font-black uppercase tracking-[.2em] text-[#f4ba62]">Yaagvi expedition atlas</p><h1 className="truncate font-bubble text-2xl">Agent {profileName}</h1><div className="mt-1 flex items-center gap-2"><span className="font-round text-xs text-white/65">Level {level}</span><div className="h-1.5 max-w-md flex-1 overflow-hidden rounded-full bg-white/15"><div className="h-full bg-[#f4ba45]" style={{width:`${levelPct}%`}}/></div><span className="font-round text-xs text-white/55">{xp} XP</span></div></div><div className="rounded-xl border border-[#f4ba62]/30 bg-white/10 px-3 py-2 text-center"><p className="text-lg">🎁</p><p className="font-bubble text-sm">{treasureCollection.items?.length||0}</p></div>{onSwitchProfiles&&<button onClick={onSwitchProfiles} className="rounded-xl bg-[#f4ba62] px-3 py-2 font-bubble text-sm text-[#28150d]">Switch</button>}</div></header>
+    <OneDailyJourney ageGroup="junior" profileName={profileName} steps={mission.steps} doneCount={mission.doneCount} required={2} claimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} streak={progress.loginStreak||0} onPlayNext={()=>next&&onNavigate(next.id)} onClaimTreasure={claimTreasure} onOpenTreasureRoom={()=>setShowShelf(true)} onOpenWorld={()=>onNavigate('wonderworld')} exploreOpen={showAtlas} onToggleExplore={()=>setShowAtlas(value=>!value)}/>
+    {!showAtlas&&<><LivingAdventure ageGroup="junior" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress} onOpenWonderWorld={()=>onNavigate('wonderworld')}/><NeverFinishedAdventure ageGroup="junior" progress={progress} active={treasureClaimed} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress}/></>}
     {showAtlas&&<section className="mx-auto mt-5 max-w-7xl px-3 sm:px-5"><div className="relative min-h-[760px] overflow-hidden rounded-[30px] border-4 border-[#70401f] bg-cover bg-center shadow-2xl" style={{backgroundImage:'linear-gradient(rgba(35,20,13,.08),rgba(35,20,13,.18)),url(/treasure-map-bg.png)'}}>
       <div className="absolute left-5 right-5 top-5 z-20 flex flex-col gap-3 rounded-[22px] border border-[#6e3b20]/20 bg-[#fff4dc]/94 p-5 shadow-xl backdrop-blur-sm sm:left-7 sm:right-auto sm:w-[520px]"><p className="font-round text-xs font-black uppercase tracking-[.18em] text-[#a33e18]">Current mission · {mission.doneCount}/3 stops</p><div className="flex items-center gap-3"><span className="text-5xl">{nextLoc.emoji}</span><div><h2 className="font-bubble text-3xl">Proceed to {nextLoc.name}</h2><p className="font-round text-sm font-bold text-[#765039]">Complete the challenge, earn XP, and recover +{nextLoc.treasure} treasure.</p><p className="mt-1 font-round text-xs font-black text-[#9c321d]">Gold ring marks your recommended route.</p></div></div><motion.button whileTap={{scale:.97}} onClick={()=>next&&onNavigate(next.id)} className="min-h-12 rounded-xl bg-gradient-to-r from-[#9c321d] to-[#5d285f] font-bubble text-lg text-white shadow-lg">START MISSION →</motion.button></div>
       {MAP_LOCATIONS.map((loc,idx)=>{const [left,top]=KS2_MAP_POSITIONS[idx],locked=loc.id==='games'&&!gamesUnlocked,done=progress[loc.id]?.lastPlayedDate===todayKey,active=loc.id===next?.id;return <motion.button key={loc.id} disabled={locked} onClick={()=>!locked&&onNavigate(loc.id)} whileTap={{scale:.92}} className="absolute z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center" style={{left,top,opacity:locked ? .55 : 1}} initial={{opacity:0,scale:.7}} animate={{opacity:locked ? .55 : 1,scale:1}} transition={{delay:idx*.04}}><motion.div className={`grid h-16 w-16 place-items-center rounded-2xl border-2 text-3xl shadow-lg sm:h-20 sm:w-20 sm:text-4xl ${done?'border-[#32865a] bg-[#e9ffda]':active?'border-white bg-[#8f321e] ring-4 ring-[#f4ba45]':'border-[#7b4b2c]/25 bg-[#fff5df]'}`} animate={active?{y:[0,-5,0]}:{}} transition={{duration:1.7,repeat:Infinity}}>{locked?'🔒':done?'✓':loc.emoji}</motion.div><span className="mt-1 max-w-[110px] rounded-md bg-[#2b1724]/90 px-2 py-1 text-center font-round text-[11px] font-black text-white shadow">{loc.name}</span><span className="font-round text-[10px] font-black text-[#6d341b]">+{loc.treasure}</span></motion.button>})}
-    </div></section>}<div className="mx-auto mt-4 flex max-w-7xl justify-end px-4">{onParent&&<button onClick={onParent} className="rounded-full bg-white/70 px-4 py-2 font-round text-xs font-bold">🔒 Grown-ups</button>}</div><AnimatePresence>{rewardTreasure&&<TreasureChestReward item={rewardTreasure} onClose={()=>setRewardTreasure(null)}/>} {showShelf&&<TreasureShelf collection={treasureCollection.items||[]} onClose={()=>setShowShelf(false)}/>}</AnimatePresence>
+    </div></section>}<div className="mx-auto mt-4 flex max-w-7xl justify-end px-4">{onParent&&<button onClick={onParent} className="rounded-full bg-white/70 px-4 py-2 font-round text-xs font-bold">🔒 Grown-ups</button>}</div><AnimatePresence>{rewardTreasure&&<TreasureChestReward item={rewardTreasure.item} duplicate={rewardTreasure.duplicate} weekly={rewardTreasure.weekly} onClose={()=>setRewardTreasure(null)}/>} {showShelf&&<TreasureShelf collection={treasureCollection} profileName={profileName} onEquip={equipTreasure} onClose={()=>setShowShelf(false)}/>}</AnimatePresence>
   </div>
 }
 
@@ -608,6 +609,7 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
   const hasAllAccess = !PREMIUM_GATING_ENABLED || classroomMode || premium
   const gatedNavigate = useCallback((to) => {
     if (!hasAllAccess && PREMIUM_KS2_MODULES.has(to)) { setLockedModule(to); return }
+    stopAllSpeech('navigation')
     setScreen(to)
     let skipArrival = false
     try { skipArrival = sessionStorage.getItem('bloom_living_launch') === to; if (skipArrival) sessionStorage.removeItem('bloom_living_launch') } catch {}
@@ -738,7 +740,7 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
   }
 
   if (screen === 'wonderworld') {
-    return <WonderWorld progress={progress} profileName={profileName} onUpdateProgress={(patch)=>update(p=>({...p,...patch}))} onBack={()=>setScreen('home')}/>
+    return <WonderWorld ageGroup="junior" progress={progress} profileName={profileName} onUpdateProgress={(patch)=>update(p=>({...p,...(typeof patch==='function'?patch(p):patch)}))} onBack={()=>setScreen('home')}/>
   }
 
   const goHome = () => setScreen('home')
@@ -765,7 +767,7 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
   if (moduleMap[screen]) {
     return (
       <VoiceContext.Provider value="en-GB-SoniaNeural">
-        <AdventureModuleFrame moduleId={screen} ageGroup="junior" onMap={() => { setModuleArrival(null); setScreen('home') }}>{moduleMap[screen]}</AdventureModuleFrame>
+        <AdventureModuleFrame moduleId={screen} ageGroup="junior" progress={progress} onUpdateProgress={update} onMap={() => { setModuleArrival(null); setScreen('home') }}>{moduleMap[screen]}</AdventureModuleFrame>
         <AnimatePresence>
           {moduleArrival === screen && <ModuleArrival ageGroup="junior" moduleId={screen} profileName={profileName} onStart={() => setModuleArrival(null)} onBack={() => { setModuleArrival(null); setScreen('home') }} />}
         </AnimatePresence>
