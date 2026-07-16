@@ -1,5 +1,59 @@
 # Community Distribution Kit — borrowed audiences
 
+---
+
+# SECOND-WAVE SCRIPTS — for groups you already posted in before
+
+Rule: never repeat a pitch. Re-enter with either (a) a genuinely new story or
+(b) pure value. Both below. Wait for a natural moment — these don't expire.
+
+## A. The "I listened and rebuilt it" update post (new story)
+
+> Quick update for anyone who saw my post about the learning app I built for my
+> daughter (Bloom Juniors) — and a thank you.
+>
+> Based on feedback from parents and a few FS teachers, I basically rebuilt the
+> whole experience this summer: there's now one simple daily journey (two short
+> adventures, then the app tells your child they're DONE — no endless scroll),
+> a little mascot called Yaagvi who talks, celebrates their answers and thinks
+> with them when they're stuck, and treasures they collect and keep.
+>
+> Still completely free, still zero ads — that never changes.
+> bloomjuniors.com if you want to see what changed. And if your little one
+> tried it before and got bored — that's exactly the feedback that drove this,
+> so I'd love a second opinion. 🙏
+
+## B. The value-share post (no pitch at all — share an article)
+
+> Something for the FS2/Reception parents: I kept seeing the same questions
+> about phonics (what IS phase 2? why does the teacher say "sss" not "suh"?),
+> so I wrote a plain-English guide with the full sound list and how to practise
+> at home in 10 minutes a day:
+>
+> bloomjuniors.com/blog/phase-2-phonics-sounds-explained/
+>
+> No signup, no paywall — it's on the blog of the free learning app I build.
+> Hope it helps someone at the school gate tomorrow 😄
+
+(Variants: the 44-sounds cheat sheet for any "how do I help with reading?"
+thread; the Dubai FS1/FS2 guide whenever a newcomer asks how British school
+years work.)
+
+## C. The reply strategy (highest-converting, zero spam risk)
+
+Don't post — ANSWER. Watch groups for these questions, which appear weekly:
+- "Any good learning apps that aren't full of ads?"
+- "How do I help my 4-year-old with phonics?"
+- "What's phase 2/3? The school keeps mentioning it"
+- "Screen time recommendations?"
+
+Answer genuinely and fully FIRST. Then one line: "I actually built a free app
+for exactly this after getting fed up — bloomjuniors.com if useful." A helpful
+answer with a soft mention outperforms every broadcast post ever written.
+
+---
+
+
 These are where the first real users come from. One rule for all of them:
 **you are a dad sharing something he made, never a company advertising.**
 Post once per community, reply to every comment, never argue.
