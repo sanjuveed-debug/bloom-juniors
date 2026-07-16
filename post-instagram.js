@@ -9,7 +9,9 @@ config()
 
 const IG_USERNAME = process.env.IG_USERNAME
 const IG_PASSWORD = process.env.IG_PASSWORD
-const IMAGE_PATH  = resolve(process.env.IMAGE_PATH || './public/yaagvi-mascot.png')
+// Single image: IMAGE_PATH=a.png  ·  Carousel: IMAGE_PATH=a.png,b.png,c.png
+const IMAGE_PATHS = (process.env.IMAGE_PATH || './public/yaagvi-mascot.png')
+  .split(',').map(p => resolve(p.trim())).filter(Boolean)
 const CAPTION     = process.env.CAPTION || `I'm a parent first. A builder second.
 
 I made an app so my 5-year-old could learn phonics and maths — away from the passive scroll of YouTube Kids.
@@ -37,9 +39,11 @@ if (!IG_USERNAME || !IG_PASSWORD) {
   console.error('❌  Missing IG_USERNAME or IG_PASSWORD in .env')
   process.exit(1)
 }
-if (!existsSync(IMAGE_PATH)) {
-  console.error(`❌  Image not found: ${IMAGE_PATH}`)
-  process.exit(1)
+for (const p of IMAGE_PATHS) {
+  if (!existsSync(p)) {
+    console.error(`❌  Image not found: ${p}`)
+    process.exit(1)
+  }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -147,11 +151,12 @@ async function sleep(ms) {
     await clickIfVisible(page, 'svg[aria-label="Post"]', 2500)
     await sleep(2000)
 
-    // ── 4. Upload image ───────────────────────────────────────────────────────
-    console.log(`→ Uploading image: ${IMAGE_PATH}`)
+    // ── 4. Upload image(s) — multiple files in one select = carousel ──────────
+    console.log(`→ Uploading ${IMAGE_PATHS.length} image(s):`)
+    IMAGE_PATHS.forEach(p => console.log(`     ${p}`))
     const fileInput = page.locator('input[type="file"]').first()
-    await fileInput.setInputFiles(IMAGE_PATH)
-    await sleep(3000)
+    await fileInput.setInputFiles(IMAGE_PATHS)
+    await sleep(3000 + IMAGE_PATHS.length * 1000)
 
     // ── 5. Step through crop → filter → caption ───────────────────────────────
     // "Next" is a div[role=button] in current IG — use role locators
