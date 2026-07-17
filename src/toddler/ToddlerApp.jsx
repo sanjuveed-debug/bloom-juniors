@@ -1354,6 +1354,7 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
       return {
         ...recordAdaptiveSession(p, moduleId, { total, correct, struggles: [] }),
         childInterest: recordInterestComplete(p.childInterest, moduleId, { score: correct }),
+        totalStars: (p.totalStars || 0) + correct,
         toddlerTreasurePoints: (p.toddlerTreasurePoints || 0) + (firstToday ? 5 : 0),
         [moduleId]: {
           ...p[moduleId],

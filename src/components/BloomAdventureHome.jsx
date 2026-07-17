@@ -10,6 +10,9 @@ const PALETTES = {
   junior: { ink: '#28150d', accent: '#6b2e62', warm: '#a33e18', sky: '#f4e5c7', border: '#70401f' },
 }
 
+// Where the Bloom Quiz Show lives in each age band's navigation
+const QUIZ_TARGET = { toddler: 'quizshow', early: 'arcade', junior: 'games' }
+
 export default function BloomAdventureHome({
   ageGroup = 'early', profileName = 'Explorer', progress = {}, dailyNext, dailyDone = 0,
   dailyRequired = 2, dailyClaimed = false, treasureCount = 0, libraryOpen = false,
@@ -73,6 +76,19 @@ export default function BloomAdventureHome({
                 <span className="mt-1 block font-round text-xs font-bold opacity-60">{copy.worldHint}</span>
               </motion.button>
             </div>
+            {dailyClaimed && dailyDone >= dailyRequired && (
+              <motion.button data-testid="quiz-showcase" whileTap={{ scale: .97 }} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                onClick={() => onNavigate?.(QUIZ_TARGET[age], 'quiz-showcase')}
+                className="mt-3 flex w-full items-center gap-4 rounded-[22px] border-2 border-[#fbbf24] bg-gradient-to-r from-[#3b1355] to-[#6d28d9] p-4 text-left text-white shadow-lg">
+                <motion.span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/15 text-3xl" animate={{ rotate: [0, -6, 6, 0] }} transition={{ duration: 2, repeat: Infinity }}>🎤</motion.span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-round text-[10px] font-black uppercase tracking-[.18em] text-[#fbbf24]">Tonight on the Bloom Stage</span>
+                  <span className="mt-0.5 block font-bubble text-xl leading-tight sm:text-2xl">Yaagvi&rsquo;s quiz show is ready!</span>
+                  <span className="mt-0.5 block font-round text-xs font-bold text-white/80">Take your seat, {profileName} — climb the prize lights.</span>
+                </span>
+                <span className="text-2xl">→</span>
+              </motion.button>
+            )}
           </div>
 
           <div className="relative hidden min-h-[330px] items-end justify-center lg:flex">

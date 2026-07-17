@@ -694,6 +694,7 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
       return {
         ...adaptive,
         childInterest: recordInterestComplete(p.childInterest, moduleId, { score: correct }),
+        totalStars: (p.totalStars || 0) + correct,
         ks2Xp: (p.ks2Xp || 0) + xpEarned,
         ks2TreasurePoints: (p.ks2TreasurePoints || 0) + (firstToday ? treasure : 0),
         [moduleId]: {
