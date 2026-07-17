@@ -23,7 +23,8 @@ for (const age of ['toddler', 'early', 'junior']) {
   const reveal = page.getByTestId('game-complete-reveal')
   await reveal.waitFor()
   check(`${age}: completion has age-appropriate celebration`, await reveal.getByText(titles[age]).count() === 1)
-  check(`${age}: completion shows the saved score`, await reveal.getByText('4 of 4 clues solved').count() === 1)
+  const scoreCopy = age === 'toddler' ? 'All 4 clues found!' : '4 of 4 clues solved'
+  check(`${age}: completion shows an honest completion result`, await reveal.getByText(scoreCopy).count() === 1)
   check(`${age}: completion shows a tangible reward`, await reveal.getByText(/treasure-map clue|treasure XP/i).count() >= 1)
   check(`${age}: completion does not start background Azure speech`, speechRequests === 0)
   check(`${age}: completion fits a phone without horizontal overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth))

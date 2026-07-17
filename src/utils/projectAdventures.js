@@ -187,7 +187,7 @@ export function mergeProjectAdventures(localValue = {}, cloudValue = {}) {
   history.sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0))
   const completedRuns = new Set(history.map(entry => entry.runId))
   let active = null
-  if (local.active?.runId === cloud.active?.runId) {
+  if (local.active?.runId && local.active.runId === cloud.active?.runId) {
     active = {
       ...(local.active.updatedAt >= cloud.active.updatedAt ? cloud.active : local.active),
       ...(local.active.updatedAt >= cloud.active.updatedAt ? local.active : cloud.active),

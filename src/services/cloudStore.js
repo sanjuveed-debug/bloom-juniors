@@ -48,7 +48,16 @@ export function generateClassCode(className = 'CLASS') {
   return `${prefix}-${suffix}`
 }
 
-const MODULE_KEYS = ['phonics', 'math', 'tricky', 'arcade', 'logic', 'shapes', 'davinci', 'anatomy', 'science', 'worldgk', 'exercise', 'planets']
+const MODULE_KEYS = [
+  // Early years
+  'phonics', 'math', 'tricky', 'arcade', 'logic', 'shapes', 'davinci',
+  'anatomy', 'science', 'worldgk', 'exercise', 'planets',
+  // Tiny Stars
+  'bodyparts', 'colours', 'numbers', 'fruits', 'animals', 'alphabet', 'quizshow',
+  // Junior Explorers
+  'timestables', 'fractions', 'wordproblems', 'piggybank', 'reading', 'spelling',
+  'grammar', 'ks2science', 'worldmap', 'spirituality', 'games',
+]
 export const CLASS_SESSION_KEY = 'eduapp_class_session_v1'
 
 function loadClassSession(profileId = '') {
@@ -62,7 +71,17 @@ function loadClassSession(profileId = '') {
   }
 }
 
-function mergeProgress(local, cloud) {
+export function mergeProgress(local = {}, cloud = {}) {
+  // The fresher snapshot supplies ordinary preferences and UI state. Earned
+  // progress is merged explicitly below and therefore can never move backwards.
+  const localRevision = Number(local.revision || 0)
+  const cloudRevision = Number(cloud.revision || 0)
+  const localUpdatedAt = Number(local.updatedAt || 0)
+  const cloudUpdatedAt = Number(cloud.updatedAt || 0)
+  const localIsNewer = localRevision > cloudRevision ||
+    (localRevision === cloudRevision && localUpdatedAt >= cloudUpdatedAt)
+  const newer = localIsNewer ? local : cloud
+  const older = localIsNewer ? cloud : local
   // Sessions: union by timestamp — avoids silently dropping offline sessions
   const cloudSessions = Array.isArray(cloud.sessions) ? cloud.sessions : []
   const localSessions = Array.isArray(local.sessions) ? local.sessions : []
@@ -90,7 +109,7 @@ function mergeProgress(local, cloud) {
     const l = local[key] || {}
     const c = cloud[key] || {}
     mergedModules[key] = {
-      ...c, ...l,
+      ...(localIsNewer ? c : l), ...(localIsNewer ? l : c),
       score:   Math.max(l.score   || 0, c.score   || 0),
       level:   Math.max(l.level   || 1, c.level   || 1),
       played:  Math.max(l.played  || 0, c.played  || 0),
@@ -171,14 +190,66 @@ function mergeProgress(local, cloud) {
     ? localTreasures
     : cloudTreasures
 
+  const mergedMoodLog = Object.values([...((cloud.moodLog || [])), ...((local.moodLog || []))]
+    .reduce((byDate, entry) => {
+      if (!entry?.date) return byDate
+      if (!byDate[entry.date] || (entry.at || 0) >= (byDate[entry.date].at || 0)) byDate[entry.date] = entry
+      return byDate
+    }, {})).sort((a, b) => String(a.date).localeCompare(String(b.date))).slice(-60)
+
+  const mergedStruggles = {}
+  for (const moduleId of new Set([...Object.keys(cloud.struggles || {}), ...Object.keys(local.struggles || {})])) {
+    const items = new Map()
+    for (const entry of [...(cloud.struggles?.[moduleId] || []), ...(local.struggles?.[moduleId] || [])]) {
+      if (!entry?.item) continue
+      const previous = items.get(entry.item)
+      if (!previous || (entry.count || 0) > (previous.count || 0)) items.set(entry.item, entry)
+    }
+    mergedStruggles[moduleId] = [...items.values()].sort((a, b) => (b.count || 0) - (a.count || 0)).slice(0, 20)
+  }
+
+  const localLiving = local.livingAdventure || {}
+  const cloudLiving = cloud.livingAdventure || {}
+  const livingCompleted = [...new Set([...(cloudLiving.completed || []), ...(localLiving.completed || [])])]
+    .sort((a, b) => a - b)
+  const newestLiving = (localLiving.lastReward?.at || localLiving.launched?.at || 0) >=
+    (cloudLiving.lastReward?.at || cloudLiving.launched?.at || 0) ? localLiving : cloudLiving
+
+  const mergedGallery = []
+  const galleryKeys = new Set()
+  for (const artwork of [...(cloud.artGallery || []), ...(local.artGallery || [])]) {
+    const key = artwork?.id || artwork?.createdAt || artwork?.date
+    if (!key || galleryKeys.has(key)) continue
+    galleryKeys.add(key)
+    mergedGallery.push(artwork)
+  }
+
+  const mergedArcadeLevels = {}
+  for (const gameId of new Set([...Object.keys(cloud.arcadeLevels || {}), ...Object.keys(local.arcadeLevels || {})])) {
+    mergedArcadeLevels[gameId] = Math.max(cloud.arcadeLevels?.[gameId] || 1, local.arcadeLevels?.[gameId] || 1)
+  }
+
   return {
-    ...cloud,
-    ...local,
+    ...older,
+    ...newer,
     ...mergedModules,
     sessions:   merged.slice(-50),
     stickers:   mergedStickers.sort((a, b) => (a.date || 0) - (b.date || 0)).slice(-200),
     totalStars: Math.max(local.totalStars || 0, cloud.totalStars || 0),
     stars:      Math.max(local.stars      || 0, cloud.stars      || 0),
+    ks2Xp:      Math.max(local.ks2Xp      || 0, cloud.ks2Xp      || 0),
+    toddlerTreasurePoints: Math.max(local.toddlerTreasurePoints || 0, cloud.toddlerTreasurePoints || 0),
+    loginStreak: Math.max(local.loginStreak || 0, cloud.loginStreak || 0),
+    revision:   Math.max(localRevision, cloudRevision),
+    updatedAt:  Math.max(localUpdatedAt, cloudUpdatedAt),
+    moodLog: mergedMoodLog,
+    struggles: mergedStruggles,
+    sacredCompleted: [...new Set([...(cloud.sacredCompleted || []), ...(local.sacredCompleted || [])])],
+    arcadeLevels: mergedArcadeLevels,
+    artGallery: mergedGallery.slice(-80),
+    livingAdventure: livingCompleted.length || Object.keys(newestLiving).length
+      ? { ...cloudLiving, ...localLiving, ...newestLiving, completed: livingCompleted }
+      : undefined,
     learningJourney: {
       ...(cloud.learningJourney || {}),
       ...(local.learningJourney || {}),
@@ -225,7 +296,7 @@ export async function loadCloudGuardian() {
 
   const { data, error } = await supabase
     .from('guardian_profiles')
-    .select('guardian_name, relationship, email, phone, parent_pin, consent_accepted, registered_at, school_id, class_id, teacher_role, class_name, schools(name), school_classes(name, age_group, class_code)')
+    .select('guardian_name, relationship, email, phone, consent_accepted, registered_at, school_id, class_id, teacher_role, class_name, schools(name), school_classes(name, age_group, class_code)')
     .eq('user_id', userId)
     .maybeSingle()
 
@@ -237,7 +308,8 @@ export async function loadCloudGuardian() {
     relationship:  data.relationship,
     email:         data.email,
     phone:         data.phone || '',
-    pin:           data.parent_pin,
+    pin:           '',
+    hasParentPin:  true,
     consentAccepted: data.consent_accepted,
     registeredAt:  data.registered_at,
     classroomMode: Boolean(data.school_id),
@@ -291,7 +363,7 @@ export async function startPremiumCheckout(email) {
   window.location.assign(data.url)
 }
 
-export async function saveCloudGuardian(guardian) {
+export async function saveCloudGuardian(guardian, { includePin = false } = {}) {
   const userId = await getCloudUserId()
   if (!userId) return null
 
@@ -301,7 +373,6 @@ export async function saveCloudGuardian(guardian) {
     relationship:    guardian.relationship,
     email:           guardian.email,
     phone:           guardian.phone || '',
-    parent_pin:      guardian.pin,
     consent_accepted: guardian.consentAccepted,
     registered_at:   guardian.registeredAt,
     updated_at:      new Date().toISOString(),
@@ -545,19 +616,19 @@ export async function saveCloudProgress(profileId, progress) {
 
   // Merge with any existing cloud state so offline sessions from other devices are preserved
   let toSave = progress
-  try {
-    const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
       .from('child_progress')
       .select('progress, updated_at')
       .eq('profile_id', profileId)
       .order('updated_at', { ascending: false })
       .limit(1)
-    if (existing?.[0]?.progress) {
-      toSave = mergeProgress(progress, existing[0].progress)
-    }
-  } catch {
-    // merge failed — fall through and save local state as-is
+  // Never turn a read failure into a destructive write. The caller keeps the
+  // payload in the durable outbox and retries after connectivity recovers.
+  if (existingError) throw existingError
+  if (existing?.[0]?.progress) {
+    toSave = mergeProgress(progress, existing[0].progress)
   }
+  if (includePin) row.parent_pin = guardian.pin
 
   const { error } = await supabase
     .from('child_progress')
@@ -610,6 +681,29 @@ export async function saveCloudClassLesson(schoolId, className, dateKey, moduleI
 
   if (error) throw error
   return row
+}
+
+async function callParentPin(action, pin) {
+  if (!isSupabaseConfigured) return false
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+  if (!token) return false
+  const response = await fetch('/api/parent-pin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ action, pin }),
+  })
+  const result = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(result.error || 'Parent PIN service unavailable')
+  return action === 'verify' ? Boolean(result.valid) : Boolean(result.ok)
+}
+
+export function verifyCloudParentPin(pin) {
+  return callParentPin('verify', pin)
+}
+
+export function updateCloudParentPin(pin) {
+  return callParentPin('set', pin)
 }
 
 export async function clearCloudClassLesson(schoolId, className, dateKey, classId = null) {

@@ -30,6 +30,7 @@ export function normalizeGuardianData(source = {}) {
     email:           cleanEmail(source.email),
     phone:           cleanPhone(source.phone),
     pin:             cleanPin(source.pin),
+    hasParentPin:    Boolean(source.hasParentPin || cleanPin(source.pin).length === 4),
     consentAccepted: Boolean(source.consentAccepted),
     registeredAt:    String(source.registeredAt || new Date().toISOString()),
     classroomMode:   Boolean(source.classroomMode),
@@ -47,7 +48,7 @@ export function isGuardianRegistered(guardian) {
     guardian?.guardianName &&
     guardian?.relationship &&
     guardian?.email &&
-    guardian?.pin?.length === 4 &&
+    (guardian?.pin?.length === 4 || guardian?.hasParentPin) &&
     guardian?.consentAccepted,
   )
 }

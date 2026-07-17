@@ -10,7 +10,11 @@ const COPY = {
 export default function GameCompleteReveal({ ageGroup = 'early', place, icon, result = {}, treasureMessage = '', onReplay, onContinue, onHome }) {
   const copy = COPY[ageGroup] || COPY.early
   const stars = Math.max(1, Math.min(3, Number(result.stars) || (Number(result.total) > 0 ? Math.ceil((Number(result.correct) / Number(result.total)) * 3) : 3)))
-  const scoreText = Number(result.total) > 0 ? `${Math.max(0, Number(result.correct) || 0)} of ${Number(result.total)} clues solved` : 'Your journey has been saved'
+  const scoreText = Number(result.total) > 0
+    ? ageGroup === 'toddler'
+      ? `All ${Number(result.total)} clues found!`
+      : `${Math.max(0, Number(result.correct) || 0)} of ${Number(result.total)} clues solved`
+    : 'Your journey has been saved'
   return <motion.div data-testid="game-complete-reveal" className="fixed inset-0 z-[255] grid place-items-center overflow-y-auto bg-[#241331]/80 p-3 backdrop-blur-md sm:p-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
     <motion.section className="relative w-full max-w-3xl overflow-hidden rounded-[34px] border-4 border-[#ffe5a8] bg-[#fff5df] shadow-2xl" initial={{ y: 34, scale: .88 }} animate={{ y: 0, scale: 1 }} exit={{ y: 24, scale: .94 }} transition={{ type: 'spring', stiffness: 250, damping: 22 }}>
       <div className="absolute inset-0 bg-cover bg-center opacity-25" style={{ backgroundImage: 'url(/treasure-map-bg.png)' }} />

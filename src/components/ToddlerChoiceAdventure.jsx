@@ -74,7 +74,7 @@ export default function ToddlerChoiceAdventure({
         setSelected(null)
         setMessage(guided ? 'Tap the glowing choice.' : '')
         lockedRef.current = false
-      }, timersRef, { minMs: 850, maxMs: 3600 })
+      }, timersRef, { minMs: 600, maxMs: 2200 })
       return
     }
 
@@ -97,7 +97,7 @@ export default function ToddlerChoiceAdventure({
       lockedRef.current = false
       const id = window.setTimeout(() => hearQuestion(questions[nextIndex]), 160)
       timersRef.current.push(id)
-    }, timersRef, { minMs: 950, maxMs: 4200 })
+    }, timersRef, { minMs: 700, maxMs: 2400 })
   }
 
   return (

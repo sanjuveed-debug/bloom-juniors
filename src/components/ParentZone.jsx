@@ -174,7 +174,7 @@ function PremiumCard({ theme, guardianEmail }) {
   )
 }
 
-export default function ParentZone({ avatar, progress, profileId, onBack, onSetChallenge, onAddSticker, onReset, onSwitchProfiles, profileName, profileAgeGroup, parentPin, onUpdateProgress, onUpdateProfile, onLogout, guardianEmail, onUpdateGuardian, classroomMode }) {
+export default function ParentZone({ avatar, progress, profileId, onBack, onSetChallenge, onAddSticker, onReset, onSwitchProfiles, profileName, profileAgeGroup, parentPin, verifyParentPin, onUpdateProgress, onUpdateProfile, onLogout, guardianEmail, onUpdateGuardian, classroomMode }) {
   const theme = THEMES[avatar] || THEMES.rumi
   const [pin, setPin] = useState('')
   const [unlocked, setUnlocked] = useState(false)
@@ -202,6 +202,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
 
   useEffect(() => () => clearTimeout(pinTimerRef.current), [])
   const expectedPin = String(parentPin || '')
+  const pinConfigured = Boolean(expectedPin || verifyParentPin)
   const isLockedOut = lockedUntil > Date.now()
   const lockoutSeconds = Math.max(0, Math.ceil((lockedUntil - Date.now()) / 1000))
 
@@ -261,15 +262,18 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
   const interestInsight = useMemo(() => getParentInterestInsight(progress, profileAgeGroup || 'early'), [progress, profileAgeGroup])
 
   const handlePin = useCallback((digit) => {
-    if (!expectedPin || isLockedOut) return
+    if (!pinConfigured || isLockedOut) return
     setPinError(false)
     setPin(prev => {
       if (prev.length >= 4) return prev
       const next = `${prev}${digit}`.slice(0, 4)
       if (next.length === 4) {
         clearTimeout(pinTimerRef.current)
-        pinTimerRef.current = window.setTimeout(() => {
-          if (next === expectedPin) {
+        pinTimerRef.current = window.setTimeout(async () => {
+          const valid = verifyParentPin
+            ? await verifyParentPin(next)
+            : next === expectedPin
+          if (valid) {
             setPinAttempts(0)
             setLockedUntil(0)
             setUnlocked(true)
@@ -283,11 +287,11 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
           })
           setPinError(true)
           setPin('')
-        }, next === expectedPin ? 300 : 400)
+        }, 300)
       }
       return next
     })
-  }, [expectedPin, isLockedOut])
+  }, [expectedPin, pinConfigured, isLockedOut, verifyParentPin])
 
   const handleSetChallenge = useCallback(() => {
     if (!selectedChallenge) return
@@ -330,7 +334,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
             <p className="font-round text-sm mt-1 opacity-70" style={{ color: theme.text }}>Enter your parent PIN to continue</p>
           </div>
 
-          {!expectedPin && (
+          {!pinConfigured && (
             <p className="mb-4 rounded-2xl bg-red-500/12 px-4 py-3 text-center font-round text-sm font-bold text-red-500">
               Parent PIN is not set for this account. Please register again or contact support.
             </p>
@@ -369,7 +373,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
                   if (digit === '⌫') setPin(p => p.slice(0, -1))
                   else if (digit !== '') handlePin(String(digit))
                 }}
-                disabled={digit === '' || !expectedPin || isLockedOut}
+                disabled={digit === '' || !pinConfigured || isLockedOut}
                 className="h-14 rounded-2xl font-bubble text-2xl shadow-md disabled:opacity-0"
                 style={{ background: digit === '⌫' ? '#EF4444' : theme.card, color: theme.text }}>
                 {digit}

@@ -269,7 +269,7 @@ function AdventureStepBridge({ starsEarned, emoji, label, onContinue, avatar }) 
 }
 
 // ── Inner app — remounts fresh when profileId changes ─────────────────────────
-function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, onSwitchProfiles, onQuickSwitch, profiles, onLogout, guardianEmail, onUpdateGuardian, onUpdateProfile, classroomMode, ageGroup, guardianId, schoolId, classId, className }) {
+function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, verifyParentPin, onSwitchProfiles, onQuickSwitch, profiles, onLogout, guardianEmail, onUpdateGuardian, onUpdateProfile, classroomMode, ageGroup, guardianId, schoolId, classId, className }) {
   const { progress, update, addStars, logSession, tickChallenge,
           ensureDailyChallenges, setAvatar, addSticker, setDailyChallenge, resetProgress } = useProgress(profileId)
 
@@ -655,7 +655,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
       </Screen>
 
       {screen === 'mood' && (
-        <MoodCheckIn avatar={progress.avatar} profileName={profileName} onComplete={handleMoodComplete} onSkip={() => setScreen('home')} />
+        <MoodCheckIn avatar={progress.avatar} profileName={profileName} onComplete={handleMoodComplete} onSkip={() => handleMoodComplete({ key: 'skipped', emoji: '⏭️' })} />
       )}
 
       <Screen id="home" current={screen}>
@@ -800,6 +800,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
           profileName={profileName}
           profileAgeGroup={profileAgeGroup}
           parentPin={parentPin}
+          verifyParentPin={verifyParentPin}
           onBack={() => navigate('home')}
           onSetChallenge={setDailyChallenge}
           onAddSticker={addSticker}
@@ -914,15 +915,18 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
                       setLockPinInput(prev => {
                         const next = (prev + k).slice(0, 4)
                         if (next.length === 4) {
-                          if (next === String(parentPin || '')) {
-                            defer(() => {
+                          defer(async () => {
+                            const valid = verifyParentPin
+                              ? await verifyParentPin(next)
+                              : next === String(parentPin || '')
+                            if (valid) {
                               setSessionLocked(false)
                               setSessionTimerKey(n => n + 1)
-                            }, 0)
-                            return ''
-                          }
-                          setLockPinError(true)
-                          defer(() => setLockPinInput(''), 600)
+                            } else {
+                              setLockPinError(true)
+                            }
+                          }, 0)
+                          return ''
                         }
                         return next
                       })
@@ -1062,6 +1066,7 @@ export default function App() {
     resetPin,
     updateAccountPassword,
     updateGuardian,
+    verifyParentPin,
   } = useGuardian()
   const { profiles, activeId, activeProfile, createProfile, createProfilesBulk, switchProfile, deleteProfile, updateProfile, resetProfiles } = useProfiles()
   const [ageGroup, setAgeGroup] = useState(null)
@@ -1497,7 +1502,8 @@ export default function App() {
             profileId={activeId}
             profileName={activeProfile?.name || 'Superstar'}
             profileAgeGroup={profileAgeGroup}
-            parentPin={guardian.pin}
+            parentPin={guardian.pin || (guardian.hasParentPin ? 'cloud' : '')}
+            verifyParentPin={verifyParentPin}
             onSwitchProfiles={handleSwitchProfiles}
             onUpdateProfile={(patch) => updateProfile(activeId, patch)}
             onLogout={handleLogout}
@@ -1526,7 +1532,8 @@ export default function App() {
             profileId={activeId}
             profileName={activeProfile?.name || 'Superstar'}
             profileAgeGroup={profileAgeGroup}
-            parentPin={guardian.pin}
+            parentPin={guardian.pin || (guardian.hasParentPin ? 'cloud' : '')}
+            verifyParentPin={verifyParentPin}
             onSwitchProfiles={handleSwitchProfiles}
             onUpdateProfile={(patch) => updateProfile(activeId, patch)}
             onLogout={handleLogout}
@@ -1553,7 +1560,8 @@ export default function App() {
         profileId={activeId}
         profileName={activeProfile?.name || 'Superstar'}
         profileAgeGroup={profileAgeGroup}
-        parentPin={guardian.pin}
+        parentPin={guardian.pin || (guardian.hasParentPin ? 'cloud' : '')}
+        verifyParentPin={verifyParentPin}
         onSwitchProfiles={handleSwitchProfiles}
         onQuickSwitch={handleSelectProfile}
         onUpdateProfile={(patch) => updateProfile(activeId, patch)}

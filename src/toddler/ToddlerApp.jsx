@@ -1278,7 +1278,7 @@ export function ToddlerChoiceModule({ moduleId, played = 0, onBack, onDone }) {
   return <ToddlerChoiceAdventure {...config} moduleId={moduleId} questions={questions} onBack={onBack} onDone={onDone} />
 }
 
-export default function ToddlerApp({ profileId, profileName, profileAgeGroup, onSwitchProfiles, parentPin, onUpdateProfile, onLogout, guardianEmail, onUpdateGuardian, classroomMode }) {
+export default function ToddlerApp({ profileId, profileName, profileAgeGroup, onSwitchProfiles, parentPin, verifyParentPin, onUpdateProfile, onLogout, guardianEmail, onUpdateGuardian, classroomMode }) {
   const { progress, update, logSession, resetProgress, addSticker } = useProgress(profileId)
   const todayKey = todayStamp()
   const moodLog = progress.moodLog || []
@@ -1376,7 +1376,7 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
   }
 
   if (screen === 'mood') {
-    return <MoodCheckIn avatar={progress.toddlerAvatar} profileName={profileName} themeOverride={theme} onComplete={handleMoodComplete} onSkip={() => setScreen('home')} />
+    return <MoodCheckIn avatar={progress.toddlerAvatar} profileName={profileName} themeOverride={theme} onComplete={handleMoodComplete} onSkip={() => handleMoodComplete({ key: 'skipped', emoji: '⏭️' })} />
   }
 
   if (screen === 'parent') {
@@ -1388,6 +1388,7 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
         profileName={profileName}
         profileAgeGroup={profileAgeGroup}
         parentPin={parentPin}
+        verifyParentPin={verifyParentPin}
         onBack={() => setScreen('home')}
         onSetChallenge={() => {}}
         onAddSticker={addSticker}

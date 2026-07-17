@@ -597,7 +597,7 @@ export function KS2Dashboard({ profileName, progress, todayKey, gamesUnlocked, s
   </div>
 }
 
-export default function KS2App({ profileId, profileName, profileAgeGroup, onSwitchProfiles, parentPin, onUpdateProfile, onLogout, guardianEmail, onUpdateGuardian, classroomMode, guardianId }) {
+export default function KS2App({ profileId, profileName, profileAgeGroup, onSwitchProfiles, parentPin, verifyParentPin, onUpdateProfile, onLogout, guardianEmail, onUpdateGuardian, classroomMode, guardianId }) {
   const { progress, update, logSession, resetProgress, addSticker } = useProgress(profileId)
   const todayKey = useMemo(() => formatLocalDate(), [])
   const classroomLesson = useMemo(() =>
@@ -725,7 +725,7 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
   }, [update, todayKey, profileId])
 
   if (screen === 'avatar') return <KS2AvatarSelector onSelect={handleAvatarSelect} />
-  if (screen === 'mood') return <MoodCheckIn avatar={progress.ks2Avatar} profileName={profileName} themeOverride={theme} onComplete={handleMoodComplete} onSkip={() => setScreen('home')} />
+  if (screen === 'mood') return <MoodCheckIn avatar={progress.ks2Avatar} profileName={profileName} themeOverride={theme} onComplete={handleMoodComplete} onSkip={() => handleMoodComplete({ key: 'skipped', emoji: '⏭️' })} />
 
   if (screen === 'parent') {
     return (
@@ -736,6 +736,7 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
         profileName={profileName}
         profileAgeGroup={profileAgeGroup}
         parentPin={parentPin}
+        verifyParentPin={verifyParentPin}
         onBack={() => setScreen('home')}
         onSetChallenge={() => {}}
         onAddSticker={addSticker}
