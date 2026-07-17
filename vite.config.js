@@ -3,6 +3,13 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  server: {
+    proxy: {
+      // Pages Functions (/api/parent-pin, /api/tts, …) don't run under `vite dev`;
+      // forward them to production so local dev can log in and speak.
+      '/api': { target: 'https://bloomjuniors.com', changeOrigin: true },
+    },
+  },
   build: {
     chunkSizeWarningLimit: 800,
     rollupOptions: {
