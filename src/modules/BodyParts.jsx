@@ -61,17 +61,28 @@ function BodySVG({ selected, onSelect, mode }) {
 
   // Large invisible tap target
   const Hit = ({ id, shape, ...props }) => {
+    const interactionProps = {
+      role: 'button',
+      tabIndex: 0,
+      'aria-label': PARTS[id]?.name || id,
+      'data-body-part': id,
+      style: { cursor: 'pointer' },
+      onClick: () => tap(id),
+      onKeyDown: event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          tap(id)
+        }
+      },
+    }
     if (shape === 'circle') return (
-      <circle {...props} fill="transparent" style={{ cursor: 'pointer' }}
-        onClick={() => tap(id)} />
+      <circle {...props} {...interactionProps} fill="transparent" />
     )
     if (shape === 'rect') return (
-      <rect {...props} fill="transparent" style={{ cursor: 'pointer' }}
-        onClick={() => tap(id)} />
+      <rect {...props} {...interactionProps} fill="transparent" />
     )
     return (
-      <ellipse {...props} fill="transparent" style={{ cursor: 'pointer' }}
-        onClick={() => tap(id)} />
+      <ellipse {...props} {...interactionProps} fill="transparent" />
     )
   }
 
@@ -316,6 +327,8 @@ export default function BodyParts({ avatar, onAddStars, onBack, profileName }) {
   const [done,     setDone]     = useState(false)
   const lockedRef   = useRef(false)
   const completedRef = useRef(false)
+  const missedRef = useRef(false)
+  const strugglesRef = useRef([])
   const { track }   = useVisibilityTimers()
 
   const part = selected ? PARTS[selected] : null
@@ -332,6 +345,8 @@ export default function BodyParts({ avatar, onAddStars, onBack, profileName }) {
     const q = makeQuiz()
     lockedRef.current = false
     completedRef.current = false
+    missedRef.current = false
+    strugglesRef.current = []
     setQuiz(q); setQIdx(0); setScore(0); setFeedback(null); setDone(false); setSelected(null)
     setScreen('quiz')
     speak(`Quiz time! ${q[0].question}`, { mood: 'question' })
@@ -341,25 +356,32 @@ export default function BodyParts({ avatar, onAddStars, onBack, profileName }) {
     if (lockedRef.current || completedRef.current) return
     lockedRef.current = true
     const correct = quiz[qIdx]?.id === id
-    const nextScore = score + (correct ? 1 : 0)
+    const nextScore = score + (correct && !missedRef.current ? 1 : 0)
     setFeedback(correct ? 'correct' : 'wrong')
     if (correct) {
       setScore(nextScore)
       speak(`Yes! That's the ${PARTS[id].name}! Brilliant!`, { mood: 'celebrate' })
       confetti({ particleCount: 40, spread: 60, origin: { x: 0.5, y: 0.5 } })
     } else {
-      speak(`Not quite! That's the ${PARTS[id].name}. The answer was the ${PARTS[quiz[qIdx].id].name}!`, { mood: 'instruct' })
+      if (!missedRef.current) strugglesRef.current.push(quiz[qIdx].question)
+      missedRef.current = true
+      speak(`Good try. That is the ${PARTS[id].name}. Listen to the clue and tap another body part.`, { mood: 'instruct' })
     }
     track(() => {
+      if (!correct) {
+        setFeedback(null); setSelected(null); lockedRef.current = false
+        return
+      }
       const next = qIdx + 1
       if (next >= quiz.length) {
         completedRef.current = true
         setDone(true)
-        onAddStars('anatomy', nextScore >= 6 ? 3 : nextScore >= 4 ? 2 : 1, { total: quiz.length, correct: nextScore, struggles: [] })
+        onAddStars('anatomy', nextScore >= 6 ? 3 : nextScore >= 4 ? 2 : 1, { total: quiz.length, correct: nextScore, struggles: strugglesRef.current })
         confetti({ particleCount: 120, spread: 120, origin: { x: 0.5, y: 0.3 } })
         speak(`Fantastic ${profileName || 'explorer'}! Quiz done! You got ${nextScore} out of ${quiz.length}!`, { mood: 'celebrate' })
       } else {
         setQIdx(next); setFeedback(null); setSelected(null)
+        missedRef.current = false
         speak(quiz[next].question, { mood: 'question' })
         lockedRef.current = false
       }

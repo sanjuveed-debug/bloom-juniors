@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
+import BloomQuizShow from '../../components/BloomQuizShow.jsx'
 import { dailySeedFor, seededShuffle } from '../../utils/seededRandom'
 
 const pick = (items) => items[Math.floor(Math.random() * items.length)]
@@ -237,7 +238,7 @@ function TowerBuilderGame({ theme, onDone }) {
       setFeedback('Tower block added')
       confetti({ particleCount: 25, spread: 45 })
     } else {
-      setFeedback(`Try ${current.a}`)
+      setFeedback('Not that block — solve it one more time')
     }
 
     const id = window.setTimeout(() => {
@@ -352,7 +353,7 @@ function WordForgeGame({ theme, onDone }) {
       wordLockedRef.current = true
       const correct = next === word
       const newScore = score + (correct ? 25 : 0)
-      setFeedback(correct ? 'Word built!' : `Try again: ${word}`)
+      setFeedback(correct ? 'Word built!' : 'Listen to the word in your head and rebuild it')
       if (correct) {
         setScore(newScore)
         confetti({ particleCount: 30, spread: 50 })
@@ -816,6 +817,7 @@ function MazeMunchGame({ theme, onDone }) {
 }
 
 const GAMES = [
+  { id: 'quiz', label: 'Bloom Brain Championship', badge: 'LIVE', desc: 'Contestant seat, lifelines, adaptive questions, and prizes' },
   { id: 'maze', label: 'Maze Munch', badge: 'MAZE', desc: 'Collect 24 gems and avoid blockers' },
   { id: 'quest', label: 'Quest Dash', badge: 'RUN', desc: 'Move lanes and catch the correct answer' },
   { id: 'tower', label: 'Sky Tower', badge: 'BUILD', desc: 'Build a tower with maths blocks' },
@@ -823,7 +825,7 @@ const GAMES = [
   { id: 'memory', label: 'Memory Vault', badge: 'BRAIN', desc: 'Match maths questions with answers' },
 ]
 
-export default function GamesModule({ theme, onBack, gamesUnlocked }) {
+export default function GamesModule({ theme, onBack, gamesUnlocked, played = 0, onComplete }) {
   const [game, setGame] = useState(null)
   const [result, setResult] = useState(null)
   const gameCompleteCalledRef = useRef(false)
@@ -849,11 +851,12 @@ export default function GamesModule({ theme, onBack, gamesUnlocked }) {
   }
 
   if (game && !result) {
-    const handleDone = (score) => {
+    const handleDone = (score, total = 1) => {
       if (gameCompleteCalledRef.current) return
       gameCompleteCalledRef.current = true
       setResult({ game, score })
       confetti({ particleCount: 100, spread: 130 })
+      onComplete?.({ game, score, correct: score, total })
     }
 
     return (
@@ -870,6 +873,7 @@ export default function GamesModule({ theme, onBack, gamesUnlocked }) {
           {game === 'tower' && <TowerBuilderGame theme={theme} onDone={handleDone} />}
           {game === 'forge' && <WordForgeGame theme={theme} onDone={handleDone} />}
           {game === 'memory' && <MemoryGame theme={theme} onDone={handleDone} />}
+          {game === 'quiz' && <BloomQuizShow ageGroup="junior" played={played} onBack={() => setGame(null)} onComplete={({ correct, total }) => handleDone(correct, total)} />}
         </div>
       </div>
     )

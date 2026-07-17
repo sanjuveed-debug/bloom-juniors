@@ -56,6 +56,7 @@ function SentenceMatchPhase({ theme, speak, onComplete }) {
   const completedRef = useRef(false)
   const timersRef = useRef([])
   const spokenQ = useRef(-1)
+  const missedRef = useRef(false)
   const current = questions[q]
 
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
@@ -73,21 +74,27 @@ function SentenceMatchPhase({ theme, speak, onComplete }) {
     lockedRef.current = true
     setPicked(emoji)
     const correct = emoji === current.match
-    const nextScore = score + (correct ? 1 : 0)
+    const nextScore = score + (correct && !missedRef.current ? 1 : 0)
     if (correct) {
       setScore(nextScore)
       confetti({ particleCount: 70, spread: 90, origin: { x: 0.5, y: 0.6 } })
     }
+    if (!correct) missedRef.current = true
     setFeedback(correct ? 'correct' : 'wrong')
     const feedbackText = correct ? `Yes! ${current.text} Brilliant!` : `Let's listen again. ${current.text}`
     speakThenAdvance(speak, feedbackText, { mood: correct ? 'celebrate' : 'instruct', rate: 0.85 }, () => {
       setFeedback(null)
       setPicked(null)
+      if (!correct) {
+        lockedRef.current = false
+        return
+      }
       if (q + 1 >= questions.length) {
         completedRef.current = true
         onComplete(nextScore, questions.length)
       } else {
         setQ(v => v + 1)
+        missedRef.current = false
         lockedRef.current = false
       }
     }, timersRef, { minMs: 1200, maxMs: 6000 })

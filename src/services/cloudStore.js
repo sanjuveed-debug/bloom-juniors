@@ -3,6 +3,10 @@ import { mergeWonderWorld } from '../utils/wonderWorld.js'
 import { mergeCompanionPowers } from '../utils/companionPowers.js'
 import { mergeAdventureDirector } from '../utils/adventureDirector.js'
 import { mergeDreamProject } from '../utils/dreamProject.js'
+import { mergeParentHighFives } from '../utils/parentHighFives.js'
+import { mergeProjectAdventures } from '../utils/projectAdventures.js'
+import { mergeTreasureLoadouts } from '../utils/treasureLoadout.js'
+import { mergeChildInterest } from '../utils/childInterest.js'
 
 function isMissingAuthSession(error) {
   const message = String(error?.message || '').toLowerCase()
@@ -69,6 +73,17 @@ function mergeProgress(local, cloud) {
   }
   merged.sort((a, b) => (a.date || 0) - (b.date || 0))
 
+  // Stickers can be earned on the child device while a parent is composing a
+  // high-five elsewhere. Keep the union so a later parent save cannot erase it.
+  const mergedStickers = []
+  const seenStickers = new Set()
+  for (const sticker of [...(cloud.stickers || []), ...(local.stickers || [])]) {
+    const key = sticker.highFiveId || `${sticker.type || ''}:${sticker.emoji || ''}:${sticker.date || ''}`
+    if (seenStickers.has(key)) continue
+    seenStickers.add(key)
+    mergedStickers.push(sticker)
+  }
+
   // Module scores: take max so progress never goes backwards on either device
   const mergedModules = {}
   for (const key of MODULE_KEYS) {
@@ -125,12 +140,43 @@ function mergeProgress(local, cloud) {
     if (!key || seenEggHatches.has(key)) continue
     seenEggHatches.add(key); eggHatches.push(hatch)
   }
+  const treasureInteractions = {}
+  for (const itemId of new Set([
+    ...Object.keys(cloudTreasures.treasureInteractions || {}),
+    ...Object.keys(localTreasures.treasureInteractions || {}),
+  ])) {
+    const localInteraction = localTreasures.treasureInteractions?.[itemId] || {}
+    const cloudInteraction = cloudTreasures.treasureInteractions?.[itemId] || {}
+    treasureInteractions[itemId] = {
+      count: Math.max(localInteraction.count || 0, cloudInteraction.count || 0),
+      lastAt: Math.max(localInteraction.lastAt || 0, cloudInteraction.lastAt || 0),
+    }
+  }
+  const secretGames = {}
+  for (const age of new Set([
+    ...Object.keys(cloudTreasures.secretGames || {}),
+    ...Object.keys(localTreasures.secretGames || {}),
+  ])) {
+    const localGame = localTreasures.secretGames?.[age] || {}
+    const cloudGame = cloudTreasures.secretGames?.[age] || {}
+    secretGames[age] = {
+      plays: Math.max(localGame.plays || 0, cloudGame.plays || 0),
+      best: Math.max(localGame.best || 0, cloudGame.best || 0),
+      total: Math.max(localGame.total || 0, cloudGame.total || 0),
+      lastPlayedAt: Math.max(localGame.lastPlayedAt || 0, cloudGame.lastPlayedAt || 0),
+      perfectAt: localGame.perfectAt || cloudGame.perfectAt || null,
+    }
+  }
+  const newestRoom = (localTreasures.roomLayoutUpdatedAt || 0) >= (cloudTreasures.roomLayoutUpdatedAt || 0)
+    ? localTreasures
+    : cloudTreasures
 
   return {
     ...cloud,
     ...local,
     ...mergedModules,
     sessions:   merged.slice(-50),
+    stickers:   mergedStickers.sort((a, b) => (a.date || 0) - (b.date || 0)).slice(-200),
     totalStars: Math.max(local.totalStars || 0, cloud.totalStars || 0),
     stars:      Math.max(local.stars      || 0, cloud.stars      || 0),
     learningJourney: {
@@ -149,11 +195,19 @@ function mergeProgress(local, cloud) {
       sparkleDust: Math.max(localTreasures.sparkleDust || 0, cloudTreasures.sparkleDust || 0),
       claimStreak: newestTreasureState.claimStreak || 0,
       lastClaimDate: newestTreasureState.lastClaimDate || '',
+      roomLayout: newestRoom.roomLayout || {},
+      roomLayoutUpdatedAt: newestRoom.roomLayoutUpdatedAt || 0,
+      treasureInteractions,
+      secretGames,
+      treasureLoadout: mergeTreasureLoadouts(localTreasures.treasureLoadout, cloudTreasures.treasureLoadout),
     },
     wonderWorld: mergeWonderWorld(local.wonderWorld, cloud.wonderWorld),
     companionPowers: mergeCompanionPowers(local.companionPowers, cloud.companionPowers),
     adventureDirector: mergeAdventureDirector(local.adventureDirector, cloud.adventureDirector),
     dreamProject: mergeDreamProject(local.dreamProject, cloud.dreamProject),
+    projectAdventures: mergeProjectAdventures(local.projectAdventures, cloud.projectAdventures),
+    parentHighFives: mergeParentHighFives(local.parentHighFives, cloud.parentHighFives),
+    childInterest: mergeChildInterest(local.childInterest, cloud.childInterest),
   }
 }
 

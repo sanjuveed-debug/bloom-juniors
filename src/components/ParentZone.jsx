@@ -5,6 +5,8 @@ import { isDigestOptedIn, setDigestOptIn, buildDigestPayload, sendDigestEmail, m
 import { loadPremiumStatus, startPremiumCheckout, openBillingPortal } from '../services/cloudStore.js'
 import { PREMIUM_GATING_ENABLED } from '../config/premiumContent.js'
 import { getModuleGrowth, growthEmoji } from '../utils/growthLevels.js'
+import ParentProgressStory from './ParentProgressStory.jsx'
+import { getParentInterestInsight } from '../utils/childInterest.js'
 
 const PREMIUM_PRICE_LABEL = 'AED 19/month'
 
@@ -179,7 +181,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
   const [pinError, setPinError] = useState(false)
   const [pinAttempts, setPinAttempts] = useState(0)
   const [lockedUntil, setLockedUntil] = useState(0)
-  const [tab, setTab] = useState('analytics')
+  const [tab, setTab] = useState('story')
   const [selectedChallenge, setSelectedChallenge] = useState(null)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [resetPin, setResetPin] = useState('')
@@ -256,6 +258,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
     })
     return all.sort((a, b) => b.count - a.count).slice(0, 5)
   }, [struggles])
+  const interestInsight = useMemo(() => getParentInterestInsight(progress, profileAgeGroup || 'early'), [progress, profileAgeGroup])
 
   const handlePin = useCallback((digit) => {
     if (!expectedPin || isLockedOut) return
@@ -379,6 +382,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
   }
 
   const TABS = [
+        { id: 'story',     label: 'Weekly Story' },
         { id: 'analytics', label: 'Stats' },
         { id: 'map',       label: 'Progress' },
         { id: 'quiz',      label: 'Challenge' },
@@ -421,6 +425,22 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
       </div>
 
       {/* Premium upgrade (parents only — schools have their own licence) */}
+      <section className="mx-4 mb-3 rounded-3xl border-2 border-white/60 bg-white/80 p-4 shadow-lg" data-testid="parent-interest-insight">
+        <div className="flex items-start gap-3">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-pink-500 text-2xl text-white shadow">💛</div>
+          <div className="min-w-0 flex-1">
+            <p className="font-round text-[10px] font-black uppercase tracking-[.18em]" style={{ color: theme.primary }}>What keeps {profileName || 'your child'} engaged</p>
+            <h2 className="font-bubble text-xl" style={{ color: theme.text }}>{interestInsight.ready ? `${interestInsight.favourite.label} is the current favourite` : 'The Interest Engine is observing real play'}</h2>
+            <p className="mt-1 font-round text-xs font-bold opacity-70" style={{ color: theme.text }}>{interestInsight.ready ? `${interestInsight.sessionsObserved} choices observed. Surprise Me currently introduces ${interestInsight.exploring.label}.` : 'After a few game choices, this card will show what is replayed, completed, and left early.'}</p>
+          </div>
+        </div>
+        {interestInsight.ready && <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          <div className="rounded-2xl bg-emerald-50 p-3"><p className="font-round text-[9px] font-black uppercase text-emerald-700">LOVES RETURNING TO</p><p className="mt-1 font-bubble text-sm text-emerald-950">{interestInsight.favourite.emoji} {interestInsight.favourite.label}</p></div>
+          <div className="rounded-2xl bg-violet-50 p-3"><p className="font-round text-[9px] font-black uppercase text-violet-700">DISCOVERING NEXT</p><p className="mt-1 font-bubble text-sm text-violet-950">🎲 {interestInsight.exploring.label}</p></div>
+          <div className="rounded-2xl bg-amber-50 p-3"><p className="font-round text-[9px] font-black uppercase text-amber-700">MAY NEED A REDESIGN</p><p className="mt-1 font-bubble text-sm text-amber-950">{interestInsight.friction ? `${interestInsight.friction.emoji} ${interestInsight.friction.label}` : 'No repeated quick exits yet'}</p></div>
+        </div>}
+      </section>
+
       {!classroomMode && <PremiumCard theme={theme} guardianEmail={guardianEmail} />}
 
       {/* Tabs */}
@@ -440,6 +460,19 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
 
       {/* Tab content */}
       <AnimatePresence mode="wait">
+
+        {/* ── WEEKLY PARENT STORY ── */}
+        {tab === 'story' && (
+          <motion.div key="story" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <ParentProgressStory
+              progress={progress}
+              profileName={profileName || 'Your child'}
+              ageGroup={profileAgeGroup || 'early'}
+              theme={theme}
+              onUpdateProgress={onUpdateProgress}
+            />
+          </motion.div>
+        )}
 
         {/* ── ANALYTICS TAB ── */}
         {tab === 'analytics' && (

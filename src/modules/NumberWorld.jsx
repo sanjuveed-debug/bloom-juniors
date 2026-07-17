@@ -10,6 +10,7 @@ import InteractiveYaagvi, { useYaagviReactions } from '../components/Interactive
 import MatchingActivity from '../components/MatchingActivity'
 import SubitisingFlash from '../components/SubitisingFlash'
 import { buildNumberLineWindow } from '../utils/numberLine'
+import { questionSignature } from '../utils/adaptiveLearning'
 
 // ── Avatar object sets ────────────────────────────────────────────────────────
 const OBJECT_SETS = {
@@ -564,6 +565,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
   const timersRef  = useRef(new Set())
   const askedRef   = useRef(new Set())
   const seedStepRef = useRef(0)
+  const questionHadWrongRef = useRef(false)
 
   useEffect(() => () => {
     timersRef.current.forEach(clearTimeout)
@@ -584,7 +586,8 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
     let q
     for (let attempt = 0; attempt < 8; attempt++) {
       seedStepRef.current += 1
-      const seed = dailySeedFor(`numberworld-${op}-${maxNum}`) + seedStepRef.current * 131
+      const sessionNumber = opPlayed[op] || 0
+      const seed = dailySeedFor(`numberworld-${op}-${maxNum}-${sessionNumber}`) + seedStepRef.current * 131
       q = generateQuestion(op, maxNum, mulberry32(seed))
       if (!askedRef.current.has(q.q)) break
     }
@@ -594,9 +597,10 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
     setSelected(null)
     setFeedback(null)
     setAnswered(false)
+    questionHadWrongRef.current = false
     reactYaagvi('question')
     defer(() => speak(q.q, { mood: 'instruct' }), 500)
-  }, [speak, defer, reactYaagvi])
+  }, [speak, defer, reactYaagvi, opPlayed])
 
   const completeMath = useCallback((finalScore) => {
     if (awardedRef.current) return
@@ -604,6 +608,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
     reactYaagvi('complete')
     onAddStars('math', finalScore, {
       total: totalRounds, correct: finalScore, struggles: wrongAnswers, op: selectedOp,
+      questionSignatures: [...askedRef.current].map(prompt => questionSignature('math', `${selectedOp}:${prompt}`)),
     })
   }, [onAddStars, selectedOp, totalRounds, wrongAnswers, reactYaagvi])
 
@@ -679,16 +684,17 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
   const handleChoice = useCallback((choice) => {
     if (selected !== null || answered) return
     setSelected(choice)
-    setAnswered(true)
     const correct = choice === question.a
 
     if (correct) {
-      setScore(s => s + 1)
+      setAnswered(true)
+      const firstTry = !questionHadWrongRef.current
+      if (firstTry) setScore(s => s + 1)
       setConsecutiveWrong(0)
       setFeedback({ type: 'correct', msg: `✅ ${question.a}! Brilliant!` })
       confetti({ particleCount: 55, spread: 75, origin: { x: 0.5, y: 0.6 }, colors: ['#FFD700','#22C55E','#4D96FF'] })
 
-      const finalScore = score + 1
+      const finalScore = score + (firstTry ? 1 : 0)
       reactYaagvi('correct', {
         streak: finalScore % 3 === 0 ? 3 : 1,
         isFinal: round >= totalRounds,
@@ -704,22 +710,19 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
       }, timersRef, { minMs: 1400, maxMs: 6000 })
     } else {
       const newWrong = consecutiveWrong + 1
+      questionHadWrongRef.current = true
+      setAnswered(true)
       setConsecutiveWrong(newWrong)
       setWrongAnswers(prev => [...prev, question.q])
-      setFeedback({ type: 'wrong', msg: `The answer is ${question.a}! Look at the picture!` })
+      setFeedback({ type: 'wrong', msg: 'Good try. Use the picture or number line and have another go!' })
       reactYaagvi('wrong', { attempt: newWrong })
 
-      speakThenAdvance(speak, `Not quite. The answer is ${question.a}. Look at the picture carefully.`, { mood: 'instruct' }, () => {
+      speakThenAdvance(speak, 'Good try. Look at the picture or move one step on the number line, then try again.', { mood: 'instruct' }, () => {
+        setSelected(null)
+        setFeedback(null)
+        setAnswered(false)
         if (newWrong >= 2) {
           setShowHint(true)
-          return
-        }
-        if (round >= totalRounds) {
-          setRound(totalRounds + 1)
-          completeMath(score)
-        } else {
-          setRound(r => r + 1)
-          newQuestion(selectedOp, currentMaxNum)
         }
       }, timersRef, { minMs: 1600, maxMs: 6000 })
     }
@@ -1052,14 +1055,14 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
                     answer={question.a}
                     type={question.display === 'onemore' ? 'more' : 'less'}
                     colour={opColour}
-                    revealAnswer={answered}
+                    revealAnswer={feedback?.type === 'correct'}
                   />
                 )}
                 {question.display === 'add1' && (
-                  <OneMorLessVisual n={question.n1} answer={question.a} type="more" colour={opColour} revealAnswer={answered} />
+                  <OneMorLessVisual n={question.n1} answer={question.a} type="more" colour={opColour} revealAnswer={feedback?.type === 'correct'} />
                 )}
                 {question.display === 'sub1' && (
-                  <OneMorLessVisual n={question.n1} answer={question.a} type="less" colour={opColour} revealAnswer={answered} />
+                  <OneMorLessVisual n={question.n1} answer={question.a} type="less" colour={opColour} revealAnswer={feedback?.type === 'correct'} />
                 )}
               </div>
             </motion.div>
@@ -1075,7 +1078,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
             const isCorrect = question && choice === question.a
             const showRight = isChosen && isCorrect
             const showWrong = isChosen && !isCorrect
-            const showReveal = !isChosen && selected !== null && isCorrect
+            const showReveal = feedback?.type === 'correct' && !isChosen && selected !== null && isCorrect
 
             return (
               <motion.button

@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
+import { buildJuniorPersonalisedPassage } from '../../utils/personalisedStories.js'
 
 const PASSAGES = [
   {
@@ -37,7 +38,7 @@ const PASSAGES = [
 
 const TYPE_BADGE = { literal: '📖 Literal', inference: '💭 Inference', vocabulary: '📝 Vocabulary' }
 
-export default function ReadingModule({ theme, onDone, onBack }) {
+export default function ReadingModule({ theme, onDone, onBack, progress = {}, profileName = 'Explorer' }) {
   const [phase, setPhase] = useState('pick') // pick | read | quiz | result
   const [passage, setPassage] = useState(null)
   const [q, setQ] = useState(0)
@@ -45,13 +46,19 @@ export default function ReadingModule({ theme, onDone, onBack }) {
   const [feedback, setFeedback] = useState(null)
   const lockedRef = useRef(false)
   const completedRef = useRef(false)
+  const missedRef = useRef(false)
   const timersRef = useRef([])
+  const availablePassages = useMemo(
+    () => [buildJuniorPersonalisedPassage(progress, profileName), ...PASSAGES],
+    [progress, profileName],
+  )
 
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
 
   const startPassage = (p) => {
     lockedRef.current = false
     completedRef.current = false
+    missedRef.current = false
     setPassage(p); setQ(0); setScore(0); setFeedback(null); setPhase('read')
   }
 
@@ -59,19 +66,25 @@ export default function ReadingModule({ theme, onDone, onBack }) {
     if (lockedRef.current || completedRef.current) return
     lockedRef.current = true
     const correct = ans === passage.questions[q].ans
-    const ns = score + (correct ? 1 : 0)
+    const ns = score + (correct && !missedRef.current ? 1 : 0)
+    if (!correct) missedRef.current = true
     if (correct) confetti({ particleCount: 40, spread: 60, origin: { x: 0.5, y: 0.4 } })
-    setFeedback({ correct, ans: passage.questions[q].ans })
+    setFeedback({ correct })
     const id = window.setTimeout(() => {
       timersRef.current = timersRef.current.filter(t => t !== id)
       setFeedback(null)
+      if (!correct) {
+        lockedRef.current = false
+        return
+      }
       if (q + 1 >= passage.questions.length) {
         completedRef.current = true
         setScore(ns)
         setPhase('result')
-        onDone(ns, passage.questions.length)
+        onDone(ns, passage.questions.length, { questions: passage.questions })
       } else {
         setQ(q + 1)
+        missedRef.current = false
         lockedRef.current = false
       }
     }, 1200)
@@ -86,7 +99,7 @@ export default function ReadingModule({ theme, onDone, onBack }) {
       </div>
       <div className="flex-1 px-5 pt-6 flex flex-col gap-4">
         <p className="font-round text-white/50 text-sm text-center">Choose a passage to read</p>
-        {PASSAGES.map((p, i) => (
+        {availablePassages.map((p, i) => (
           <motion.button key={p.id}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
             whileTap={{ scale: 0.96 }} onClick={() => startPassage(p)}
@@ -95,6 +108,7 @@ export default function ReadingModule({ theme, onDone, onBack }) {
               <span className="text-3xl">📖</span>
               <div>
                 <p className="font-bubble text-white text-lg">{p.title}</p>
+                {p.personalised && <span className="mt-1 inline-flex rounded-full px-2 py-0.5 font-round text-[10px] font-black uppercase tracking-wider" style={{ background: theme.accent, color: '#25130b' }}>Made for {profileName}</span>}
                 <p className="font-round text-sm mt-0.5" style={{ color: theme.accent }}>{p.level} · {p.questions.length} questions</p>
                 <p className="font-round text-white/40 text-xs mt-1">{p.text.slice(0, 80)}…</p>
               </div>
@@ -171,7 +185,7 @@ export default function ReadingModule({ theme, onDone, onBack }) {
           {feedback && (
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className={`px-5 py-2 rounded-xl font-round text-base ${feedback.correct ? 'bg-green-500/80' : 'bg-orange-500/70'} text-white`}>
-              {feedback.correct ? '✓ Correct!' : `✗ Answer: ${feedback.ans}`}
+              {feedback.correct ? '✓ Correct!' : '✗ Return to the passage clue and try again'}
             </motion.div>
           )}
         </AnimatePresence>
@@ -180,8 +194,8 @@ export default function ReadingModule({ theme, onDone, onBack }) {
             <motion.button key={opt} data-companion-answer={opt === curr.ans ? 'correct' : 'wrong'} whileTap={{ scale: 0.96 }} onClick={() => handle(opt)}
               className="py-4 px-5 rounded-2xl font-round text-white text-sm text-left"
               style={{
-                background: feedback && opt === curr.ans ? '#22C55E30' : theme.card,
-                border: feedback && opt === curr.ans ? '2px solid #22C55E' : `2px solid ${theme.primary}30`,
+                background: feedback?.correct && opt === curr.ans ? '#22C55E30' : theme.card,
+                border: feedback?.correct && opt === curr.ans ? '2px solid #22C55E' : `2px solid ${theme.primary}30`,
               }}>
               {opt}
             </motion.button>

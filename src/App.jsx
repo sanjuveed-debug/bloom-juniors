@@ -23,6 +23,7 @@ import { recordAdaptiveSession } from './utils/adaptiveLearning.js'
 import { stopAllSpeech } from './lib/speechController.js'
 import { CLASS_SESSION_KEY, loadCloudClassLesson } from './services/cloudStore.js'
 import { getAssistant } from './assistants'
+import { recordInterestComplete, recordInterestExit, recordInterestStart } from './utils/childInterest.js'
 
 import LandingPage from './pages/LandingPage'
 import AgeGroupLanding from './components/AgeGroupLanding'
@@ -368,12 +369,17 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
     history.pushState({ bloom: true }, '')
     const handlePop = () => {
       history.pushState({ bloom: true }, '')
-      if (GAME_SCREENS.includes(screenRef.current)) setScreen('home')
+      if (GAME_SCREENS.includes(screenRef.current)) {
+        const previousScreen = screenRef.current
+        update(p => ({ ...p, childInterest: recordInterestExit(p.childInterest, previousScreen) }))
+        setModuleArrival(null)
+        setScreen('home')
+      }
     }
     window.addEventListener('popstate', handlePop)
     return () => window.removeEventListener('popstate', handlePop)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [update])
 
   const todayKey = formatLocalDate()
 
@@ -412,10 +418,14 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
   // Core tabs are always accessible — only adventure shortcut modules go through the gate
   const GATE_FREE_SCREENS = new Set(['phonics', 'math', 'story', 'tricky', 'shapes', 'logic'])
 
-  const navigate = useCallback((to) => {
+  const navigate = useCallback((to, interestSource = 'choice') => {
     stopAllSpeech('navigation')
     resume()
     triggerHaptic('tap')
+    const previousScreen = screenRef.current
+    if (to === 'home' && GAME_SCREENS.includes(previousScreen)) {
+      update(p => ({ ...p, childInterest: recordInterestExit(p.childInterest, previousScreen) }))
+    }
     if (sessionLocked && GAME_SCREENS.includes(to)) return
     // Premium gate (no-op while PREMIUM_GATING_ENABLED is false / beta)
     if (!hasAllAccessRef.current && PREMIUM_FS2_MODULES.has(to)) {
@@ -431,6 +441,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
     }
     if (GAME_SCREENS.includes(to)) {
       screenEntryRef.current = Date.now()
+      update(p => ({ ...p, childInterest: recordInterestStart(p.childInterest, to, { source: interestSource }) }))
       let skipArrival = false
       try { skipArrival = sessionStorage.getItem('bloom_living_launch') === to; if (skipArrival) sessionStorage.removeItem('bloom_living_launch') } catch {}
       setModuleArrival(skipArrival ? null : to)
@@ -438,7 +449,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
       setModuleArrival(null)
     }
     setScreen(to)
-  }, [resume, progress, sessionLocked])
+  }, [resume, progress, sessionLocked, update])
 
   const handleAddStars = useCallback((module, rawCount, sessionData = {}) => {
     const count = Math.max(0, Number(rawCount) || 0)
@@ -450,11 +461,11 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
     if (module === event.moduleId && !isEventBonusCollected(profileId)) {
       markEventBonusCollected(profileId)
       addStars('event', WORLD_EVENT_BONUS)
-      speak(`${event.title.replace('!', '')} complete! ${WORLD_EVENT_BONUS} bonus stars!`, { mood: 'celebrate', queue: true })
     }
     // Bonus award modules (dailygift, event) don't log game sessions
     const isBonusModule = module === 'dailygift' || module === 'event'
     const { total = 0, correct = 0, struggles = [], stayOnModule = false } = sessionData
+    let learningEventId = ''
     if (!isBonusModule) {
       const duration = screenEntryRef.current
         ? Math.round((Date.now() - screenEntryRef.current) / 1000)
@@ -463,8 +474,13 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
       const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0
       logSession({ module, stars: count, total, correct, accuracy, duration, date: Date.now(), struggles })
       update(p => recordAdaptiveSession(p, module, { total, correct, struggles, duration, questionSignatures: sessionData.questionSignatures || [] }))
+      update(p => {
+        const completed = recordInterestComplete(p.childInterest, module, { duration, score: count })
+        return { ...p, childInterest: stayOnModule ? recordInterestStart(completed, module, { source: 'replay', at: Date.now() + 1 }) : completed }
+      })
       tickChallenge({ module, stars: count, accuracy, total, correct })
-      window.dispatchEvent(new CustomEvent('yaagvi:celebrate', { detail: { module, stars: count } }))
+      learningEventId = `learning:${profileId || 'local'}:${module}:${Date.now()}`
+      window.dispatchEvent(new CustomEvent('yaagvi:celebrate', { detail: { module, stars: count, eventId: learningEventId } }))
     }
 
     // Use latest progress from ref to avoid stale-closure reads
@@ -539,7 +555,10 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
     if (latest.dailyChallenge === module && !latest.challengeCompleted) {
       update(p => ({ ...p, challengeCompleted: true }))
       addSticker({ type: 'challenge', emoji: '🏆' })
-      speak(`You completed the daily challenge! AMAZING ${profileName}!`, { mood: 'celebrate' })
+    }
+    if (!stayOnModule && !isBonusModule) {
+      window.dispatchEvent(new CustomEvent('bloom:game-complete', { detail: { module, stars: count, total, correct, eventId: learningEventId } }))
+      return
     }
     const skyshipEngineMissionActive =
       module === 'math' &&
@@ -605,7 +624,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, on
             moduleId={moduleArrival}
             profileName={profileName}
             onStart={() => setModuleArrival(null)}
-            onBack={() => { setModuleArrival(null); setScreen('home') }}
+            onBack={() => navigate('home')}
           />
         )}
         {adventureBridge && (

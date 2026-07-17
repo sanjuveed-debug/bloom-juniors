@@ -63,7 +63,7 @@ export default function OneDailyJourney({
   const primaryAction = journey.phase === 'ready'
     ? onClaimTreasure
     : journey.phase === 'claimed'
-      ? () => document.getElementById('never-finished-adventure')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      ? (onPlayNext || (() => document.getElementById('never-finished-adventure')?.scrollIntoView({ behavior: 'smooth', block: 'center' })))
       : onPlayNext
 
   return (

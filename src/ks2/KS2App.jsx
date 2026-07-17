@@ -26,7 +26,7 @@ import { VoiceContext }  from '../contexts/VoiceContext'
 import { PREMIUM_GATING_ENABLED, PREMIUM_KS2_MODULES } from '../config/premiumContent.js'
 import { usePremium } from '../hooks/usePremium'
 import PremiumLockModal from '../components/PremiumLockModal'
-import { recordAdaptiveSession } from '../utils/adaptiveLearning.js'
+import { questionSignature, recordAdaptiveSession } from '../utils/adaptiveLearning.js'
 import ModuleArrival from '../components/ModuleArrival'
 import AdventureModuleFrame from '../components/AdventureModuleFrame'
 import LivingAdventure from '../components/LivingAdventure'
@@ -37,6 +37,9 @@ import WonderWorld from '../components/WonderWorld'
 import { grantWonderSeed } from '../utils/wonderWorld.js'
 import { claimTreasureReward, equipTreasureReward } from '../utils/treasureRewards.js'
 import { stopAllSpeech } from '../lib/speechController.js'
+import HighFiveDelivery from '../components/HighFiveDelivery.jsx'
+import BloomAdventureHome from '../components/BloomAdventureHome.jsx'
+import { recordInterestComplete, recordInterestExit, recordInterestStart } from '../utils/childInterest.js'
 
 // ── Themes ────────────────────────────────────────────────────────────────────
 const KS2_THEMES = {
@@ -581,14 +584,16 @@ export function KS2Dashboard({ profileName, progress, todayKey, gamesUnlocked, s
   const treasureCollection=progress.treasureCollection||{items:[],claims:{}},claimKey=`junior:${todayKey}`,treasureClaimed=Boolean(treasureCollection.claims?.[claimKey])
   const claimTreasure=()=>{if(treasureClaimed||mission.doneCount<2)return;const reward=claimTreasureReward(treasureCollection,{claimKey,source:'junior-mission'});if(!reward.claimed||!reward.item)return;onUpdateProgress?.({treasureCollection:reward.collection,wonderWorld:grantWonderSeed(progress.wonderWorld,`daily:${claimKey}`,'junior-mission')});setRewardTreasure(reward)}
   const equipTreasure=item=>onUpdateProgress?.({treasureCollection:equipTreasureReward(treasureCollection,item)})
+  const updateTreasureCollection=nextCollection=>onUpdateProgress?.({treasureCollection:nextCollection})
   return <div className="min-h-screen bg-[#f4e5c7] pb-16 text-[#28150d]">
+    <HighFiveDelivery progress={progress} profileName={profileName} ageGroup="junior" onUpdateProgress={onUpdateProgress}/>
     <header className="border-b border-[#5d321d]/20 bg-[#2a1837] px-4 py-3 text-white shadow-lg"><div className="mx-auto flex max-w-7xl items-center gap-3"><div className="min-w-0 flex-1"><p className="font-round text-[11px] font-black uppercase tracking-[.2em] text-[#f4ba62]">Yaagvi expedition atlas</p><h1 className="truncate font-bubble text-2xl">Agent {profileName}</h1><div className="mt-1 flex items-center gap-2"><span className="font-round text-xs text-white/65">Level {level}</span><div className="h-1.5 max-w-md flex-1 overflow-hidden rounded-full bg-white/15"><div className="h-full bg-[#f4ba45]" style={{width:`${levelPct}%`}}/></div><span className="font-round text-xs text-white/55">{xp} XP</span></div></div><div className="rounded-xl border border-[#f4ba62]/30 bg-white/10 px-3 py-2 text-center"><p className="text-lg">🎁</p><p className="font-bubble text-sm">{treasureCollection.items?.length||0}</p></div>{onSwitchProfiles&&<button onClick={onSwitchProfiles} className="rounded-xl bg-[#f4ba62] px-3 py-2 font-bubble text-sm text-[#28150d]">Switch</button>}</div></header>
-    <OneDailyJourney ageGroup="junior" profileName={profileName} steps={mission.steps} doneCount={mission.doneCount} required={2} claimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} streak={progress.loginStreak||0} onPlayNext={()=>next&&onNavigate(next.id)} onClaimTreasure={claimTreasure} onOpenTreasureRoom={()=>setShowShelf(true)} onOpenWorld={()=>onNavigate('wonderworld')} exploreOpen={showAtlas} onToggleExplore={()=>setShowAtlas(value=>!value)}/>
-    {!showAtlas&&<><LivingAdventure ageGroup="junior" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress} onOpenWonderWorld={()=>onNavigate('wonderworld')}/><NeverFinishedAdventure ageGroup="junior" progress={progress} active={treasureClaimed} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress}/></>}
+    <BloomAdventureHome ageGroup="junior" profileName={profileName} progress={progress} dailyNext={next} dailyDone={mission.doneCount} dailyRequired={2} dailyClaimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} libraryOpen={showAtlas} onNavigate={onNavigate} onClaimTreasure={claimTreasure} onToggleLibrary={()=>setShowAtlas(value=>!value)} onOpenWorld={()=>onNavigate('wonderworld')} onOpenTreasureRoom={()=>setShowShelf(true)}/>
+    {showAtlas&&<><OneDailyJourney ageGroup="junior" profileName={profileName} steps={mission.steps} doneCount={mission.doneCount} required={2} claimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} streak={progress.loginStreak||0} onPlayNext={()=>next&&onNavigate(next.id)} onClaimTreasure={claimTreasure} onOpenTreasureRoom={()=>setShowShelf(true)} onOpenWorld={()=>onNavigate('wonderworld')} exploreOpen={showAtlas} onToggleExplore={()=>setShowAtlas(value=>!value)}/><LivingAdventure ageGroup="junior" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress} onOpenWonderWorld={()=>onNavigate('wonderworld')}/><NeverFinishedAdventure ageGroup="junior" progress={progress} active={treasureClaimed} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress}/></>}
     {showAtlas&&<section className="mx-auto mt-5 max-w-7xl px-3 sm:px-5"><div className="relative min-h-[760px] overflow-hidden rounded-[30px] border-4 border-[#70401f] bg-cover bg-center shadow-2xl" style={{backgroundImage:'linear-gradient(rgba(35,20,13,.08),rgba(35,20,13,.18)),url(/treasure-map-bg.png)'}}>
       <div className="absolute left-5 right-5 top-5 z-20 flex flex-col gap-3 rounded-[22px] border border-[#6e3b20]/20 bg-[#fff4dc]/94 p-5 shadow-xl backdrop-blur-sm sm:left-7 sm:right-auto sm:w-[520px]"><p className="font-round text-xs font-black uppercase tracking-[.18em] text-[#a33e18]">Current mission · {mission.doneCount}/3 stops</p><div className="flex items-center gap-3"><span className="text-5xl">{nextLoc.emoji}</span><div><h2 className="font-bubble text-3xl">Proceed to {nextLoc.name}</h2><p className="font-round text-sm font-bold text-[#765039]">Complete the challenge, earn XP, and recover +{nextLoc.treasure} treasure.</p><p className="mt-1 font-round text-xs font-black text-[#9c321d]">Gold ring marks your recommended route.</p></div></div><motion.button whileTap={{scale:.97}} onClick={()=>next&&onNavigate(next.id)} className="min-h-12 rounded-xl bg-gradient-to-r from-[#9c321d] to-[#5d285f] font-bubble text-lg text-white shadow-lg">START MISSION →</motion.button></div>
       {MAP_LOCATIONS.map((loc,idx)=>{const [left,top]=KS2_MAP_POSITIONS[idx],locked=loc.id==='games'&&!gamesUnlocked,done=progress[loc.id]?.lastPlayedDate===todayKey,active=loc.id===next?.id;return <motion.button key={loc.id} disabled={locked} onClick={()=>!locked&&onNavigate(loc.id)} whileTap={{scale:.92}} className="absolute z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center" style={{left,top,opacity:locked ? .55 : 1}} initial={{opacity:0,scale:.7}} animate={{opacity:locked ? .55 : 1,scale:1}} transition={{delay:idx*.04}}><motion.div className={`grid h-16 w-16 place-items-center rounded-2xl border-2 text-3xl shadow-lg sm:h-20 sm:w-20 sm:text-4xl ${done?'border-[#32865a] bg-[#e9ffda]':active?'border-white bg-[#8f321e] ring-4 ring-[#f4ba45]':'border-[#7b4b2c]/25 bg-[#fff5df]'}`} animate={active?{y:[0,-5,0]}:{}} transition={{duration:1.7,repeat:Infinity}}>{locked?'🔒':done?'✓':loc.emoji}</motion.div><span className="mt-1 max-w-[110px] rounded-md bg-[#2b1724]/90 px-2 py-1 text-center font-round text-[11px] font-black text-white shadow">{loc.name}</span><span className="font-round text-[10px] font-black text-[#6d341b]">+{loc.treasure}</span></motion.button>})}
-    </div></section>}<div className="mx-auto mt-4 flex max-w-7xl justify-end px-4">{onParent&&<button onClick={onParent} className="rounded-full bg-white/70 px-4 py-2 font-round text-xs font-bold">🔒 Grown-ups</button>}</div><AnimatePresence>{rewardTreasure&&<TreasureChestReward item={rewardTreasure.item} duplicate={rewardTreasure.duplicate} weekly={rewardTreasure.weekly} onClose={()=>setRewardTreasure(null)}/>} {showShelf&&<TreasureShelf collection={treasureCollection} profileName={profileName} onEquip={equipTreasure} onClose={()=>setShowShelf(false)}/>}</AnimatePresence>
+    </div></section>}<div className="mx-auto mt-4 flex max-w-7xl justify-end px-4">{onParent&&<button onClick={onParent} className="rounded-full bg-white/70 px-4 py-2 font-round text-xs font-bold">🔒 Grown-ups</button>}</div><AnimatePresence>{rewardTreasure&&<TreasureChestReward item={rewardTreasure.item} duplicate={rewardTreasure.duplicate} weekly={rewardTreasure.weekly} ageGroup="junior" onClose={()=>setRewardTreasure(null)}/>} {showShelf&&<TreasureShelf collection={treasureCollection} profileName={profileName} ageGroup="junior" onEquip={equipTreasure} onCollectionChange={updateTreasureCollection} onClose={()=>setShowShelf(false)}/>}</AnimatePresence>
   </div>
 }
 
@@ -601,22 +606,24 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
   const moodLog = progress.moodLog || []
   const moodLoggedToday = moodLog.some(entry => entry.date === todayKey)
   const [screen, setScreen] = useState(classroomMode || moodLoggedToday ? 'home' : 'mood')
-  const [rewardInfo, setRewardInfo] = useState(null)
   const [lockedModule, setLockedModule] = useState(null)
   const [moduleArrival, setModuleArrival] = useState(null)
+  const [rewardInfo, setRewardInfo] = useState(null)
   const { premium } = usePremium()
   // Beta: PREMIUM_GATING_ENABLED=false means everyone has full access
   const hasAllAccess = !PREMIUM_GATING_ENABLED || classroomMode || premium
-  const gatedNavigate = useCallback((to) => {
+  const gatedNavigate = useCallback((to, interestSource = 'choice') => {
     if (!hasAllAccess && PREMIUM_KS2_MODULES.has(to)) { setLockedModule(to); return }
     stopAllSpeech('navigation')
+    if (DAILY_STUDY_MODULES.includes(to) || ['piggybank','games','exercise'].includes(to)) {
+      update(p => ({ ...p, childInterest: recordInterestStart(p.childInterest, to, { source: interestSource }) }))
+    }
     setScreen(to)
     let skipArrival = false
     try { skipArrival = sessionStorage.getItem('bloom_living_launch') === to; if (skipArrival) sessionStorage.removeItem('bloom_living_launch') } catch {}
     if (!skipArrival && ['timestables','fractions','reading','spelling','wordproblems','piggybank','grammar','science','worldmap','spirituality','games','exercise'].includes(to)) setModuleArrival(to)
-  }, [hasAllAccess])
+  }, [hasAllAccess, update])
   // Per-session idempotency guard: moduleId:date → only one completion per module per day
-  const completedModulesRef = useRef(new Set())
 
   // Auto-assign default hero on first visit so child skips the hero picker
   useEffect(() => {
@@ -664,29 +671,33 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
     setScreen('home')
   }, [update, todayKey])
 
-  const handleModuleDone = useCallback((moduleId, rawCorrect, rawTotal) => {
-    const completionKey = `${moduleId}:${todayKey}`
-    if (completedModulesRef.current.has(completionKey)) return
-    completedModulesRef.current.add(completionKey)
+  const handleModuleDone = useCallback((moduleId, rawCorrect, rawTotal, evidence = {}) => {
     trackActivityComplete(moduleId, 'junior')
 
     const total = Math.max(1, Number.isFinite(Number(rawTotal)) ? Number(rawTotal) : 1)
     const correct = Math.min(total, Math.max(0, Number.isFinite(Number(rawCorrect)) ? Number(rawCorrect) : 0))
     const xpEarned = Math.round((correct / total) * 30)
     const accuracy = Math.round((correct / total) * 100)
-    const loc = MAP_LOCATIONS.find(l => l.id === moduleId)
     const treasure = getKS2Treasure(moduleId)
     const pct = correct / total
     const stars = pct >= 0.9 ? 3 : pct >= 0.6 ? 2 : 1
 
     update(p => {
       const firstToday = p[moduleId]?.lastPlayedDate !== todayKey
+      const questionSignatures = (evidence.questions || []).map(question => questionSignature(moduleId, question))
+      const adaptive = recordAdaptiveSession(p, moduleId, {
+        total,
+        correct,
+        struggles: evidence.struggles || [],
+        questionSignatures,
+      })
       return {
-        ...recordAdaptiveSession(p, moduleId, { total, correct, struggles: [] }),
+        ...adaptive,
+        childInterest: recordInterestComplete(p.childInterest, moduleId, { score: correct }),
         ks2Xp: (p.ks2Xp || 0) + xpEarned,
         ks2TreasurePoints: (p.ks2TreasurePoints || 0) + (firstToday ? treasure : 0),
         [moduleId]: {
-          ...p[moduleId],
+          ...adaptive[moduleId],
           stars: Math.max(p[moduleId]?.stars || 0, stars),
           played: (p[moduleId]?.played || 0) + 1,
           lastAccuracy: accuracy,
@@ -696,21 +707,22 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
     })
     logSession({ module: moduleId, stars: correct, accuracy, date: Date.now() })
     confetti({ particleCount: 120, spread: 130, origin: { x: 0.5, y: 0.3 } })
-    setScreen('home')
-    if (loc) {
-      setRewardInfo({ loc, treasure, xp: xpEarned, stars })
-      setTimeout(() => setRewardInfo(null), 3500)
-    }
-  }, [update, logSession, todayKey])
+    const eventId=`learning:${profileId || 'local'}:${moduleId}:${Date.now()}`
+    window.dispatchEvent(new CustomEvent('yaagvi:celebrate',{detail:{module:moduleId,stars,eventId}}))
+    window.dispatchEvent(new CustomEvent('bloom:game-complete',{detail:{module:moduleId,stars,total,correct,eventId,reward:`${xpEarned} XP earned${treasure>0?` · ${treasure} expedition treasure`:''}.`}}))
+  }, [update, logSession, todayKey, profileId])
 
   const handleExerciseDone = useCallback(() => {
     update(p => ({
       ...p,
+      childInterest: recordInterestComplete(p.childInterest, 'exercise', { score: 3 }),
       ks2ExerciseDate: todayKey,
       ks2TreasurePoints: (p.ks2TreasurePoints || 0) + (p.ks2ExerciseDate === todayKey ? 0 : getKS2Treasure('exercise')),
     }))
-    setTimeout(() => setScreen('home'), 1200)
-  }, [update, todayKey])
+    const eventId=`learning:${profileId || 'local'}:exercise:${Date.now()}`
+    window.dispatchEvent(new CustomEvent('yaagvi:celebrate',{detail:{module:'exercise',stars:3,eventId}}))
+    window.dispatchEvent(new CustomEvent('bloom:game-complete',{detail:{module:'exercise',stars:3,eventId,reward:'Your focus energy is recharged.'}}))
+  }, [update, todayKey, profileId])
 
   if (screen === 'avatar') return <KS2AvatarSelector onSelect={handleAvatarSelect} />
   if (screen === 'mood') return <MoodCheckIn avatar={progress.ks2Avatar} profileName={profileName} themeOverride={theme} onComplete={handleMoodComplete} onSkip={() => setScreen('home')} />
@@ -743,33 +755,36 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
     return <WonderWorld ageGroup="junior" progress={progress} profileName={profileName} onUpdateProgress={(patch)=>update(p=>({...p,...(typeof patch==='function'?patch(p):patch)}))} onBack={()=>setScreen('home')}/>
   }
 
-  const goHome = () => setScreen('home')
+  const goHome = () => {
+    update(p => ({ ...p, childInterest: recordInterestExit(p.childInterest, screen) }))
+    setScreen('home')
+  }
   const props = { theme, onBack: goHome }
 
   const p = (id) => progress[id]?.played || 0
 
   const moduleMap = {
-    timestables:  <TimesTablesModule  {...props} played={p('timestables')} onDone={(s, t) => handleModuleDone('timestables', s, t)} />,
-    fractions:    <FractionsModule    {...props} played={p('fractions')}   onDone={(s, t) => handleModuleDone('fractions', s, t)} />,
-    reading:      <ReadingModule      {...props} played={p('reading')}     onDone={(s, t) => handleModuleDone('reading', s, t)} />,
-    spelling:     <SpellingModule     {...props} played={p('spelling')}    onDone={(s, t) => handleModuleDone('spelling', s, t)} />,
-    wordproblems: <WordProblemsModule {...props} played={p('wordproblems')} onDone={(s, t) => handleModuleDone('wordproblems', s, t)} />,
+    timestables:  <TimesTablesModule  {...props} played={p('timestables')} onDone={(s, t, e) => handleModuleDone('timestables', s, t, e)} />,
+    fractions:    <FractionsModule    {...props} played={p('fractions')}   onDone={(s, t, e) => handleModuleDone('fractions', s, t, e)} />,
+    reading:      <ReadingModule      {...props} progress={progress} profileName={profileName} played={p('reading')} onDone={(s, t, e) => handleModuleDone('reading', s, t, e)} />,
+    spelling:     <SpellingModule     {...props} played={p('spelling')}    onDone={(s, t, e) => handleModuleDone('spelling', s, t, e)} />,
+    wordproblems: <WordProblemsModule {...props} played={p('wordproblems')} onDone={(s, t, e) => handleModuleDone('wordproblems', s, t, e)} />,
     piggybank:    <PiggyBankGame ageGroup="junior" theme={theme} profileName={profileName} onBack={goHome}
                     onComplete={({ correct, total }) => handleModuleDone('piggybank', correct, total)} />,
-    grammar:      <GrammarModule      {...props} played={p('grammar')}     onDone={(s, t) => handleModuleDone('grammar', s, t)} />,
-    science:      <ScienceModule      {...props} played={p('science')}     onDone={(s, t) => handleModuleDone('science', s, t)} />,
-    worldmap:     <WorldMapModule     {...props} played={p('worldmap')}    onDone={(s, t) => handleModuleDone('worldmap', s, t)} />,
-    spirituality: <SpiritualityModule {...props} played={p('spirituality')} onDone={(s, t) => handleModuleDone('spirituality', s, t)} />,
-    games:        <GamesModule        {...props} gamesUnlocked={gamesUnlocked} />,
+    grammar:      <GrammarModule      {...props} played={p('grammar')}     onDone={(s, t, e) => handleModuleDone('grammar', s, t, e)} />,
+    science:      <ScienceModule      {...props} played={p('science')}     onDone={(s, t, e) => handleModuleDone('science', s, t, e)} />,
+    worldmap:     <WorldMapModule     {...props} played={p('worldmap')}    onDone={(s, t, e) => handleModuleDone('worldmap', s, t, e)} />,
+    spirituality: <SpiritualityModule {...props} played={p('spirituality')} onDone={(s, t, e) => handleModuleDone('spirituality', s, t, e)} />,
+    games:        <GamesModule        {...props} played={p('games')} gamesUnlocked={gamesUnlocked} onComplete={({ correct, total }) => handleModuleDone('games', correct, total)} />,
     exercise:     <ExerciseModule     {...props} onDone={handleExerciseDone} />,
   }
 
   if (moduleMap[screen]) {
     return (
       <VoiceContext.Provider value="en-GB-SoniaNeural">
-        <AdventureModuleFrame moduleId={screen} ageGroup="junior" progress={progress} onUpdateProgress={update} onMap={() => { setModuleArrival(null); setScreen('home') }}>{moduleMap[screen]}</AdventureModuleFrame>
+        <AdventureModuleFrame moduleId={screen} ageGroup="junior" progress={progress} onUpdateProgress={update} onMap={() => { setModuleArrival(null); goHome() }}>{moduleMap[screen]}</AdventureModuleFrame>
         <AnimatePresence>
-          {moduleArrival === screen && <ModuleArrival ageGroup="junior" moduleId={screen} profileName={profileName} onStart={() => setModuleArrival(null)} onBack={() => { setModuleArrival(null); setScreen('home') }} />}
+          {moduleArrival === screen && <ModuleArrival ageGroup="junior" moduleId={screen} profileName={profileName} onStart={() => setModuleArrival(null)} onBack={() => { setModuleArrival(null); goHome() }} />}
         </AnimatePresence>
       </VoiceContext.Provider>
     )

@@ -1,8 +1,10 @@
 ﻿import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSpeech } from '../hooks/useSpeech'
+import { speakThenAdvance } from '../utils/speechAdvance'
 import { dailySeedFor, seededShuffle } from '../utils/seededRandom'
 import { THEMES } from '../themes'
+import { buildEarlyPersonalisedStory } from '../utils/personalisedStories.js'
 
 // ── Animated scene layers per story page ────────────────────────────────────
 // Each item: { emoji, left, top, size, animate, duration, delay }
@@ -482,11 +484,9 @@ function getStoryDifficultyLabel(story) {
 }
 
 function getUnlockedStoryCount(progress = {}) {
-  const start = progress.story?.storyUnlockStart
-  if (!start) return 1
-  const msPerDay = 86400000
-  const daysElapsed = Math.floor((Date.now() - new Date(start).getTime()) / msPerDay)
-  return Math.max(1, Math.min(daysElapsed + 1, STORIES.length))
+  // Reading should never become unavailable because a child finished today's pick.
+  // The recommendation rotates, while the complete library remains playable.
+  return STORIES.length
 }
 
 function getCurrentRound(progress = {}) {
@@ -527,6 +527,10 @@ export default function StoryRoom({ avatar, progress, onAddStars, onBack, profil
   const completedRef = useRef(false)
   const introSpokenRef = useRef(false)
   const recommendedStories = getRecommendedStories(STORIES, progress)
+  const personalisedStory = useMemo(
+    () => buildEarlyPersonalisedStory(progress, profileName),
+    [progress, profileName],
+  )
 
   // Count unique phonics words (non-tricky) on the current page — drives the mission target
   const pagePhonicsWords = useMemo(() => {
@@ -638,16 +642,14 @@ export default function StoryRoom({ avatar, progress, onAddStars, onBack, profil
     // Speak phonics-hunt intro before the page text so child knows the task
     if (!introSpokenRef.current) {
       introSpokenRef.current = true
-      speak(
+      speakThenAdvance(speak,
         'Listen carefully! Can you find the special phonics words? Look for the underlined words and tap them to hear their sounds!',
-        { mood: 'instruct', voice: 'gb' }
+        { mood: 'instruct', voice: 'gb' },
+        () => readPage(story, 0),
+        timersRef,
+        { minMs: 1600, maxMs: 6500 }
       )
     }
-    const id = window.setTimeout(() => {
-      timersRef.current = timersRef.current.filter(t => t !== id)
-      readPage(story, 0)
-    }, 2200)
-    timersRef.current.push(id)
   }, [clearStoryTimers, readPage, speak, stopSpeaking])
 
   const handleWordTap = useCallback((word, idx) => {
@@ -761,11 +763,31 @@ export default function StoryRoom({ avatar, progress, onAddStars, onBack, profil
         </div>
         <p className="font-round text-center opacity-70 mb-4 px-4" style={{ color: theme.text }}>
           {currentRound >= 2
-            ? `Round ${currentRound} — stories unlocking daily again! 🌟`
-            : 'A new story unlocks every day! 📖'}
+            ? `Round ${currentRound} — every story is ready, with a fresh pick first! 🌟`
+            : 'Every story is ready — choose one or follow today’s fresh pick! 📖'}
         </p>
 
         <div className="flex flex-col gap-4 px-4">
+          <motion.button
+            initial={{ opacity: 0, y: -18 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => handleStorySelect(personalisedStory)}
+            className="relative overflow-hidden rounded-3xl p-4 text-left shadow-xl"
+            style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})`, border: '3px solid rgba(255,255,255,.7)' }}
+          >
+            <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-white/20" />
+            <div className="relative flex items-center gap-4">
+              <img src="/yaagvi-3d-wave.png" alt="Yaagvi brings a story made for this explorer" className="h-20 w-20 object-contain drop-shadow-xl" />
+              <div className="min-w-0 flex-1 text-white">
+                <p className="font-round text-[10px] font-black uppercase tracking-[.18em] text-white/80">Made from your learning journey</p>
+                <span role="heading" aria-level="3" className="mt-1 block font-bubble text-xl">{personalisedStory.title}</span>
+                <p className="mt-1 font-round text-xs font-bold text-white/80">A fresh {personalisedStory.frontierSkill} adventure starring {profileName || 'you'}</p>
+              </div>
+              <span className="text-2xl">▶</span>
+            </div>
+          </motion.button>
+
           {/* Unlocked stories */}
           {displayedStories.map((story, i) => {
             const readCount = getStoryReadCount(progress, story.id)

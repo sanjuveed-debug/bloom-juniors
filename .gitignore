@@ -16,6 +16,15 @@ smoke-shots/
 Video/
 Bloom Juniors - Google Play package/
 
+# Local design inputs and generated UAT evidence
+/3d_mascot.mp4
+/Bloom Juniors * Consolidation Plan*
+/New folder/
+/Story_video/
+/output/
+/download-lottie.js
+/tests/*.png
+
 *.log
 /*.png
 *.zip

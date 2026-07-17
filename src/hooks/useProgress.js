@@ -7,6 +7,7 @@ import { normalizeWonderWorld } from '../utils/wonderWorld.js'
 import { normalizeCompanionPowers } from '../utils/companionPowers.js'
 import { normalizeAdventureDirector } from '../utils/adventureDirector.js'
 import { normalizeDreamProject } from '../utils/dreamProject.js'
+import { normalizeChildInterest } from '../utils/childInterest.js'
 
 function getStorageKey(profileId) {
   if (profileId) return `eduapp_progress_${profileId}`
@@ -94,7 +95,8 @@ export const defaultProgress = {
   companionPowers: normalizeCompanionPowers(),
   adventureDirector: normalizeAdventureDirector(),
   dreamProject: normalizeDreamProject(),
-  treasureCollection: { items: [], claims: {}, equipped: {}, history: [], eggHatches: [], sparkleDust: 0, claimStreak: 0, lastClaimDate: '' },
+  childInterest: normalizeChildInterest(),
+  treasureCollection: { items: [], claims: {}, equipped: {}, history: [], eggHatches: [], sparkleDust: 0, claimStreak: 0, lastClaimDate: '', roomLayout: {}, roomLayoutUpdatedAt: 0, treasureInteractions: {}, secretGames: {} },
 }
 
 export function hydrateProgressData(parsed = {}) {
@@ -129,6 +131,7 @@ export function hydrateProgressData(parsed = {}) {
     companionPowers: normalizeCompanionPowers(source.companionPowers),
     adventureDirector: normalizeAdventureDirector(source.adventureDirector),
     dreamProject: normalizeDreamProject(source.dreamProject),
+    childInterest: normalizeChildInterest(source.childInterest),
     treasureCollection: {
       ...defaultProgress.treasureCollection,
       ...(source.treasureCollection || {}),
@@ -137,6 +140,9 @@ export function hydrateProgressData(parsed = {}) {
       equipped: source.treasureCollection?.equipped || {},
       history: Array.isArray(source.treasureCollection?.history) ? source.treasureCollection.history : [],
       eggHatches: Array.isArray(source.treasureCollection?.eggHatches) ? source.treasureCollection.eggHatches : [],
+      roomLayout: source.treasureCollection?.roomLayout || {},
+      treasureInteractions: source.treasureCollection?.treasureInteractions || {},
+      secretGames: source.treasureCollection?.secretGames || {},
     },
   }
 }

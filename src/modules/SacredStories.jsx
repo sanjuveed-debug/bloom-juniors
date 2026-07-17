@@ -655,7 +655,7 @@ function QuizScreen({ question, quizIdx, total, selectedOption, theme, onAnswer,
             let border = 'transparent'
             let textColor = theme.primary
             if (selectedOption) {
-              if (correct) { bg = '#D1FAE5'; border = '#10B981'; textColor = '#065F46' }
+              if (correct && chosen) { bg = '#D1FAE5'; border = '#10B981'; textColor = '#065F46' }
               else if (chosen) { bg = '#FEE2E2'; border = '#EF4444'; textColor = '#991B1B' }
             }
             return (
@@ -670,7 +670,7 @@ function QuizScreen({ question, quizIdx, total, selectedOption, theme, onAnswer,
                 style={{ background: bg, border: `2px solid ${border}`, color: textColor }}
               >
                 <span className="mr-2">{['A', 'B', 'C'][i]}.</span>{opt.text}
-                {selectedOption && correct && <span className="float-right">✅</span>}
+                {selectedOption && chosen && correct && <span className="float-right">✅</span>}
                 {selectedOption && chosen && !correct && <span className="float-right">❌</span>}
               </motion.button>
             )
@@ -911,6 +911,8 @@ export default function SacredStories({ avatar, profileName, profileId, onAddSta
   const [starsEarned, setStarsEarned] = useState(0)
   const [isFirstTime, setIsFirstTime] = useState(false)
   const correctAnswers = useRef(0)
+  const questionMissedRef = useRef(false)
+  const quizStrugglesRef = useRef([])
   const answerLockedRef = useRef(false)
   const quizTimerRef = useRef(null)
   useEffect(() => () => clearTimeout(quizTimerRef.current), [])
@@ -955,6 +957,8 @@ export default function SacredStories({ avatar, profileName, profileId, onAddSta
     setQuizIdx(0)
     setSelectedOption(null)
     correctAnswers.current = 0
+    questionMissedRef.current = false
+    quizStrugglesRef.current = []
     setScreen('story')
     const s = religion.stories.find(st => st.id === id)
     if (s) speak(sacredPreprocess(getPanelText(id, 0, s.panels[0].text)), speakOpts)
@@ -976,17 +980,24 @@ export default function SacredStories({ avatar, profileName, profileId, onAddSta
     answerLockedRef.current = true
     setSelectedOption(option)
     if (option.correct) {
-      correctAnswers.current += 1
+      if (!questionMissedRef.current) correctAnswers.current += 1
       speak('Correct! Well done!', speakOpts)
     } else {
-      const rightAnswer = quizQuestion.options.find(o => o.correct)
-      speak(`Good try! The answer was ${rightAnswer.text}`, speakOpts)
+      if (!questionMissedRef.current) quizStrugglesRef.current.push(quizQuestion.q)
+      questionMissedRef.current = true
+      speak('Good try. Think about what happened in the story, then choose again.', speakOpts)
+      quizTimerRef.current = setTimeout(() => {
+        setSelectedOption(null)
+        answerLockedRef.current = false
+      }, 1300)
+      return
     }
     const nextIdx = quizIdx + 1
     quizTimerRef.current = setTimeout(() => {
       if (nextIdx < story.quiz.length) {
         setQuizIdx(nextIdx)
         setSelectedOption(null)
+        questionMissedRef.current = false
         answerLockedRef.current = false
         speak(story.quiz[nextIdx].q, speakOpts)
       } else {
@@ -1007,13 +1018,16 @@ export default function SacredStories({ avatar, profileName, profileId, onAddSta
     onAddStars('sacred', starsEarned, {
       total: story.quiz.length,
       correct: correctAnswers.current,
-      stayOnModule: true,
+      struggles: quizStrugglesRef.current,
+      stayOnModule: false,
     })
     setScreen('religion')
     setSelectedStory(null)
     setSelectedOption(null)
     setQuizIdx(0)
     correctAnswers.current = 0
+    questionMissedRef.current = false
+    quizStrugglesRef.current = []
     answerLockedRef.current = false
   }
 

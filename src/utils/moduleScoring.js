@@ -9,6 +9,7 @@ export function buildSoundPopCompletion({
   correctAnswers,
   bonusStars,
   wrongSounds,
+  questionSignatures = [],
 }) {
   return {
     stars: bonusStars,
@@ -16,6 +17,7 @@ export function buildSoundPopCompletion({
       total: totalRounds,
       correct: correctAnswers,
       struggles: wrongSounds,
+      ...(questionSignatures.length ? { questionSignatures } : {}),
     },
   }
 }

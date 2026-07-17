@@ -37,6 +37,57 @@ for (const viewport of [
   check(`${viewport.name} Shape World: completed tower triggers dance`, await shapePage.getByTestId('interactive-yaagvi').getAttribute('data-yaagvi-state') === 'dance')
   await shapePage.screenshot({ path: `tests/uat_shape_world_tower_${viewport.name}.png`, fullPage: true })
   await shapePage.close()
+
+  const storyPage = await browser.newPage({ viewport })
+  await storyPage.goto('http://127.0.0.1:5173/test-animation-modules.html?module=story', { waitUntil: 'networkidle' })
+  check(`${viewport.name} Story Room: no tomorrow lockout copy`, await storyPage.getByText(/unlocks tomorrow|new story unlocks every day/i).count() === 0)
+  check(`${viewport.name} Story Room: full library is available`, await storyPage.getByRole('button', { name: /Explore all 8 stories/i }).count() === 1)
+  await storyPage.getByRole('button', { name: /Explore all 8 stories/i }).click()
+  check(`${viewport.name} Story Room: eight originals plus a personalised story can be selected`, await storyPage.getByRole('heading', { level: 3 }).count() === 9)
+  check(`${viewport.name} Story Room: library has no horizontal overflow`, await storyPage.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth))
+  await storyPage.close()
+
+  const worldPage = await browser.newPage({ viewport })
+  await worldPage.goto('http://127.0.0.1:5173/test-animation-modules.html?module=world', { waitUntil: 'networkidle' })
+  await worldPage.getByRole('button', { name: /Capitals/i }).click()
+  const worldQuestion = await worldPage.locator('p').filter({ hasText: /capital of/i }).first().textContent()
+  await worldPage.locator('[data-companion-answer="wrong"]').first().click()
+  await worldPage.waitForTimeout(1700)
+  check(`${viewport.name} World Explorer: wrong answer keeps the question`, (await worldPage.locator('p').filter({ hasText: /capital of/i }).first().textContent()) === worldQuestion)
+  check(`${viewport.name} World Explorer: correct answer remains unexposed`, await worldPage.locator('[data-companion-answer="correct"] span.text-green-500').count() === 0)
+  check(`${viewport.name} World Explorer: retry is enabled`, await worldPage.locator('[data-companion-answer="correct"]').isEnabled())
+  await worldPage.close()
+
+  const bodyPage = await browser.newPage({ viewport })
+  await bodyPage.goto('http://127.0.0.1:5173/test-animation-modules.html?module=body', { waitUntil: 'networkidle' })
+  await bodyPage.getByRole('button', { name: /Quiz/i }).click()
+  const bodyQuestion = await bodyPage.locator('p').filter({ hasText: /Tap the/i }).first().textContent()
+  const answerName = bodyQuestion.match(/Tap the (.+)!/i)?.[1]
+  const wrongBodyPart = bodyPage.locator('[data-body-part]').filter({ hasNot: bodyPage.locator(`[aria-label="${answerName}"]`) }).first()
+  const bodyParts = bodyPage.locator('[data-body-part]')
+  let wrongIndex = 0
+  for (let i = 0; i < await bodyParts.count(); i += 1) {
+    if ((await bodyParts.nth(i).getAttribute('aria-label')) !== answerName) { wrongIndex = i; break }
+  }
+  await bodyParts.nth(wrongIndex).click({ force: true })
+  await bodyPage.waitForTimeout(1500)
+  check(`${viewport.name} My Body: wrong tap keeps the same clue`, (await bodyPage.locator('p').filter({ hasText: /Tap the/i }).first().textContent()) === bodyQuestion)
+  check(`${viewport.name} My Body: second attempt remains available`, await bodyPage.locator(`[data-body-part][aria-label="${answerName}"]`).isEnabled())
+  check(`${viewport.name} My Body: diagram has keyboard labels`, await bodyPage.locator('[data-body-part][tabindex="0"]').count() > 10)
+  await bodyPage.close()
+
+  const planetPage = await browser.newPage({ viewport })
+  await planetPage.goto('http://127.0.0.1:5173/test-animation-modules.html?module=planet', { waitUntil: 'networkidle' })
+  await planetPage.locator('button').filter({ hasText: /Mercury/i }).click()
+  await planetPage.getByRole('button', { name: /Quiz Me/i }).click()
+  const planetQuestionNode = planetPage.locator('p.font-bubble.text-white.text-xl')
+  const planetQuestion = await planetQuestionNode.textContent()
+  await planetPage.locator('[data-companion-answer="wrong"]').first().click()
+  await planetPage.waitForTimeout(1800)
+  check(`${viewport.name} Planet World: wrong answer keeps the question`, (await planetQuestionNode.textContent()) === planetQuestion)
+  check(`${viewport.name} Planet World: correct answer remains visually neutral`, await planetPage.locator('[data-companion-answer="correct"]').evaluate(node => !node.textContent.includes('✅')))
+  check(`${viewport.name} Planet World: retry is enabled`, await planetPage.locator('[data-companion-answer="correct"]').isEnabled())
+  await planetPage.close()
 }
 
 await browser.close()

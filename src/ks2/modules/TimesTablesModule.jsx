@@ -48,6 +48,7 @@ export default function TimesTablesModule({ theme, onDone, onBack, played = 0 })
   const [options, setOptions] = useState([])
   const lockedRef = useRef(false)
   const completedRef = useRef(false)
+  const missedRef = useRef(false)
   const timersRef = useRef([])
 
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
@@ -56,6 +57,7 @@ export default function TimesTablesModule({ theme, onDone, onBack, played = 0 })
     const qs = buildQuestions(t)
     lockedRef.current = false
     completedRef.current = false
+    missedRef.current = false
     timersRef.current.forEach(clearTimeout)
     timersRef.current = []
     setTable(t)
@@ -75,12 +77,13 @@ export default function TimesTablesModule({ theme, onDone, onBack, played = 0 })
     if (next >= qs.length) {
       completedRef.current = true
       setPhase('result')
-      onDone(sc, qs.length)
+      onDone(sc, qs.length, { questions: qs })
     } else {
       setQ(next)
       setOptions(wrongOptions(qs[next].ans))
       setTimeLeft(timerMax)
       setFeedback(null)
+      missedRef.current = false
       lockedRef.current = false
     }
   }, [onDone, timerMax])
@@ -90,10 +93,13 @@ export default function TimesTablesModule({ theme, onDone, onBack, played = 0 })
     if (timeLeft <= 0) {
       if (lockedRef.current) return
       lockedRef.current = true
-      setFeedback({ correct: false, label: `Time's up! Answer: ${questions[q].ans}` })
+      missedRef.current = true
+      setFeedback({ correct: false, label: 'Time’s up — take another go at the same fact' })
       const id = window.setTimeout(() => {
         timersRef.current = timersRef.current.filter(t => t !== id)
-        advance(false, questions, q, score)
+        setFeedback(null)
+        setTimeLeft(timerMax)
+        lockedRef.current = false
       }, 1300)
       timersRef.current.push(id)
       return
@@ -106,15 +112,21 @@ export default function TimesTablesModule({ theme, onDone, onBack, played = 0 })
     if (lockedRef.current || completedRef.current) return
     lockedRef.current = true
     const correct = ans === questions[q].ans
-    const newScore = score + (correct ? 1 : 0)
+    const newScore = score + (correct && !missedRef.current ? 1 : 0)
+    if (!correct) missedRef.current = true
     if (correct) {
       setScore(newScore)
       confetti({ particleCount: 40, spread: 60, origin: { x: 0.5, y: 0.4 } })
     }
-    setFeedback({ correct, label: correct ? `✓ ${questions[q].ans}` : `✗ Answer: ${questions[q].ans}` })
+    setFeedback({ correct, label: correct ? `✓ ${questions[q].ans}` : '✗ Slow it down and try the same fact again' })
     const id = window.setTimeout(() => {
       timersRef.current = timersRef.current.filter(t => t !== id)
-      advance(correct, questions, q, newScore)
+      if (correct) advance(true, questions, q, newScore)
+      else {
+        setFeedback(null)
+        setTimeLeft(timerMax)
+        lockedRef.current = false
+      }
     }, 1100)
     timersRef.current.push(id)
   }
@@ -138,7 +150,7 @@ export default function TimesTablesModule({ theme, onDone, onBack, played = 0 })
     setScore(correct)
     setQuestions(Array.from({ length: total }, () => ({})))
     setPhase('result')
-    onDone(correct, total)
+    onDone(correct, total, { questions: matchPairs })
   }
 
   if (phase === 'match') return (
@@ -307,8 +319,8 @@ export default function TimesTablesModule({ theme, onDone, onBack, played = 0 })
             <motion.button key={opt} data-companion-answer={opt === current.ans ? 'correct' : 'wrong'} whileTap={{ scale: 0.88 }} onClick={() => handleAnswer(opt)}
               className="py-5 rounded-2xl font-bubble text-white text-2xl"
               style={{
-                background: feedback && opt === current.ans ? '#22C55E40' : theme.card,
-                border: feedback && opt === current.ans ? '2px solid #22C55E' : `2px solid ${theme.primary}30`,
+                background: feedback?.correct && opt === current.ans ? '#22C55E40' : theme.card,
+                border: feedback?.correct && opt === current.ans ? '2px solid #22C55E' : `2px solid ${theme.primary}30`,
               }}>
               {opt}
             </motion.button>

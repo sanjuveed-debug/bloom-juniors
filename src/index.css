@@ -492,6 +492,8 @@ button, [role="button"], a {
 .game-experience main button:not(:disabled):hover { filter: brightness(1.055) saturate(1.04); }
 .game-experience main button:not(:disabled):focus-visible { outline: 4px solid #ffd24a; outline-offset: 3px; }
 .game-experience main button:not(:disabled):active { transform: scale(.96); }
+.game-answer-win { animation: game-answer-win 700ms cubic-bezier(.2,.9,.2,1) !important; }
+.game-answer-try { animation: game-answer-try 420ms ease-in-out !important; }
 .game-experience[data-age="toddler"] main button { min-height: 56px; }
 .game-experience[data-age="early"] main button { min-height: 48px; }
 .game-experience main [data-companion-hidden="true"] {
@@ -502,11 +504,49 @@ button, [role="button"], a {
 .companion-choice-glow { animation: companion-choice-glow 850ms ease-in-out 3 !important; }
 .companion-correct-glow { animation: companion-correct-glow 720ms ease-in-out 4 !important; }
 .companion-focus-active .game-ambient { opacity: .28; }
+.game-experience main [data-treasure-hidden="true"] {
+  opacity: .16 !important;
+  filter: grayscale(1) blur(1px) !important;
+  transform: scale(.9) !important;
+}
+.treasure-choice-focus { animation: treasure-choice-focus 780ms ease-in-out 3 !important; }
+.treasure-palette-active .game-ambient {
+  opacity: .72;
+  background-image: conic-gradient(from 45deg at 50% 50%, rgba(255,105,180,.16), rgba(68,210,255,.18), rgba(255,220,82,.18), rgba(170,90,255,.17), rgba(255,105,180,.16));
+  background-size: 160% 160%;
+  animation: treasure-palette 4.8s ease-in-out infinite alternate;
+}
+.treasure-bounce-active > div:not(.game-ambient) { animation: treasure-brave-bounce 700ms cubic-bezier(.2,.8,.2,1) 2; }
+.treasure-cheer-active .game-ambient,
+.treasure-focus-active .game-ambient { opacity: .5; filter: saturate(1.3); }
+.treasure-focus-active button:not(:disabled),
+.treasure-cheer-active button:not(:disabled),
+.treasure-palette-active button:not(:disabled),
+.treasure-bounce-active button:not(:disabled) { animation: treasure-choice-focus 780ms ease-in-out 3; }
+@keyframes treasure-choice-focus {
+  50% { box-shadow: 0 0 0 6px rgba(168,85,247,.3), 0 12px 28px rgba(86,44,18,.16); transform: translateY(-2px); }
+}
+@keyframes treasure-palette {
+  from { transform: translate3d(-4%,-3%,0) rotate(-2deg); filter: hue-rotate(0deg); }
+  to { transform: translate3d(4%,3%,0) rotate(2deg); filter: hue-rotate(35deg); }
+}
+@keyframes treasure-brave-bounce {
+  0%,100% { transform: translateY(0) }
+  45% { transform: translateY(-9px) }
+}
 @keyframes companion-choice-glow {
   50% { box-shadow: 0 0 0 7px rgba(255,211,75,.55), 0 12px 30px rgba(86,44,18,.2); transform: scale(1.025); }
 }
 @keyframes companion-correct-glow {
   50% { box-shadow: 0 0 0 8px rgba(76,222,134,.65), 0 0 34px rgba(52,211,153,.6); transform: scale(1.04); }
+}
+@keyframes game-answer-win {
+  35% { transform: translateY(-8px) scale(1.055); box-shadow: 0 0 0 8px rgba(74,222,128,.3), 0 18px 34px rgba(22,101,52,.2); filter: saturate(1.25) brightness(1.08); }
+  70% { transform: translateY(1px) scale(.99); }
+}
+@keyframes game-answer-try {
+  20%,60% { transform: translateX(-7px) rotate(-1deg); }
+  40%,80% { transform: translateX(7px) rotate(1deg); }
 }
 .game-ambient {
   background-image: radial-gradient(circle at 12% 18%, rgba(255,255,255,.18) 0 2px, transparent 3px), radial-gradient(circle at 82% 34%, rgba(255,214,91,.16) 0 3px, transparent 4px);
@@ -518,4 +558,14 @@ button, [role="button"], a {
   .game-ambient { animation: none }
   .game-experience main button { transition: none }
   .mascot-video video { display: none }
+  .treasure-choice-focus,
+  .treasure-palette-active .game-ambient,
+  .treasure-bounce-active > div { animation: none !important }
+  .game-answer-win,
+  .game-answer-try { animation: none !important }
+}
+
+@media (max-width: 520px) {
+  .game-experience > header > div { gap: .35rem }
+  .game-experience > header button[aria-label="Hear this screen"] { display: none }
 }
