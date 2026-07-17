@@ -628,7 +628,6 @@ export async function saveCloudProgress(profileId, progress) {
   if (existing?.[0]?.progress) {
     toSave = mergeProgress(progress, existing[0].progress)
   }
-  if (includePin) row.parent_pin = guardian.pin
 
   const { error } = await supabase
     .from('child_progress')
