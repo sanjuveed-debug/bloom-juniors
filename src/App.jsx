@@ -123,9 +123,8 @@ function Screen({ id, current, children, onMap, progress, onUpdateProgress }) {
         <motion.div
           key={id}
           initial={{ opacity: 0, scale: 0.94, y: 18 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 1.04, y: -18 }}
-          transition={{ duration: 0.22, ease: 'easeInOut' }}
+          animate={{ opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 24, mass: 0.9 } }}
+          exit={{ opacity: 0, scale: 1.02, y: -10, transition: { duration: 0.15, ease: 'easeIn' } }}
           className="relative z-10 min-h-screen"
         >
           {GAME_SCREENS.includes(id)
@@ -139,8 +138,26 @@ function Screen({ id, current, children, onMap, progress, onUpdateProgress }) {
 
 function LoadingSpinner() {
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--theme-bg, #13052c)' }}>
-      <div className="w-12 h-12 rounded-full border-4 border-white/20 border-t-white animate-spin" />
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: 'var(--theme-bg, #13052c)' }}>
+      <div className="flex gap-3">
+        {['🌟', '⭐', '✨'].map((emoji, i) => (
+          <motion.span
+            key={i}
+            className="text-4xl"
+            animate={{ y: [0, -16, 0], rotate: [0, i % 2 ? 12 : -12, 0] }}
+            transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
+          >
+            {emoji}
+          </motion.span>
+        ))}
+      </div>
+      <motion.p
+        className="font-round text-sm font-bold text-white/70"
+        animate={{ opacity: [0.4, 1, 0.4] }}
+        transition={{ duration: 1.4, repeat: Infinity }}
+      >
+        Getting your adventure ready...
+      </motion.p>
     </div>
   )
 }

@@ -68,10 +68,13 @@ export default function BloomQuizShow({ ageGroup = 'early', profileName = 'Explo
         confetti({ particleCount: 150, spread: 140, origin: { y: .45 } })
         speak(`${profileName}, you won the ${finalPrize.title}!`, { mood: 'celebrate' })
       } else {
-        setIndex(value => value + 1)
+        const next = index + 1
+        setIndex(next)
         setSelected('')
         setRemoved([])
         setHintOpen(false)
+        primeSpeech()
+        window.setTimeout(() => speak(`${questions[next].prompt}. Your choices are ${questions[next].options.join(', ')}`, { mood: 'instruct' }), 160)
       }
     }, won ? 1000 : 1350)
   }

@@ -581,22 +581,33 @@ function PlayPassBanner({ theme, status, onNavigate }) {
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
-        {STUDY_MODULES.map(module => {
+        {STUDY_MODULES.map((module, i) => {
           const done = status.completedModules.some(item => item.id === module.id)
           return (
-            <div
+            <motion.div
               key={module.id}
               className="flex items-center gap-2 rounded-2xl px-3 py-2"
+              initial={{ opacity: 0, y: 10, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: i * 0.06, type: 'spring', stiffness: 260, damping: 20 }}
               style={{
                 background: done ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.42)',
                 border: `1px solid ${done ? '#10B98144' : 'rgba(255,255,255,0.45)'}`,
               }}
             >
-              <span style={{ fontSize: 18 }}>{done ? '✅' : module.emoji}</span>
+              <motion.span
+                key={done ? 'done' : 'pending'}
+                initial={done ? { scale: 0.3, rotate: -30 } : false}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 12 }}
+                style={{ fontSize: 18 }}
+              >
+                {done ? '✅' : module.emoji}
+              </motion.span>
               <span className="font-round text-sm font-bold" style={{ color: theme.text }}>
                 {module.label}
               </span>
-            </div>
+            </motion.div>
           )
         })}
       </div>

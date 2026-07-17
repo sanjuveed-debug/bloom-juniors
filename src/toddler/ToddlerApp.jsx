@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useProgress } from '../hooks/useProgress'
 import JarvisOrb from '../components/JarvisOrb'
+import ScreenEnter from '../components/ScreenEnter'
 import RetentionPanel from '../components/RetentionWidgets'
 import MoodCheckIn from '../components/MoodCheckIn'
 import ParentZone from '../components/ParentZone'
@@ -1373,40 +1374,42 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
   }, [update, logSession, progress, profileId])
 
   if (screen === 'avatar') {
-    return <ToddlerAvatarSelector onSelect={handleAvatarSelect} />
+    return <ScreenEnter key={screen}><ToddlerAvatarSelector onSelect={handleAvatarSelect} /></ScreenEnter>
   }
 
   if (screen === 'mood') {
-    return <MoodCheckIn avatar={progress.toddlerAvatar} profileName={profileName} themeOverride={theme} onComplete={handleMoodComplete} onSkip={() => handleMoodComplete({ key: 'skipped', emoji: '⏭️' })} />
+    return <ScreenEnter key={screen}><MoodCheckIn avatar={progress.toddlerAvatar} profileName={profileName} themeOverride={theme} onComplete={handleMoodComplete} onSkip={() => handleMoodComplete({ key: 'skipped', emoji: '⏭️' })} /></ScreenEnter>
   }
 
   if (screen === 'parent') {
     return (
-      <ParentZone
-        avatar={progress.toddlerAvatar || 'rumi'}
-        progress={progress}
-        profileId={profileId}
-        profileName={profileName}
-        profileAgeGroup={profileAgeGroup}
-        parentPin={parentPin}
-        verifyParentPin={verifyParentPin}
-        onBack={() => setScreen('home')}
-        onSetChallenge={() => {}}
-        onAddSticker={addSticker}
-        onReset={resetProgress}
-        onSwitchProfiles={onSwitchProfiles}
-        onUpdateProgress={(patch) => update(p => ({ ...p, ...patch }))}
-        onUpdateProfile={onUpdateProfile}
-        onLogout={onLogout}
-        guardianEmail={guardianEmail}
-        onUpdateGuardian={onUpdateGuardian}
-        classroomMode={classroomMode}
-      />
+      <ScreenEnter key={screen}>
+        <ParentZone
+          avatar={progress.toddlerAvatar || 'rumi'}
+          progress={progress}
+          profileId={profileId}
+          profileName={profileName}
+          profileAgeGroup={profileAgeGroup}
+          parentPin={parentPin}
+          verifyParentPin={verifyParentPin}
+          onBack={() => setScreen('home')}
+          onSetChallenge={() => {}}
+          onAddSticker={addSticker}
+          onReset={resetProgress}
+          onSwitchProfiles={onSwitchProfiles}
+          onUpdateProgress={(patch) => update(p => ({ ...p, ...patch }))}
+          onUpdateProfile={onUpdateProfile}
+          onLogout={onLogout}
+          guardianEmail={guardianEmail}
+          onUpdateGuardian={onUpdateGuardian}
+          classroomMode={classroomMode}
+        />
+      </ScreenEnter>
     )
   }
 
   if (screen === 'wonderworld') {
-    return <WonderWorld ageGroup="toddler" progress={progress} profileName={profileName} onUpdateProgress={(patch)=>update(p=>({...p,...(typeof patch==='function'?patch(p):patch)}))} onBack={()=>setScreen('home')}/>
+    return <ScreenEnter key={screen}><WonderWorld ageGroup="toddler" progress={progress} profileName={profileName} onUpdateProgress={(patch)=>update(p=>({...p,...(typeof patch==='function'?patch(p):patch)}))} onBack={()=>setScreen('home')}/></ScreenEnter>
   }
 
   const goHome = () => {
@@ -1427,16 +1430,19 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
 
   if (moduleMap[screen]) {
     return (
-      <VoiceContext.Provider value="en-US-AnaNeural">
-        <AdventureModuleFrame moduleId={screen} ageGroup="toddler" progress={progress} onUpdateProgress={update} onMap={() => { setModuleArrival(null); goHome() }}>{moduleMap[screen]}</AdventureModuleFrame>
-        <AnimatePresence>
-          {moduleArrival === screen && <ModuleArrival ageGroup="toddler" moduleId={screen} profileName={profileName} onStart={() => setModuleArrival(null)} onBack={() => { setModuleArrival(null); goHome() }} />}
-        </AnimatePresence>
-      </VoiceContext.Provider>
+      <ScreenEnter key={screen}>
+        <VoiceContext.Provider value="en-US-AnaNeural">
+          <AdventureModuleFrame moduleId={screen} ageGroup="toddler" progress={progress} onUpdateProgress={update} onMap={() => { setModuleArrival(null); goHome() }}>{moduleMap[screen]}</AdventureModuleFrame>
+          <AnimatePresence>
+            {moduleArrival === screen && <ModuleArrival ageGroup="toddler" moduleId={screen} profileName={profileName} onStart={() => setModuleArrival(null)} onBack={() => { setModuleArrival(null); goHome() }} />}
+          </AnimatePresence>
+        </VoiceContext.Provider>
+      </ScreenEnter>
     )
   }
 
   return (
+    <ScreenEnter key={screen}>
     <VoiceContext.Provider value="en-US-AnaNeural">
       <ToddlerDashboard
         theme={theme}
@@ -1513,5 +1519,6 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
         )}
       </AnimatePresence>
     </VoiceContext.Provider>
+    </ScreenEnter>
   )
 }
