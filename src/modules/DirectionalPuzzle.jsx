@@ -135,6 +135,7 @@ export default function DirectionalPuzzle({ avatar, progress, onAddStars, onBack
           correct: 1,
           struggles: [],
           maxLevel: levelIndex + 1,
+          stayOnModule: true,
         })
         return
       }
