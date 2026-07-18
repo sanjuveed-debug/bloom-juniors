@@ -625,8 +625,8 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {[
               { src: '/screens/app-toddler.png', alt: 'Free British curriculum learning dashboard for a 3-4 year old on Bloom Juniors, ad-free and no downloads needed', caption: 'Tiny Stars (3–4): two tiny games a day', color: '#F97316' },
-              { src: '/screens/app-activity.png', alt: 'Child playing a free EYFS phonics and vocabulary learning game about fruits', caption: 'Tap-to-learn activities with voice guidance', color: '#F59E0B' },
-              { src: '/screens/app-matchup.png', alt: 'Free KS1 maths matching game with Yaagvi the learning mascot cheering a child on', caption: 'Yaagvi cheers along every activity', color: '#DB2777' },
+              { src: '/screens/app-activity.png', alt: 'Free EYFS counting activity with picture-based questions and voice guidance from Yaagvi', caption: 'Tap-to-learn activities with voice guidance', color: '#F59E0B' },
+              { src: '/screens/app-matchup.png', alt: 'Free KS1 logic puzzle game where a child plans moves to guide their character to the goal', caption: 'Puzzle Quest builds early problem-solving skills', color: '#DB2777' },
               { src: '/screens/app-arcade.png', alt: 'Game Arcade reward screen, unlocked after completing daily British curriculum learning activities', caption: 'Finish the path → the arcade opens', color: '#0F766E' },
             ].map((shot, i) => (
               <motion.figure
