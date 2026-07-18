@@ -324,6 +324,11 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
       <nav className="sticky top-0 z-40 flex items-center justify-between px-4 py-3 md:px-8"
         style={{ background: 'rgba(255,247,237,0.92)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${CARD_BORDER}`, paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
         <BloomLogo size="md" />
+        <div className="hidden lg:flex items-center gap-6 font-round text-sm font-medium" style={{ color: TEXT_MUTED }}>
+          <a href="#how-it-works" className="hover:opacity-100 transition-opacity" style={{ opacity: 0.85 }}>How it works</a>
+          <a href="#curriculum" className="hover:opacity-100 transition-opacity" style={{ opacity: 0.85 }}>Curriculum</a>
+          <a href="#schools" className="hover:opacity-100 transition-opacity" style={{ opacity: 0.85 }}>For schools</a>
+        </div>
         <div className="flex items-center gap-2">
           <button
             onClick={onSignIn}
@@ -397,10 +402,9 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
             </div>
 
             <h1 className="font-bubble text-5xl md:text-6xl leading-tight mb-4" style={{ color: TEXT }}>
-              Learning that feels<br />
-              <span style={{ color: PRIMARY_LIGHT }}>
-                personal to your child.
-              </span>
+              Your child will ask to do their{' '}
+              <span style={{ color: PRIMARY_LIGHT }}>homework</span>
+              <br />— before you've had your coffee.
             </h1>
 
             <p className="font-round text-lg md:text-xl max-w-xl leading-relaxed mb-6" style={{ color: TEXT_MUTED }}>
@@ -554,7 +558,7 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
       </section>
 
       {/* ── HOW IT WORKS ─────────────────────────────────────────────────────── */}
-      <section className="px-4 pb-16 md:px-8">
+      <section id="how-it-works" className="px-4 pb-16 md:px-8">
         <div className="mx-auto max-w-4xl">
           <h2 className="font-bubble text-3xl md:text-4xl text-center mb-2" style={{ color: TEXT }}>How it works</h2>
           <p className="font-round text-sm text-center mb-10" style={{ color: TEXT_FAINT }}>Up and learning in under 2 minutes.</p>
@@ -830,7 +834,7 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
       </section>
 
       {/* ── CURRICULUM ───────────────────────────────────────────────────────── */}
-      <section className="px-4 pb-16 md:px-8">
+      <section id="curriculum" className="px-4 pb-16 md:px-8">
         <div className="mx-auto max-w-4xl">
           <h2 className="font-bubble text-3xl md:text-4xl text-center mb-2" style={{ color: TEXT }}>Built for early learning progression</h2>
           <p className="font-round text-sm text-center mb-4" style={{ color: TEXT_FAINT }}>Phonics follows a systematic pure-sound progression — single letter sounds first, then digraphs and vowel patterns.</p>
@@ -926,6 +930,27 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
               <SchoolEnquiryForm source="landing-page" />
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* ── FOUNDING FAMILIES ────────────────────────────────────────────────── */}
+      <section className="px-4 pb-16 md:px-8">
+        <div className="mx-auto max-w-2xl rounded-[28px] p-8 md:p-10 text-center"
+          style={{ background: '#FFFFFF', border: `2px dashed ${PRIMARY}45` }}>
+          <p className="font-round text-xs font-bold uppercase tracking-widest mb-3" style={{ color: PRIMARY }}>Founding families</p>
+          <h2 className="font-bubble text-3xl mb-3" style={{ color: TEXT }}>Be among our first families</h2>
+          <p className="font-round text-sm leading-relaxed mb-2 max-w-lg mx-auto" style={{ color: TEXT_MUTED }}>
+            We're a new app, built by a parent for parents — not a big team with years of reviews behind us yet.
+            If you join now, what you tell us directly shapes what we build next.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3 mt-6 mb-2">
+            {['Direct line to the founder', 'Your feedback shapes the roadmap', 'Free core learning path, always'].map(perk => (
+              <span key={perk} className="font-round text-xs font-bold px-3 py-1.5 rounded-full"
+                style={{ color: '#15803D', background: 'rgba(22,163,74,0.10)', border: '1px solid rgba(22,163,74,0.25)' }}>
+                ✓ {perk}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
