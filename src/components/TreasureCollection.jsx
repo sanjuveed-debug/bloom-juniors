@@ -78,11 +78,21 @@ function ChestAnimation({ open, reducedMotion }) {
       <motion.div className="absolute bottom-3 left-5 h-20 w-[168px] rounded-b-[28px] rounded-t-xl border-4 border-[#7b3b13] bg-gradient-to-b from-[#f6b53d] to-[#d66b17] shadow-2xl"
         animate={open && !reducedMotion ? { y: [0, 4, 0] } : {}} />
       <motion.div className="absolute bottom-[72px] left-5 h-12 w-[168px] origin-bottom rounded-t-[34px] border-4 border-[#7b3b13] bg-gradient-to-b from-[#ffd65c] to-[#e88a1d] shadow-xl"
-        animate={{ rotateX: open ? -105 : 0, y: open ? -14 : 0 }}
-        transition={{ duration: reducedMotion ? .1 : .65, type: 'spring', stiffness: 150, damping: 15 }} />
-      <div className="absolute bottom-10 left-1/2 z-10 h-11 w-9 -translate-x-1/2 rounded-lg border-4 border-[#7b3b13] bg-[#ffe06d]">
+        animate={open
+          ? { rotateX: -105, y: -14, rotate: 0 }
+          : reducedMotion
+            ? { rotateX: 0, y: 0, rotate: 0 }
+            : { rotateX: 0, y: 0, rotate: [0, -3, 3, -2, 0] }}
+        transition={open
+          ? { duration: reducedMotion ? .1 : .65, type: 'spring', stiffness: 150, damping: 15 }
+          : { duration: .5, ease: 'easeInOut' }} />
+      <motion.div className="absolute bottom-10 left-1/2 z-10 h-11 w-9 -translate-x-1/2 rounded-lg border-4 border-[#7b3b13] bg-[#ffe06d]"
+        animate={!open && !reducedMotion
+          ? { boxShadow: ['0 0 0px rgba(255,214,92,0)', '0 0 16px rgba(255,214,92,.85)', '0 0 0px rgba(255,214,92,0)'] }
+          : { boxShadow: '0 0 0px rgba(255,214,92,0)' }}
+        transition={{ duration: .5, ease: 'easeInOut' }}>
         <div className="mx-auto mt-2 h-3 w-2 rounded-full bg-[#7b3b13]" />
-      </div>
+      </motion.div>
     </div>
   )
 }
