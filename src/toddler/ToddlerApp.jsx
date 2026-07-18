@@ -1343,7 +1343,8 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
     setScreen('home')
   }, [update, todayKey])
 
-  const handleModuleDone = useCallback((moduleId, stars, sessionTotal) => {
+  const handleModuleDone = useCallback((moduleId, stars, sessionTotal, options = {}) => {
+    const { suppressCompletionModal = false } = options
     trackActivityComplete(moduleId, 'toddler')
     const firstTreasureToday = progress[moduleId]?.lastPlayedDate !== todayStamp()
     const total = Math.max(1, Number(sessionTotal) || getToddlerSessionSize(getToddlerLevel(progress[moduleId]?.played || 0), 10))
@@ -1370,7 +1371,9 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
     confetti({ particleCount: 120, spread: 140, origin: { x: 0.5, y: 0.3 } })
     const eventId=`learning:${profileId || 'local'}:${moduleId}:${Date.now()}`
     window.dispatchEvent(new CustomEvent('yaagvi:celebrate',{detail:{module:moduleId,stars,eventId}}))
-    window.dispatchEvent(new CustomEvent('bloom:game-complete',{detail:{module:moduleId,stars,total,correct,eventId,reward:firstTreasureToday?'You found 5 new treasure points!':'Your practice made this adventure stronger.'}}))
+    if (!suppressCompletionModal) {
+      window.dispatchEvent(new CustomEvent('bloom:game-complete',{detail:{module:moduleId,stars,total,correct,eventId,reward:firstTreasureToday?'You found 5 new treasure points!':'Your practice made this adventure stronger.'}}))
+    }
   }, [update, logSession, progress, profileId])
 
   if (screen === 'avatar') {
@@ -1425,7 +1428,7 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
     fruits:    <ToddlerChoiceModule moduleId="fruits" played={progress.fruits?.played || 0} onDone={(s, t) => handleModuleDone('fruits', s, t)} onBack={goHome} />,
     bodyparts: <ToddlerChoiceModule moduleId="bodyparts" played={progress.bodyparts?.played || 0} onDone={(s, t) => handleModuleDone('bodyparts', s, t)} onBack={goHome} />,
     alphabet:  <ToddlerChoiceModule moduleId="alphabet" played={progress.alphabet?.played || 0} onDone={(s, t) => handleModuleDone('alphabet', s, t)} onBack={goHome} />,
-    quizshow:  <BloomQuizShow ageGroup="toddler" profileName={profileName} played={progress.quizshow?.played || 0} onBack={goHome} onComplete={({ correct, total }) => handleModuleDone('quizshow', correct, total)} />,
+    quizshow:  <BloomQuizShow ageGroup="toddler" profileName={profileName} played={progress.quizshow?.played || 0} onBack={goHome} onComplete={({ correct, total }) => { handleModuleDone('quizshow', correct, total, { suppressCompletionModal: true }); goHome() }} />,
   }
 
   if (moduleMap[screen]) {
