@@ -460,6 +460,99 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
         </motion.div>
       </section>
 
+      {/* ── TRUST BAR ────────────────────────────────────────────────────────── */}
+      <section className="px-4 pb-12 md:px-8">
+        <div className="mx-auto max-w-4xl text-center">
+          <p className="font-round text-xs font-bold uppercase tracking-widest mb-5" style={{ color: TEXT_FAINT }}>
+            Built for families who want screen time that means something
+          </p>
+          <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-4">
+            {[
+              { icon: '🇬🇧', label: 'British curriculum aligned' },
+              { icon: '🔒', label: 'GDPR-safe · no child accounts' },
+              { icon: '🚫', label: 'Zero ads, zero purchases' },
+              { icon: '👨‍👩‍👧', label: 'Parent-guided by design' },
+            ].map((item, i) => (
+              <motion.div
+                key={item.label}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.06 }}
+                className="flex items-center gap-2 font-round text-sm font-bold"
+                style={{ color: TEXT_MUTED }}
+              >
+                <span className="text-lg">{item.icon}</span>{item.label}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── WHO ARE YOU LEARNING WITH (early fork) ───────────────────────────── */}
+      <section className="px-4 pb-16 md:px-8">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="font-bubble text-2xl md:text-3xl text-center mb-8" style={{ color: TEXT }}>Who are you learning with today?</h2>
+          <div className="grid sm:grid-cols-2 gap-5">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -4 }}
+              className="rounded-[24px] p-6 md:p-8 flex flex-col"
+              style={{ background: '#FFFFFF', border: `1.5px solid ${PRIMARY}30`, boxShadow: '0 4px 16px rgba(66,32,6,0.06)' }}
+            >
+              <div className="text-4xl mb-4">🏠</div>
+              <p className="font-bubble text-xl mb-2" style={{ color: TEXT }}>For Home</p>
+              <p className="font-round text-sm leading-relaxed mb-6 flex-grow" style={{ color: TEXT_MUTED }}>
+                A free profile for your child, a daily guided path with Yaagvi, and a parent dashboard that shows exactly what they've practised.
+              </p>
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={onGetStarted}
+                className="font-bubble text-white text-sm py-3 rounded-2xl"
+                style={{ background: PRIMARY }}
+              >
+                Start free at home →
+              </motion.button>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -4 }}
+              transition={{ delay: 0.08 }}
+              className="rounded-[24px] p-6 md:p-8 flex flex-col"
+              style={{ background: TEXT, boxShadow: '0 4px 16px rgba(66,32,6,0.1)' }}
+            >
+              <div className="text-4xl mb-4">🏫</div>
+              <p className="font-bubble text-xl mb-2 text-white">For Schools &amp; Nurseries</p>
+              <p className="font-round text-sm leading-relaxed mb-6 flex-grow text-white/75">
+                Class-wide progress tracking with zero admin — no individual pupil logins needed. Used alongside your regular teaching.
+              </p>
+              {onTeacherSetup ? (
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={onTeacherSetup}
+                  className="font-bubble text-sm py-3 rounded-2xl"
+                  style={{ background: '#FFFFFF', color: TEXT }}
+                >
+                  🏫 Get free school access →
+                </motion.button>
+              ) : (
+                <a
+                  href="/schools"
+                  className="font-bubble text-sm py-3 rounded-2xl text-center"
+                  style={{ background: '#FFFFFF', color: TEXT }}
+                >
+                  🏫 See schools page →
+                </a>
+              )}
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* ── HOW IT WORKS ─────────────────────────────────────────────────────── */}
       <section className="px-4 pb-16 md:px-8">
         <div className="mx-auto max-w-4xl">
