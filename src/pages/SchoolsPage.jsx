@@ -181,8 +181,8 @@ const AUDIENCES = [
 export default function SchoolsPage() {
   useEffect(() => {
     const previousTitle = document.title
-    const description = 'Bloom Juniors for schools: safe EYFS, KS1 and lower KS2 classroom practice with lesson setting, pupil roster, live engagement and weekly progress reports.'
-    document.title = 'Bloom Juniors for Schools | EYFS, KS1 & Lower KS2 Classroom Practice'
+    const description = 'Free EYFS/KS1 interactive classroom resources for schools and nurseries. GDPR-compliant, no pupil login required, SEN-friendly voice-guided activities, with a teacher dashboard for live class progress.'
+    document.title = 'Free EYFS/KS1 Interactive Classroom Resources | Bloom Juniors for Schools'
 
     let meta = document.querySelector('meta[name="description"]')
     const previousDescription = meta?.getAttribute('content')

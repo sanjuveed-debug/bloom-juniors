@@ -118,9 +118,11 @@ function DeveloperVideo() {
           <video
             ref={videoRef}
             src="/developer-story.mp4"
+            poster="/founder.jpg"
             className="w-full h-full object-cover"
             playsInline
             preload="metadata"
+            aria-label="Video: Bloom Juniors founder explaining why he built a free, ad-free British curriculum learning app"
             onEnded={() => setPlaying(false)}
             onError={() => setFailed(true)}
           />
@@ -269,7 +271,7 @@ function HeroVisual() {
             >
               <img
                 src="/yaagvi-mascot.webp"
-                alt="Bloom mascot"
+                alt="Yaagvi, the friendly mascot who guides children through free British curriculum learning games on Bloom Juniors"
                 width={288}
                 height={288}
                 className="w-52 md:w-72 h-auto drop-shadow-xl relative z-10"
@@ -620,10 +622,10 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
           </p>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {[
-              { src: '/screens/app-toddler.png', alt: 'Tiny Stars dashboard for ages 3-4', caption: 'Tiny Stars (3–4): two tiny games a day', color: '#F97316' },
-              { src: '/screens/app-activity.png', alt: 'Fruits learning activity', caption: 'Tap-to-learn activities with voice guidance', color: '#F59E0B' },
-              { src: '/screens/app-matchup.png', alt: 'Match Up maths activity with Yaagvi mascot', caption: 'Yaagvi cheers along every activity', color: '#DB2777' },
-              { src: '/screens/app-arcade.png', alt: 'Game Arcade reward screen', caption: 'Finish the path → the arcade opens', color: '#0F766E' },
+              { src: '/screens/app-toddler.png', alt: 'Free British curriculum learning dashboard for a 3-4 year old on Bloom Juniors, ad-free and no downloads needed', caption: 'Tiny Stars (3–4): two tiny games a day', color: '#F97316' },
+              { src: '/screens/app-activity.png', alt: 'Child playing a free EYFS phonics and vocabulary learning game about fruits', caption: 'Tap-to-learn activities with voice guidance', color: '#F59E0B' },
+              { src: '/screens/app-matchup.png', alt: 'Free KS1 maths matching game with Yaagvi the learning mascot cheering a child on', caption: 'Yaagvi cheers along every activity', color: '#DB2777' },
+              { src: '/screens/app-arcade.png', alt: 'Game Arcade reward screen, unlocked after completing daily British curriculum learning activities', caption: 'Finish the path → the arcade opens', color: '#0F766E' },
             ].map((shot, i) => (
               <motion.figure
                 key={shot.src}
