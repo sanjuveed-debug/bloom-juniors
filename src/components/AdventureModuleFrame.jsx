@@ -10,11 +10,17 @@ import GameCompleteReveal from './GameCompleteReveal.jsx'
 const META = {
   phonics:['Echo Jungle','🎤'],math:['Number Falls','🔢'],tricky:['Starry Caves','⭐'],story:['Story Tree','📖'],shapes:['Shape River','🔷'],logic:['Puzzle Pass','🧩'],davinci:['Rainbow Mountain','🎨'],shop:['Treasure Market','🛍️'],worldgk:['World Lookout','🌍'],science:['Wonder Springs','🔬'],planets:['Moon Camp','🪐'],anatomy:['Body Basecamp','🫀'],exercise:['Movement Meadow','🏃'],arcade:['Treasure Arcade','🎮'],sacred:['Story Temple','🕊️'],piggybank:['Coin Cove','🐷'],
   colours:['Rainbow Garden','🌈'],numbers:['Counting Falls','🔢'],animals:['Animal Jungle','🐘'],fruits:['Fruit Orchard','🍎'],bodyparts:['Wiggle Meadow','👋'],alphabet:['Letter Tree','🔤'],
-  timestables:['Multiplier Mine','✖️'],fractions:['Fraction Falls','🍕'],reading:['Story Ruins','📚'],spelling:['Word Woods','✍️'],wordproblems:['Problem Pass','🧭'],grammar:['Grammar Grove','📝'],worldmap:['Atlas Lookout','🌍'],spirituality:['Wisdom Temple','🕊️'],games:['Treasure Arcade','🎮'],quizshow:['Bloom Quiz Stage','🎤'],
+  timestables:['Number Castle','🏰'],fractions:['Crystal Cave','💎'],reading:['Book Kingdom','📖'],spelling:['Spell Academy','✨'],wordproblems:['Puzzle Tower','🧩'],grammar:['Grammar Grove','🌳'],worldmap:['World Globe','🌍'],spirituality:['Temple Isle','🕉️'],games:['Game Arena','🎮'],quizshow:['Bloom Quiz Stage','🎤'],
+}
+// science/exercise/piggybank module ids are shared between the early and
+// junior bands with different intended location names — META above can't
+// hold two values per key, so junior gets an explicit override here.
+const JUNIOR_META_OVERRIDE = {
+  science:['Science Lab','🔬'],exercise:['Training Zone','🏃'],piggybank:['Money Bank','🐷'],
 }
 
 export default function AdventureModuleFrame({ moduleId, ageGroup='early', progress, onUpdateProgress, onMap, children }) {
-  const [place,icon]=META[moduleId]||['Explorer Trail','🗺️']
+  const [place,icon]=(ageGroup==='junior'&&JUNIOR_META_OVERRIDE[moduleId])||META[moduleId]||['Explorer Trail','🗺️']
   const toddler=ageGroup==='toddler', junior=ageGroup==='junior'
   const { speak, speaking, primeSpeech } = useSpeech()
   const [tap,setTap]=useState(null), timer=useRef(null)
