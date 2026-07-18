@@ -262,11 +262,29 @@ export function useGuardian() {
     const localGuardian = loadGuardian()
     const requestedEmail = email?.trim() || localGuardian?.email || ''
 
-    if (localGuardian && !accountPassword && verifyGuardianLogin(localGuardian, requestedEmail, pin)) {
-      const s = createSession()
-      setGuardian(localGuardian)
-      setSession(s)
-      return true
+    if (localGuardian && !accountPassword) {
+      if (verifyGuardianLogin(localGuardian, requestedEmail, pin)) {
+        const s = createSession()
+        setGuardian(localGuardian)
+        setSession(s)
+        return true
+      }
+      // Local PIN cache can go stale (e.g. the PIN was changed on another
+      // device, or via a reset flow). Fall back to the cloud check using any
+      // still-valid Supabase session before failing the quick-unlock outright.
+      if (isSupabaseConfigured) {
+        const cleanedPin = String(pin || '').replace(/\D/g, '').slice(0, 4)
+        let pinValid = false
+        try { pinValid = await verifyCloudParentPin(cleanedPin) } catch {}
+        if (pinValid) {
+          const refreshed = { ...localGuardian, pin: cleanedPin }
+          saveGuardian(refreshed)
+          const s = createSession()
+          setGuardian(refreshed)
+          setSession(s)
+          return true
+        }
+      }
     }
 
     if (isSupabaseConfigured && accountPassword) {
