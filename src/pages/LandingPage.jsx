@@ -330,6 +330,8 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
           <a href="#how-it-works" className="hover:opacity-100 transition-opacity" style={{ opacity: 0.85 }}>How it works</a>
           <a href="#curriculum" className="hover:opacity-100 transition-opacity" style={{ opacity: 0.85 }}>Curriculum</a>
           <a href="#schools" className="hover:opacity-100 transition-opacity" style={{ opacity: 0.85 }}>For schools</a>
+          <a href="#safety" className="hover:opacity-100 transition-opacity" style={{ opacity: 0.85 }}>Safety</a>
+          <a href="#pricing" className="hover:opacity-100 transition-opacity" style={{ opacity: 0.85 }}>Pricing</a>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -467,7 +469,7 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
       </section>
 
       {/* ── TRUST BAR ────────────────────────────────────────────────────────── */}
-      <section className="px-4 pb-12 md:px-8">
+      <section id="safety" className="px-4 pb-12 md:px-8">
         <div className="mx-auto max-w-4xl text-center">
           <p className="font-round text-xs font-bold uppercase tracking-widest mb-5" style={{ color: TEXT_FAINT }}>
             Built for families who want screen time that means something
@@ -957,7 +959,7 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
       </section>
 
       {/* ── PREMIUM WAITLIST ─────────────────────────────────────────────────── */}
-      <section className="px-4 pb-16 md:px-8">
+      <section id="pricing" className="px-4 pb-16 md:px-8">
         <div className="mx-auto max-w-xl rounded-[28px] p-8 text-center"
           style={{ background: '#FFFFFF', border: `1.5px solid ${CARD_BORDER}`, boxShadow: '0 4px 16px rgba(66,32,6,0.05)' }}>
           <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 mb-4"
