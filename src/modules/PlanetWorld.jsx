@@ -454,7 +454,7 @@ function PlanetQuiz({ onBack, onDone, speak, onAddStars }) {
     const pct = score / questions.length
     const stars = pct === 1 ? 3 : pct >= 0.75 ? 2 : pct >= 0.5 ? 1 : 0
     if (stars > 0) {
-      onAddStars?.('planets', stars, { total: questions.length, correct: score, struggles: strugglesRef.current })
+      onAddStars?.('planets', stars, { total: questions.length, correct: score, struggles: strugglesRef.current, stayOnModule: true })
     }
   }, [done, score, questions.length, onAddStars])
 
