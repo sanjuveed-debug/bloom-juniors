@@ -798,7 +798,7 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
       </section>
 
       {/* ── FROM THE DEVELOPER ───────────────────────────────────────────────── */}
-      <section className="px-4 pb-16 md:px-8">
+      <section id="founder" className="px-4 pb-16 md:px-8">
         <div className="mx-auto max-w-2xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -874,7 +874,7 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
       </section>
 
       {/* ── FOR SCHOOLS ──────────────────────────────────────────────────────── */}
-      <section className="pb-16" style={{ background: 'linear-gradient(180deg, #FFEDD5 0%, #FDE3C7 50%, #FFEDD5 100%)' }}>
+      <section id="schools" className="pb-16" style={{ background: 'linear-gradient(180deg, #FFEDD5 0%, #FDE3C7 50%, #FFEDD5 100%)' }}>
         <div className="mx-auto max-w-4xl px-4 md:px-8 py-14">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1036,20 +1036,47 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
       </main>
 
       {/* ── FOOTER ───────────────────────────────────────────────────────────── */}
-      <footer className="border-t px-4 py-10 text-center md:px-8" style={{ borderColor: CARD_BORDER }}>
-        <p className="font-round text-sm mb-2" style={{ color: TEXT_MUTED }}>
-          🌻 Built with love, for every curious child
-        </p>
-        <p className="font-round text-xs mb-3" style={{ color: TEXT_FAINT }}>
-          Questions or feedback?{' '}
-          <a href="mailto:hello@bloomjuniors.com" className="underline transition-colors" style={{ color: PRIMARY }}>
-            hello@bloomjuniors.com
-          </a>
-        </p>
-        <p className="font-round text-xs" style={{ color: TEXT_FAINT }}>
-          © 2026 Bloom Juniors · Learning app for ages 3–9 · Worldwide ·
-          <a href="/privacy" className="ml-1 underline">Privacy Policy</a>
-        </p>
+      <footer className="border-t px-4 pt-12 pb-8 md:px-8" style={{ borderColor: CARD_BORDER }}>
+        <div className="mx-auto max-w-5xl">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 mb-10">
+            <div className="col-span-2 sm:col-span-1">
+              <BloomLogo size="sm" />
+              <p className="font-round text-sm mt-3 leading-relaxed max-w-[220px]" style={{ color: TEXT_MUTED }}>
+                Free, ad-free British curriculum learning for ages 3–9. Built by a parent, for parents.
+              </p>
+            </div>
+            <div>
+              <p className="font-round text-xs font-bold uppercase tracking-widest mb-4" style={{ color: TEXT }}>Product</p>
+              <div className="flex flex-col gap-2.5">
+                <a href="#how-it-works" className="font-round text-sm transition-colors" style={{ color: TEXT_MUTED }}>How it works</a>
+                <a href="#curriculum" className="font-round text-sm transition-colors" style={{ color: TEXT_MUTED }}>Curriculum</a>
+                <a href="#schools" className="font-round text-sm transition-colors" style={{ color: TEXT_MUTED }}>For schools</a>
+              </div>
+            </div>
+            <div>
+              <p className="font-round text-xs font-bold uppercase tracking-widest mb-4" style={{ color: TEXT }}>Company</p>
+              <div className="flex flex-col gap-2.5">
+                <a href="#founder" className="font-round text-sm transition-colors" style={{ color: TEXT_MUTED }}>Our story</a>
+                <a href="/schools" className="font-round text-sm transition-colors" style={{ color: TEXT_MUTED }}>Schools &amp; nurseries</a>
+              </div>
+            </div>
+            <div>
+              <p className="font-round text-xs font-bold uppercase tracking-widest mb-4" style={{ color: TEXT }}>Get in touch</p>
+              <div className="flex flex-col gap-2.5">
+                <a href="mailto:hello@bloomjuniors.com" className="font-round text-sm transition-colors" style={{ color: TEXT_MUTED }}>Contact us</a>
+                <a href="/privacy" className="font-round text-sm transition-colors" style={{ color: TEXT_MUTED }}>Privacy Policy</a>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 border-t" style={{ borderColor: CARD_BORDER }}>
+            <p className="font-round text-xs" style={{ color: TEXT_FAINT }}>
+              © 2026 Bloom Juniors · Learning app for ages 3–9 · Worldwide
+            </p>
+            <p className="font-round text-xs" style={{ color: TEXT_FAINT }}>
+              🌻 Built with love, for every curious child
+            </p>
+          </div>
+        </div>
       </footer>
     </div>
   )
