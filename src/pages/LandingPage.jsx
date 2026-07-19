@@ -293,12 +293,12 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
       <nav className="sticky top-0 z-40 flex items-center justify-between px-4 py-3 md:px-8"
         style={{ background: 'rgba(255,247,237,0.92)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${CARD_BORDER}`, paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
         <BloomLogo size="md" />
-        <div className="hidden lg:flex items-center gap-6 font-round text-sm font-medium" style={{ color: TEXT_MUTED }}>
-          <a href="#how-it-works" className="hover:opacity-100 transition-opacity" style={{ opacity: 0.85 }}>How it works</a>
-          <a href="#curriculum" className="hover:opacity-100 transition-opacity" style={{ opacity: 0.85 }}>Curriculum</a>
-          <a href="#schools" className="hover:opacity-100 transition-opacity" style={{ opacity: 0.85 }}>For schools</a>
-          <a href="#safety" className="hover:opacity-100 transition-opacity" style={{ opacity: 0.85 }}>Safety</a>
-          <a href="#pricing" className="hover:opacity-100 transition-opacity" style={{ opacity: 0.85 }}>Pricing</a>
+        <div className="hidden lg:flex items-center gap-8 font-round text-sm font-bold" style={{ color: TEXT }}>
+          <a href="#how-it-works" className="hover:opacity-70 transition-opacity">How it works</a>
+          <a href="#curriculum" className="hover:opacity-70 transition-opacity">Curriculum</a>
+          <a href="#schools" className="hover:opacity-70 transition-opacity">For schools</a>
+          <a href="#safety" className="hover:opacity-70 transition-opacity">Safety</a>
+          <a href="#pricing" className="hover:opacity-70 transition-opacity">Pricing</a>
         </div>
         <div className="flex items-center gap-2">
           <button
