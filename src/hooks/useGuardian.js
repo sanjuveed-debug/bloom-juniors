@@ -274,6 +274,8 @@ export function useGuardian() {
       // still-valid Supabase session before failing the quick-unlock outright.
       if (isSupabaseConfigured) {
         const cleanedPin = String(pin || '').replace(/\D/g, '').slice(0, 4)
+        const { data: sessionData } = await supabase.auth.getSession()
+        const hasCloudSession = Boolean(sessionData?.session?.access_token)
         let pinValid = false
         try { pinValid = await verifyCloudParentPin(cleanedPin) } catch {}
         if (pinValid) {
@@ -283,6 +285,12 @@ export function useGuardian() {
           setGuardian(refreshed)
           setSession(s)
           return true
+        }
+        // No live cloud session means we genuinely can't verify the PIN
+        // remotely — that's not the same as "PIN is wrong," so say so
+        // instead of leaving a correct PIN stuck behind a dead-end message.
+        if (!hasCloudSession) {
+          return 'Your saved sign-in has expired. Tap "Use a different account" below and sign in with your email and password.'
         }
       }
     }
