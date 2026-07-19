@@ -16,7 +16,7 @@ const QUEST_QUESTIONS = [
   { q: '12 x 4', a: 48, wrong: [36, 44, 52] },
 ]
 
-function FinishScreen({ theme, title, score, onDone }) {
+function FinishScreen({ theme, title, score, total = score, onDone }) {
   const lockedRef = useRef(false)
   return (
     <div className="flex flex-col items-center justify-center gap-5 py-10 text-center">
@@ -28,7 +28,7 @@ function FinishScreen({ theme, title, score, onDone }) {
         onClick={() => {
           if (lockedRef.current) return
           lockedRef.current = true
-          onDone(score)
+          onDone(score, total)
         }}
         className="px-8 py-3 rounded-2xl font-bubble text-white"
         style={{ background: theme.primary }}
@@ -141,7 +141,7 @@ function QuestDashGame({ theme, onDone }) {
     }
   }, [finished, health])
 
-  if (finished) return <FinishScreen theme={theme} title="Quest Dash Complete" score={score} onDone={onDone} />
+  if (finished) return <FinishScreen theme={theme} title="Quest Dash Complete" score={score} total={QUEST_QUESTIONS.length * 25} onDone={onDone} />
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -218,6 +218,7 @@ function TowerBuilderGame({ theme, onDone }) {
   const [step, setStep] = useState(0)
   const [blocks, setBlocks] = useState([])
   const [score, setScore] = useState(0)
+  const [penalty, setPenalty] = useState(0)
   const [feedback, setFeedback] = useState(null)
   const current = questions[step]
   const options = useMemo(() => [current.a, ...current.wrong].sort(() => Math.random() - 0.5), [current])
@@ -239,6 +240,7 @@ function TowerBuilderGame({ theme, onDone }) {
       confetti({ particleCount: 25, spread: 45 })
     } else {
       setFeedback('Not that block — solve it one more time')
+      setPenalty((value) => value + 5)
     }
 
     const id = window.setTimeout(() => {
@@ -251,7 +253,7 @@ function TowerBuilderGame({ theme, onDone }) {
       if (step + 1 >= questions.length) {
         completedRef.current = true
         confetti({ particleCount: 90, spread: 120 })
-        onDone(newScore)
+        onDone(Math.max(0, newScore - penalty), questions.length * 20)
       } else {
         setStep((v) => v + 1)
         lockedRef.current = false
@@ -334,6 +336,7 @@ function WordForgeGame({ theme, onDone }) {
   const [built, setBuilt] = useState('')
   const [selectedIndices, setSelectedIndices] = useState([])
   const [score, setScore] = useState(0)
+  const [penalty, setPenalty] = useState(0)
   const [feedback, setFeedback] = useState(null)
   const word = words[wordIndex]
   const letters = useMemo(() => word.split('').sort(() => Math.random() - 0.5), [word])
@@ -357,12 +360,14 @@ function WordForgeGame({ theme, onDone }) {
       if (correct) {
         setScore(newScore)
         confetti({ particleCount: 30, spread: 50 })
+      } else {
+        setPenalty((value) => value + 5)
       }
       const id = window.setTimeout(() => {
         timersRef.current = timersRef.current.filter(t => t !== id)
         if (correct && wordIndex + 1 >= words.length) {
           completedRef.current = true
-          onDone(newScore)
+          onDone(Math.max(0, newScore - penalty), words.length * 25)
         } else if (correct) {
           setBuilt('')
           setSelectedIndices([])
@@ -520,7 +525,7 @@ function MemoryGame({ theme, onDone }) {
     }
   }
 
-  if (done) return <FinishScreen theme={theme} title="Memory Vault Opened" score={Math.max(10, 200 - moves * 5)} onDone={onDone} />
+  if (done) return <FinishScreen theme={theme} title="Memory Vault Opened" score={Math.max(10, 200 - moves * 5)} total={200} onDone={onDone} />
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -569,6 +574,7 @@ const MAZE_LAYOUT = [
 
 const MAZE_SIZE = MAZE_LAYOUT.length
 const MAZE_TARGET_GEMS = 24
+const MAZE_MAX_SCORE = MAZE_TARGET_GEMS * 10 + 100
 const START_POS = { row: 7, col: 7 }
 const START_BLOCKERS = [
   { row: 1, col: 1 },
@@ -627,7 +633,7 @@ function MazeMunchGame({ theme, onDone }) {
     confetti({ particleCount: 120, spread: 130 })
     const id = window.setTimeout(() => {
       timersRef.current = timersRef.current.filter(t => t !== id)
-      onDone(finalScore)
+      onDone(finalScore, MAZE_MAX_SCORE)
     }, 850)
     timersRef.current.push(id)
   }, [onDone])
@@ -727,7 +733,7 @@ function MazeMunchGame({ theme, onDone }) {
   }, [finished, suspended, hitBlocker, lives, loseLife, player])
 
   if (finished) {
-    return <FinishScreen theme={theme} title="Maze Munch Complete" score={score} onDone={onDone} />
+    return <FinishScreen theme={theme} title="Maze Munch Complete" score={score} total={MAZE_MAX_SCORE} onDone={onDone} />
   }
 
   const controls = [
