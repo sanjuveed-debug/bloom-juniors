@@ -20,7 +20,7 @@ function FinishScreen({ theme, title, score, onDone }) {
   const lockedRef = useRef(false)
   return (
     <div className="flex flex-col items-center justify-center gap-5 py-10 text-center">
-      <div className="text-6xl">WIN</div>
+      <div className="text-6xl">🏆</div>
       <p className="font-bubble text-white text-2xl">{title}</p>
       <p className="font-round text-white/60">Score: {score}</p>
       <motion.button
@@ -839,7 +839,7 @@ export default function GamesModule({ theme, onBack, gamesUnlocked, played = 0, 
           Back
         </motion.button>
         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }} className="text-center">
-          <div className="text-7xl mb-5">LOCK</div>
+          <div className="text-7xl mb-5">🔒</div>
           <h2 className="font-bubble text-white text-2xl mb-3">Games Locked</h2>
           <p className="font-round text-white/60 text-sm mb-2 max-w-xs mx-auto">
             Complete <span style={{ color: theme.accent }} className="font-bold">2 learning modules</span> today to unlock the Game Arena.
@@ -883,7 +883,7 @@ export default function GamesModule({ theme, onBack, gamesUnlocked, played = 0, 
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: theme.bg }}>
         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }} className="text-center">
-          <div className="text-6xl mb-4">GAME</div>
+          <div className="text-6xl mb-4">🎮</div>
           <h2 className="font-bubble text-white text-2xl mb-2">Game Complete</h2>
           <p className="font-round text-white/60 mb-6">Score: {result.score}</p>
           <div className="flex gap-3 justify-center">

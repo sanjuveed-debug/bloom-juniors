@@ -278,8 +278,9 @@ export default function FunExercise({ avatar, onAddStars, onBack, profileName })
             exerciseIndex: idx,
             totalExercises: EXERCISES.length,
           })
+          const isFullWorkout = nextSessionMode === 'full' && idx + 1 >= EXERCISES.length
 
-          if (reward) {
+          if (reward && isFullWorkout) {
             setEarnedWorkoutReward(true)
             setScreen('done')
             speak(`Amazing work, ${profileName || 'superstar'}! You finished all ${EXERCISES.length} exercises! Your body is getting stronger!`, { mood: 'celebrate' })
@@ -287,6 +288,7 @@ export default function FunExercise({ avatar, onAddStars, onBack, profileName })
           } else if (nextSessionMode === 'single') {
             setScreen('done')
             speak(`Great job, ${profileName || 'superstar'}! You finished ${e.name}!`, { mood: 'celebrate' })
+            if (reward) onAddStars('exercise', reward.stars, reward.sessionData)
           } else {
             setScreen('rest')
           }

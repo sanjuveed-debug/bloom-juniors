@@ -65,14 +65,17 @@ test('getWorldExplorerStars matches the quiz thresholds', () => {
   assert.equal(getWorldExplorerStars(6), 3)
 })
 
-test('getExerciseCompletionReward only awards the full workout at the real end', () => {
-  assert.equal(
+test('getExerciseCompletionReward only awards the full workout bonus at the real end, but still rewards a single completed exercise', () => {
+  assert.deepEqual(
     getExerciseCompletionReward({
       sessionMode: 'single',
       exerciseIndex: 7,
       totalExercises: 8,
     }),
-    null,
+    {
+      stars: 1,
+      sessionData: { total: 1, correct: 1, struggles: [] },
+    },
   )
 
   assert.equal(

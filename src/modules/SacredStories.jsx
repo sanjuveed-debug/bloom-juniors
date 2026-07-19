@@ -1015,7 +1015,7 @@ export default function SacredStories({ avatar, profileName, profileId, onAddSta
   }
 
   const handleDone = () => {
-    onAddStars('sacred', starsEarned, {
+    onAddStars('sacred', isFirstTime ? starsEarned : 0, {
       total: story.quiz.length,
       correct: correctAnswers.current,
       struggles: quizStrugglesRef.current,
