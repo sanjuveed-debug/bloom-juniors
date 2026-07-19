@@ -25,6 +25,10 @@ const CSS = `
     height: 100%;
     object-fit: contain;
     transition: opacity 0.25s ease;
+    /* Source art has a baked-in white background, not real transparency.
+       Multiply blend makes the white drop out against whatever is behind it
+       instead of rendering as a visible floating photo card. */
+    mix-blend-mode: multiply;
   }
   .yaagvi-img.fade-out { opacity: 0; }
   .yaagvi-img.fade-in  { opacity: 1; }
