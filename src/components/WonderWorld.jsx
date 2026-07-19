@@ -127,6 +127,7 @@ export default function WonderWorld({ progress, profileName, ageGroup = 'early',
   const [reactionBurst, setReactionBurst] = useState(0)
   const [showTreasures, setShowTreasures] = useState(false)
   const [questCelebration, setQuestCelebration] = useState(false)
+  const [activeTab, setActiveTab] = useState('world')
   const recentDiscoveries = useMemo(() => [...world.discoveries].reverse().slice(0, 12), [world.discoveries])
   const treasureCollection = normaliseTreasureCollection(progress?.treasureCollection)
   const copy = LIVING_WORLD_AGE_COPY[ageGroup] || LIVING_WORLD_AGE_COPY.early
@@ -202,31 +203,56 @@ export default function WonderWorld({ progress, profileName, ageGroup = 'early',
     <main className="mx-auto max-w-6xl px-3 pt-4 sm:px-5">
       <div className="rounded-3xl bg-white/75 p-4 shadow"><p className="font-bubble text-xl">Everything you earn lives here.</p><p className="mt-1 font-round text-sm font-bold text-[#78583e]">{copy.intro}</p><div className="mt-3 grid grid-cols-3 gap-2 text-center"><div className="rounded-2xl bg-[#fff4cf] p-2"><p className="font-bubble text-lg">{treasureCollection.items.length}</p><p className="font-round text-[9px] font-black uppercase">Treasures</p></div><div className="rounded-2xl bg-[#eefbdc] p-2"><p className="font-bubble text-lg">{world.discoveries.length}</p><p className="font-round text-[9px] font-black uppercase">Discoveries</p></div><div className="rounded-2xl bg-[#f4e8ff] p-2"><p className="font-bubble text-lg">{worldScore}</p><p className="font-round text-[9px] font-black uppercase">World points</p></div></div></div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-      <CompanionBondCard progress={progress} ageGroup={ageGroup} onChooseBuddy={()=>setShowTreasures(true)}/>
-      <section data-testid="companion-quest" className="overflow-hidden rounded-3xl border-2 bg-gradient-to-r from-[#30205d] via-[#63378d] to-[#b64f91] p-4 text-white shadow-xl" style={{borderColor:`${theme.accent}88`}}>
-        <div className="flex items-center gap-3">
-          <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 border-white/70 bg-white/90 shadow-lg">{buddy.image?<img src={buddy.image} alt={buddy.name} className="h-full w-full object-contain"/>:<span className="text-4xl">{buddy.emoji || '🧸'}</span>}</div>
-          <div className="min-w-0 flex-1"><p className="font-round text-[10px] font-black uppercase tracking-[.18em] text-yellow-200">Today&apos;s buddy quest · {buddy.name}</p><h2 className="font-bubble text-xl sm:text-2xl">{companionQuest.completedAt ? 'Quest complete!' : companionQuest.title}</h2><p className="font-round text-xs font-bold text-white/80">{companionQuest.completedAt ? 'Your Wonder Seed and 5 sparkle dust are safe. Keep planting, building, and playing with your discoveries.' : ageGroup==='toddler'?`Tap ${companionQuest.required} glowing ${companionQuest.plural}.`:`Search the world and find ${companionQuest.required} hidden ${companionQuest.plural}.`}</p></div>
-          <div className="shrink-0 rounded-2xl bg-black/20 px-3 py-2 text-center"><p className="font-bubble text-xl">{companionQuest.found.length}/{companionQuest.required}</p><p className="font-round text-[8px] font-black uppercase text-yellow-200">found</p></div>
-        </div>
-        <div className="mt-3 flex gap-2" aria-label={`${companionQuest.found.length} of ${companionQuest.required} buddy clues found`}>{Array.from({length:companionQuest.required}).map((_,index)=><span key={index} className={`h-2 flex-1 rounded-full ${index<companionQuest.found.length?'bg-yellow-300':'bg-white/20'}`}/>)}</div>
-      </section>
+      <div className="sticky top-[60px] z-30 -mx-3 mt-4 flex gap-2 overflow-x-auto bg-[#fff3da]/95 px-3 py-2 backdrop-blur sm:mx-0 sm:rounded-2xl sm:px-2">
+        {[
+          { id: 'world', label: '🌱 My World' },
+          { id: 'companion', label: '🧸 My Companion' },
+          { id: 'dream', label: '🚀 Dream Build' },
+          { id: 'treasures', label: '🧰 Treasures' },
+        ].map(tab => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            className="shrink-0 rounded-full px-4 py-2 font-round text-xs font-black uppercase tracking-wide transition-colors"
+            style={activeTab === tab.id
+              ? { background: theme.primary, color: '#fff' }
+              : { background: '#ffffff', color: theme.primary, border: `1.5px solid ${theme.primary}40` }}>
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      <DreamProject
-        progress={progress}
-        ageGroup={ageGroup}
-        equippedItems={equippedItems}
-        onUpdateProgress={onUpdateProgress}
-      />
+      {activeTab === 'companion' && (
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <CompanionBondCard progress={progress} ageGroup={ageGroup} onChooseBuddy={()=>setShowTreasures(true)}/>
+        <section data-testid="companion-quest" className="overflow-hidden rounded-3xl border-2 bg-gradient-to-r from-[#30205d] via-[#63378d] to-[#b64f91] p-4 text-white shadow-xl" style={{borderColor:`${theme.accent}88`}}>
+          <div className="flex items-center gap-3">
+            <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 border-white/70 bg-white/90 shadow-lg">{buddy.image?<img src={buddy.image} alt={buddy.name} className="h-full w-full object-contain"/>:<span className="text-4xl">{buddy.emoji || '🧸'}</span>}</div>
+            <div className="min-w-0 flex-1"><p className="font-round text-[10px] font-black uppercase tracking-[.18em] text-yellow-200">Today&apos;s buddy quest · {buddy.name}</p><h2 className="font-bubble text-xl sm:text-2xl">{companionQuest.completedAt ? 'Quest complete!' : companionQuest.title}</h2><p className="font-round text-xs font-bold text-white/80">{companionQuest.completedAt ? 'Your Wonder Seed and 5 sparkle dust are safe. Keep planting, building, and playing with your discoveries.' : ageGroup==='toddler'?`Tap ${companionQuest.required} glowing ${companionQuest.plural}.`:`Search the world and find ${companionQuest.required} hidden ${companionQuest.plural}.`}</p></div>
+            <div className="shrink-0 rounded-2xl bg-black/20 px-3 py-2 text-center"><p className="font-bubble text-xl">{companionQuest.found.length}/{companionQuest.required}</p><p className="font-round text-[8px] font-black uppercase text-yellow-200">found</p></div>
+          </div>
+          <div className="mt-3 flex gap-2" aria-label={`${companionQuest.found.length} of ${companionQuest.required} buddy clues found`}>{Array.from({length:companionQuest.required}).map((_,index)=><span key={index} className={`h-2 flex-1 rounded-full ${index<companionQuest.found.length?'bg-yellow-300':'bg-white/20'}`}/>)}</div>
+          <p className="mt-3 font-round text-xs font-bold text-white/70">Find this quest's hidden clues in the My World tab.</p>
+        </section>
+        </div>
+      )}
 
-      {dreamProjectComplete && <DreamProjectAdventures
-        progress={progress}
-        ageGroup={ageGroup}
-        onUpdateProgress={onUpdateProgress}
-      />}
+      {activeTab === 'dream' && (
+        <div className="mt-4">
+          <DreamProject
+            progress={progress}
+            ageGroup={ageGroup}
+            equippedItems={equippedItems}
+            onUpdateProgress={onUpdateProgress}
+          />
 
+          {dreamProjectComplete && <DreamProjectAdventures
+            progress={progress}
+            ageGroup={ageGroup}
+            onUpdateProgress={onUpdateProgress}
+          />}
+        </div>
+      )}
+
+      {activeTab === 'world' && (
       <div className="relative mt-4 h-[380px] overflow-hidden rounded-[30px] border-4 border-[#cb8a4b] bg-cover bg-center shadow-2xl sm:h-auto sm:aspect-[16/9]" style={{backgroundImage:'url(/yaagvi-secret-world.webp)'}}>
         <div className="absolute inset-0 bg-gradient-to-t from-[#3b210f]/20 via-transparent to-white/5"/>
         <motion.div className="absolute bottom-0 left-[7%] z-10" animate={{y:[0,-5,0]}} transition={{duration:2.4,repeat:Infinity}}>
@@ -241,8 +267,10 @@ export default function WonderWorld({ progress, profileName, ageGroup = 'early',
           <span className="mt-1 min-w-24 max-w-36 rounded-xl bg-[#3b210f]/90 px-2 py-1 text-center font-round text-[9px] font-black text-white shadow sm:text-xs">{ready?'✨ TAP TO DISCOVER':plot?<><span className="whitespace-nowrap" style={{color:seed.color}}>{seed.icon} {seed.name.replace(' Seed','')}</span><span className="block text-white">Stage {growth.step}/3 · {growth.id==='seed'?'planted':'sprouting'}</span><span className="mt-1 block h-1 overflow-hidden rounded-full bg-white/25"><span className="block h-full rounded-full" style={{width:`${growth.progress}%`,background:seed.color}}/></span></>:availableAwards.length?'Plant here':'Earn a seed first'}</span>
         </motion.button>})}
       </div>
+      )}
 
-      <section className="mt-5 grid gap-4 lg:grid-cols-[1.05fr_.95fr]">
+      {activeTab === 'treasures' && (
+      <section className="mt-4 grid gap-4 lg:grid-cols-[1.05fr_.95fr]">
         <div className="rounded-3xl bg-white/80 p-4 shadow-lg">
           <div className="flex items-center justify-between gap-3"><div><p className="font-round text-[10px] font-black uppercase tracking-[.18em]" style={{color:theme.primary}}>Things I really earned</p><h2 className="font-bubble text-2xl">My treasures</h2><p className="font-round text-xs font-bold text-[#78583e]">Choose what appears inside your world.</p></div><span className="text-4xl">🧰</span></div>
           <div className="mt-3 flex min-h-20 items-center gap-2 overflow-x-auto rounded-2xl bg-[#fff7e7] p-3">{treasureCollection.items.length?treasureCollection.items.slice(-5).map(item=><span key={item.id} title={item.name} className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 border-white bg-white text-3xl shadow">{item.image?<img src={item.image} alt={item.name} className="h-full w-full object-contain"/>:(item.emoji||'🎁')}</span>):<p className="font-round text-sm font-bold text-[#78583e]">Complete two adventures to open your first treasure.</p>}</div>
@@ -250,10 +278,13 @@ export default function WonderWorld({ progress, profileName, ageGroup = 'early',
         </div>
         <YaagviRoom theme={theme} roomScore={worldScore} stickersCount={treasureCollection.items.length} dark profileName={profileName}/>
       </section>
+      )}
 
-      <MysteryEgg collection={treasureCollection} profileName={profileName} onHatch={hatchEgg}/>
+      {activeTab === 'treasures' && <MysteryEgg collection={treasureCollection} profileName={profileName} onHatch={hatchEgg}/>}
 
+      {activeTab === 'world' && (
       <section className="mt-5 rounded-3xl bg-white/75 p-4 shadow"><div className="flex items-end justify-between"><div><p className="font-round text-[10px] font-black uppercase tracking-[.18em] text-emerald-700">Made by your world</p><h2 className="font-bubble text-2xl">{copy.discoveries}</h2><p className="font-round text-xs font-bold text-[#78583e]">Tap any friend to make it react.</p></div><p className="font-bubble text-emerald-700">{world.discoveries.length}</p></div>{recentDiscoveries.length?<div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">{recentDiscoveries.map(item=>{const seed=WONDER_SEEDS.find(seedItem=>seedItem.id===item.seedId)||WONDER_SEEDS[0],details=getWonderDiscoveryDetails(item.name);return <motion.button key={item.id} onClick={()=>playWithDiscovery(item)} whileTap={{scale:.93}} className="rounded-2xl border-2 bg-[#f6ffe9] p-3 text-center shadow-sm" style={{borderColor:`${details.accent}55`,background:`linear-gradient(145deg,#f6ffe9,${details.accent}20)`}}><div className="mx-auto flex h-24 items-end justify-center"><SeedPlant seedId={item.seedId} ready discoveryName={item.name}/></div><p className="mt-1 font-bubble text-sm">{item.name}</p><p className="font-round text-[9px] font-black uppercase" style={{color:seed.color}}>{item.interactionCount?`Played ${item.interactionCount}×`:'Tap to play'}</p></motion.button>})}</div>:<div className="mt-3 rounded-2xl border-2 border-dashed border-emerald-700/15 p-6 text-center"><p className="text-4xl">🌱</p><p className="mt-1 font-bubble">Your first discovery begins with a Wonder Seed.</p></div>}</section>
+      )}
     </main>
     <AnimatePresence>{questCelebration&&<motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-[320] grid place-items-center overflow-y-auto bg-[#1e1238]/85 p-4 backdrop-blur-md"><motion.div initial={{scale:.55,y:60}} animate={{scale:1,y:0}} exit={{scale:.8,opacity:0}} transition={{type:'spring'}} className="w-full max-w-md overflow-hidden rounded-[34px] border-4 border-yellow-200 bg-gradient-to-b from-[#fff8c9] via-[#f5d9ff] to-[#b7f7de] p-6 text-center shadow-2xl"><motion.div className="text-8xl" animate={{y:[0,-10,0],rotate:[-5,5,-5]}} transition={{duration:1.8,repeat:Infinity}}>{companionQuest.icon}</motion.div><p className="font-round text-xs font-black uppercase tracking-[.2em] text-[#6b348c]">Buddy quest complete</p><h2 className="mt-1 font-bubble text-3xl text-[#32113f]">You found them all!</h2><p className="mt-2 font-round text-sm font-bold text-[#66456f]">{buddy.name} found a reward for your Living World.</p><div className="mt-4 grid grid-cols-2 gap-3"><div className="rounded-2xl bg-white/80 p-3 shadow"><p className="text-4xl">🌱</p><p className="font-bubble text-sm">1 Wonder Seed</p></div><div className="rounded-2xl bg-white/80 p-3 shadow"><p className="text-4xl">✨</p><p className="font-bubble text-sm">5 Sparkle Dust</p></div></div><button onClick={()=>setQuestCelebration(false)} className="mt-5 min-h-14 w-full rounded-2xl bg-gradient-to-r from-[#7a3bad] to-[#ec4899] font-bubble text-lg text-white shadow-lg">KEEP MY REWARDS →</button></motion.div></motion.div>}</AnimatePresence>
     <AnimatePresence>{showTreasures&&<TreasureShelf collection={treasureCollection} ageGroup={ageGroup} onEquip={equipTreasure} onCollectionChange={updateTreasureCollection} onClose={()=>setShowTreasures(false)} profileName={profileName}/>}</AnimatePresence>
