@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react'
 import { motion } from 'framer-motion'
+import YaagviCharacter from './YaagviCharacter.jsx'
 import { useSpeech } from '../hooks/useSpeech.js'
 import { ADVENTURE_HOME_COPY, getAdventureHomeNext } from '../utils/adventureHome.js'
 import { getInterestRecommendations } from '../utils/childInterest.js'
@@ -94,8 +95,7 @@ export default function BloomAdventureHome({
           <div className="relative hidden min-h-[330px] items-end justify-center lg:flex">
             <motion.div className="absolute bottom-4 h-16 w-64 rounded-[50%] bg-[#6b341d]/15 blur-md" animate={{ scaleX: [1, .84, 1] }} transition={{ duration: 2.2, repeat: Infinity }} />
             <motion.div className="relative h-[325px] w-[260px]" animate={{ y: [0, -8, 0] }} transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}>
-              <img src="/yaagvi-3d-wave.png" alt="Yaagvi, your adventure guide" className="absolute inset-0 h-full w-full object-contain drop-shadow-2xl" />
-              <video className="absolute inset-0 h-full w-full object-contain drop-shadow-2xl" autoPlay muted loop playsInline preload="metadata" poster="/yaagvi-3d-wave.png" aria-hidden="true"><source src="/yaagvi-3d-wave.webm" type="video/webm" /></video>
+              <YaagviCharacter state="wave" size="100%" className="absolute inset-0" imageClassName="drop-shadow-2xl" />
             </motion.div>
             <button onClick={() => speak(narration)} aria-label={speaking ? 'Yaagvi is speaking' : 'Hear Yaagvi explain the next adventure'} className="absolute right-2 top-2 grid h-12 w-12 place-items-center rounded-full border-2 border-white bg-[#3a214c] text-xl text-white shadow-lg">{speaking ? '⏸' : '🔊'}</button>
             <button onClick={onOpenTreasureRoom} className="absolute bottom-3 right-2 rounded-full bg-[#3a214c] px-4 py-2 font-round text-xs font-black text-white shadow-lg">🎁 {treasureCount} treasures</button>

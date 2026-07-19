@@ -21,6 +21,7 @@ import {
 } from '../utils/treasureRewards.js'
 import { MysteryEgg, TreasureShelf } from './TreasureCollection.jsx'
 import { YaagviRoom } from './RetentionWidgets.jsx'
+import YaagviCharacter from './YaagviCharacter.jsx'
 import { getLivingWorldScore, LIVING_WORLD_AGE_COPY } from '../utils/livingWorld.js'
 import { findCompanionQuestMarker, getCompanionQuest } from '../utils/companionQuest.js'
 import { CompanionBondCard } from './CompanionBond.jsx'
@@ -228,7 +229,9 @@ export default function WonderWorld({ progress, profileName, ageGroup = 'early',
 
       <div className="relative mt-4 h-[380px] overflow-hidden rounded-[30px] border-4 border-[#cb8a4b] bg-cover bg-center shadow-2xl sm:h-auto sm:aspect-[16/9]" style={{backgroundImage:'url(/yaagvi-secret-world.webp)'}}>
         <div className="absolute inset-0 bg-gradient-to-t from-[#3b210f]/20 via-transparent to-white/5"/>
-        <motion.img src="/yaagvi-3d-wave.png" alt="Yaagvi exploring her living world" className="absolute bottom-0 left-[7%] z-10 h-28 object-contain drop-shadow-2xl sm:h-44" animate={{y:[0,-5,0]}} transition={{duration:2.4,repeat:Infinity}}/>
+        <motion.div className="absolute bottom-0 left-[7%] z-10" animate={{y:[0,-5,0]}} transition={{duration:2.4,repeat:Infinity}}>
+          <YaagviCharacter state="wave" size={150} imageClassName="drop-shadow-2xl" />
+        </motion.div>
         {!companionQuest.completedAt&&Array.from({length:companionQuest.required}).map((_,index)=>!companionQuest.found.includes(index)&&<motion.button type="button" key={`quest-${index}`} onClick={()=>findQuestMarker(index)} aria-label={`Find ${companionQuest.singular} ${index+1}`} className={`absolute z-30 grid place-items-center rounded-full border-2 border-white bg-[#fff8c7]/90 shadow-[0_0_24px_#fde047] ${ageGroup==='junior'?'h-10 w-10 text-xl':'h-14 w-14 text-3xl'}`} style={QUEST_MARKER_POSITIONS[index]} initial={{scale:0,opacity:0}} animate={{scale:[1,1.14,1],opacity:1,rotate:[-6,6,-6]}} transition={{scale:{duration:1.4,repeat:Infinity,delay:index*.15},opacity:{duration:.3},rotate:{duration:2,repeat:Infinity}}}>{companionQuest.icon}</motion.button>)}
         {equippedItems.map((item,index)=><motion.button type="button" key={item.id} onClick={()=>setShowTreasures(true)} className="absolute z-20 grid h-14 w-14 place-items-center overflow-hidden rounded-2xl border-2 border-white/80 bg-white/90 text-3xl shadow-xl sm:h-20 sm:w-20 sm:text-4xl" style={{right:`${4+(index%2)*10}%`,bottom:`${8+Math.floor(index/2)*21}%`}} animate={{y:[0,-4,0],rotate:[-2,2,-2]}} transition={{duration:2+index*.25,repeat:Infinity}} aria-label={`${item.name} on display`}>{item.image?<img src={item.image} alt="" className="h-full w-full object-contain"/>:(item.emoji||'🎁')}</motion.button>)}
         {world.plots.map((plot,index)=>{const growth=getWonderGrowthStage(plot,today),ready=growth.id==='ready',seed=plot?(WONDER_SEEDS.find(item=>item.id===plot.seedId)||WONDER_SEEDS[0]):null;return <motion.button key={index} onClick={()=>tapPlot(plot,index)} whileTap={{scale:.9}} className="absolute z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center" style={PLOT_POSITIONS[index]}>

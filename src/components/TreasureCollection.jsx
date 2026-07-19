@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useSpeech } from '../hooks/useSpeech.js'
+import YaagviCharacter from './YaagviCharacter.jsx'
 import {
   TREASURE_ITEMS,
   getMysteryEggProgress,
@@ -160,9 +161,10 @@ function RoomStage({ collection, profileName, ageGroup, onMove, onInteract }) {
       <div className="absolute inset-x-0 bottom-0 h-24 bg-[#8b542f]/55" />
       <div className="absolute left-8 top-8 h-24 w-24 rounded-full bg-[#ffe772] shadow-[0_0_50px_#fff1a0]" />
       {[...Array(12)].map((_, index) => <span key={index} className="absolute text-sm text-white/80" style={{ left: `${8 + (index * 17) % 87}%`, top: `${9 + (index * 23) % 58}%` }}>✦</span>)}
-      <motion.img src="/yaagvi-3d-wave.png" alt={`${profileName || 'Your explorer'} in the treasure room`}
-        className="pointer-events-none absolute bottom-3 left-1/2 h-60 -translate-x-1/2 object-contain drop-shadow-2xl sm:h-72"
-        animate={{ y: [0, -5, 0] }} transition={{ duration: 2.4, repeat: Infinity }} />
+      <motion.div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2"
+        animate={{ y: [0, -5, 0] }} transition={{ duration: 2.4, repeat: Infinity }}>
+        <YaagviCharacter state="wave" size={230} imageClassName="drop-shadow-2xl" />
+      </motion.div>
       {displayedItems.map((item, index) => {
         const position = collection.roomLayout?.[item.id] || { x: index % 2 ? 82 : 12, y: 30 + Math.floor(index / 2) * 30 }
         const personality = getTreasurePersonality(item, ageGroup)

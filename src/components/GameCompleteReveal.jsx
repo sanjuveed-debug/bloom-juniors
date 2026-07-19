@@ -1,5 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
+import YaagviCharacter from './YaagviCharacter.jsx'
 
 const COPY = {
   toddler: { eyebrow: 'YOU FOUND IT!', title: 'Happy treasure dance!', continue: 'Next adventure', replay: 'Play again' },
@@ -33,7 +34,7 @@ export default function GameCompleteReveal({ ageGroup = 'early', place, icon, re
           </div>
           <button onClick={onHome} className="mt-4 min-h-11 w-full font-round text-sm font-black text-[#7b543d] underline decoration-2 underline-offset-4">Return to Bloom Home</button>
         </div>
-        <div className="relative mx-auto hidden h-80 w-56 self-end sm:block"><motion.div className="absolute inset-x-5 bottom-4 h-9 rounded-full bg-[#69351d]/20 blur-md" animate={{ scaleX: [1, .8, 1] }} transition={{ duration: 1.4, repeat: Infinity }} /><motion.img src="/yaagvi-3d-wave.png" alt="Yaagvi celebrates the completed adventure" className="relative h-full w-full object-contain drop-shadow-2xl" animate={{ y: [0,-12,0], rotate: [-2,2,-2] }} transition={{ duration: 1.4, repeat: Infinity }} /></div>
+        <div className="relative mx-auto hidden h-80 w-56 self-end sm:block"><motion.div className="absolute inset-x-5 bottom-4 h-9 rounded-full bg-[#69351d]/20 blur-md" animate={{ scaleX: [1, .8, 1] }} transition={{ duration: 1.4, repeat: Infinity }} /><motion.div className="relative h-full w-full" animate={{ y: [0,-12,0] }} transition={{ duration: 1.4, repeat: Infinity }}><YaagviCharacter state="celebrate" size="100%" imageClassName="drop-shadow-2xl" /></motion.div></div>
       </div>
       <div className="pointer-events-none absolute inset-0" aria-hidden>{Array.from({length:18},(_,index)=><motion.span key={index} className="absolute text-xl" style={{left:`${5+(index*17)%90}%`,top:'-8%'}} animate={{y:['0vh','105vh'],rotate:[0,index%2?280:-280]}} transition={{duration:2.8+(index%4)*.4,delay:(index%6)*.16,repeat:Infinity}}>✨</motion.span>)}</div>
     </motion.section>
