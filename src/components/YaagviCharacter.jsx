@@ -1,14 +1,19 @@
 import { useState, useEffect, useRef } from 'react'
 
+// Cache-busting query so Cloudflare's CDN (and browsers) don't keep serving
+// the pre-transparency version of these assets from a prior deploy — public/
+// files keep the same filename across deploys, so the CDN cache never
+// invalidates on its own when only the file content changes.
+const ASSET_VERSION = 'v2'
 const POSES = {
-  idle:      '/yaagvi-poses/idle.png',
-  wave:      '/yaagvi-poses/wave.png',
-  celebrate: '/yaagvi-poses/celebrate.png',
-  dance:     '/yaagvi-poses/dance.png',
-  point:     '/yaagvi-poses/point.png',
-  think:     '/yaagvi-poses/think.png',
-  read:      '/yaagvi-poses/read.png',
-  clap:      '/yaagvi-poses/clap.png',
+  idle:      `/yaagvi-poses/idle.png?${ASSET_VERSION}`,
+  wave:      `/yaagvi-poses/wave.png?${ASSET_VERSION}`,
+  celebrate: `/yaagvi-poses/celebrate.png?${ASSET_VERSION}`,
+  dance:     `/yaagvi-poses/dance.png?${ASSET_VERSION}`,
+  point:     `/yaagvi-poses/point.png?${ASSET_VERSION}`,
+  think:     `/yaagvi-poses/think.png?${ASSET_VERSION}`,
+  read:      `/yaagvi-poses/read.png?${ASSET_VERSION}`,
+  clap:      `/yaagvi-poses/clap.png?${ASSET_VERSION}`,
 }
 
 // CSS injected once
