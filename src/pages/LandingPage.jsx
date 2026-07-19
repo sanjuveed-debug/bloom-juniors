@@ -13,12 +13,6 @@ const PRIMARY_LIGHT = '#EA580C'
 const TEAL = '#0F766E'
 const CARD_BORDER = 'rgba(66,32,6,0.10)'
 
-const AGE_GROUPS = [
-  { emoji: '🧸', label: 'Tiny Stars', range: 'Ages 3–4', color: '#F97316', desc: 'Colours, shapes, numbers & animals through gentle tap games.' },
-  { emoji: '🌟', label: 'Little Stars', range: 'Ages 4–6', color: '#0F766E', desc: 'Phonics, maths, stories, art & world exploration.' },
-  { emoji: '🚀', label: 'Super Kids', range: 'Ages 7–9', color: '#DC2626', desc: 'Times tables, fractions, reading, science & more.' },
-]
-
 const FEATURES = [
   { emoji: '🧒', title: 'A companion, not a worksheet', desc: 'Yaagvi reacts to effort, struggle and progress so your child feels seen and encouraged while they learn.' },
   { emoji: '🗺️', title: 'A visible mastery journey', desc: 'The Mastery Map lights up sounds and skills as children practise — progress they can see and feel proud of.' },
@@ -26,27 +20,6 @@ const FEATURES = [
   { emoji: '🎮', title: 'A healthy daily rhythm', desc: 'Children complete their learning path first, then the arcade opens. Study first, play after — built into the design.' },
   { emoji: '📚', title: 'Built for British progression', desc: 'Phonics, maths, reading and wider learning carefully sequenced for ages 3–9, aligned with EYFS, KS1 and early KS2.' },
   { emoji: '🔒', title: 'Safe by design', desc: 'No ads, no social feeds, no random purchases. PIN-protected parent area with full progress visibility.' },
-]
-
-const THREE_HOOKS = [
-  {
-    emoji: '💛',
-    title: 'Yaagvi notices how they learn',
-    desc: 'When your child is confident, stuck, tired or improving, Yaagvi responds with the right encouragement — not a generic "well done."',
-    color: '#F59E0B',
-  },
-  {
-    emoji: '🗺️',
-    title: 'The Mastery Map makes progress visible',
-    desc: 'Every sound, skill and activity lights up as they practise. Children can see exactly what they are getting better at.',
-    color: '#0F766E',
-  },
-  {
-    emoji: '🏅',
-    title: 'The Parent Handoff turns learning into a moment',
-    desc: 'After a win, Bloom Juniors creates a full-screen badge card: "Show this to someone you love!" — learning becomes a family conversation.',
-    color: '#10B981',
-  },
 ]
 
 const CURRICULUM = [
@@ -71,12 +44,6 @@ const CURRICULUM = [
     color: '#DC2626',
     items: ['Times tables and fractions', 'Grammar and comprehension', 'Science and geography', 'Problem solving', 'Wider world exploration'],
   },
-]
-
-const PARENT_NOTICES = [
-  { emoji: '📖', text: 'My child started asking to do their reading before school — I didn\'t have to ask.', label: 'On building the habit' },
-  { emoji: '🗺️', text: 'Seeing the Mastery Map light up made phonics feel like collecting progress, not doing homework.', label: 'On visible progress' },
-  { emoji: '🏅', text: 'Instead of asking what they did, the handoff badge meant they explained it themselves.', label: 'On the parent moment' },
 ]
 
 const HOW_STEPS = [
@@ -657,57 +624,6 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
         </div>
       </section>
 
-      {/* ── WHY CHILDREN COME BACK ───────────────────────────────────────────── */}
-      <section className="px-4 pb-16 md:px-8">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="font-bubble text-3xl md:text-4xl text-center mb-2" style={{ color: TEXT }}>Why children come back tomorrow</h2>
-          <p className="font-round text-sm text-center mb-10" style={{ color: TEXT_FAINT }}>Three features designed to make learning feel personal.</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {THREE_HOOKS.map((h, i) => (
-              <motion.div
-                key={h.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, type: 'spring', stiffness: 220 }}
-                className="rounded-[24px] p-6"
-                style={{ background: '#FFFFFF', border: `1.5px solid ${h.color}30`, boxShadow: '0 4px 16px rgba(66,32,6,0.05)' }}
-              >
-                <div className="text-4xl mb-4">{h.emoji}</div>
-                <p className="font-bubble text-lg mb-2 leading-snug" style={{ color: TEXT }}>{h.title}</p>
-                <p className="font-round text-sm leading-relaxed" style={{ color: TEXT_MUTED }}>{h.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── AGE GROUPS ───────────────────────────────────────────────────────── */}
-      <section className="px-4 pb-16 md:px-8">
-        <div className="mx-auto max-w-4xl">
-          <p className="font-round text-xs font-bold uppercase tracking-widest text-center mb-6" style={{ color: TEXT_FAINT }}>Three experiences, one account</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {AGE_GROUPS.map((g, i) => (
-              <motion.div
-                key={g.label}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                whileHover={{ scale: 1.04, y: -4 }}
-                transition={{ delay: i * 0.1, type: 'spring', stiffness: 260 }}
-                className="rounded-[24px] p-5 text-center cursor-default"
-                style={{ background: '#FFFFFF', border: `1.5px solid ${g.color}30`, boxShadow: '0 4px 16px rgba(66,32,6,0.05)' }}
-              >
-                <div className="text-4xl mb-3">{g.emoji}</div>
-                <p className="font-bubble text-xl mb-1" style={{ color: TEXT }}>{g.label}</p>
-                <p className="font-round text-xs font-bold mb-3" style={{ color: g.color }}>{g.range}</p>
-                <p className="font-round text-sm leading-relaxed" style={{ color: TEXT_MUTED }}>{g.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── FEATURES ─────────────────────────────────────────────────────────── */}
       <section className="px-4 pb-16 md:px-8">
         <div className="mx-auto max-w-4xl">
@@ -728,71 +644,6 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
                 <div className="text-3xl mb-3">{f.emoji}</div>
                 <p className="font-bubble text-base mb-1" style={{ color: TEXT }}>{f.title}</p>
                 <p className="font-round text-sm leading-relaxed" style={{ color: TEXT_MUTED }}>{f.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── STUDY FIRST SECTION ──────────────────────────────────────────────── */}
-      <section className="px-4 pb-16 md:px-8">
-        <div className="mx-auto max-w-2xl rounded-[28px] overflow-hidden"
-          style={{ background: PRIMARY, boxShadow: '0 16px 40px rgba(194,65,12,0.25)' }}>
-          <div className="p-8 md:p-10 text-center">
-            <div className="text-5xl mb-4">🎮</div>
-            <h2 className="font-bubble text-white text-3xl mb-3">Games as the reward</h2>
-            <p className="font-round text-white/85 text-base leading-relaxed max-w-lg mx-auto">
-              Children complete 2 study modules first — then the Game Arcade unlocks as their reward.
-              No guilt. No battles. The habit builds itself.
-            </p>
-            <div className="mt-6 flex items-center justify-center gap-4 flex-wrap">
-              <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'rgba(255,255,255,0.18)' }}>
-                <p className="font-bubble text-white text-2xl">📚</p>
-                <p className="font-round text-white/85 text-xs mt-1">Study first</p>
-              </div>
-              <motion.span
-                className="font-bubble text-white text-2xl"
-                animate={{ x: [0, 6, 0] }}
-                transition={{ duration: 1.2, repeat: Infinity }}
-              >→</motion.span>
-              <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'rgba(255,255,255,0.18)' }}>
-                <p className="font-bubble text-white text-2xl">🎮</p>
-                <p className="font-round text-white/85 text-xs mt-1">Games unlock</p>
-              </div>
-              <motion.span
-                className="font-bubble text-white text-2xl"
-                animate={{ x: [0, 6, 0] }}
-                transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }}
-              >→</motion.span>
-              <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'rgba(255,255,255,0.18)' }}>
-                <p className="font-bubble text-white text-2xl">🔥</p>
-                <p className="font-round text-white/85 text-xs mt-1">Habit built</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── WHAT PARENTS NOTICE ──────────────────────────────────────────────── */}
-      <section className="px-4 pb-16 md:px-8">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="font-bubble text-3xl text-center mb-2" style={{ color: TEXT }}>What parents will notice</h2>
-          <p className="font-round text-xs text-center mb-8" style={{ color: TEXT_FAINT }}>Based on how the app is designed to work.</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {PARENT_NOTICES.map((t, i) => (
-              <motion.div
-                key={t.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                whileHover={{ scale: 1.02 }}
-                transition={{ delay: 0.05 + i * 0.1 }}
-                className="rounded-[20px] p-5 cursor-default"
-                style={{ background: '#FFFFFF', border: `1px solid ${CARD_BORDER}`, boxShadow: '0 4px 14px rgba(66,32,6,0.05)' }}
-              >
-                <div className="text-3xl mb-3">{t.emoji}</div>
-                <p className="font-round text-sm leading-relaxed mb-4" style={{ color: TEXT_MUTED }}>"{t.text}"</p>
-                <p className="font-round text-xs uppercase tracking-wider" style={{ color: TEXT_FAINT }}>{t.label}</p>
               </motion.div>
             ))}
           </div>
