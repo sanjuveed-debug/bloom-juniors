@@ -293,17 +293,17 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
       <nav className="sticky top-0 z-40 flex items-center justify-between px-4 py-3 md:px-8"
         style={{ background: 'rgba(255,247,237,0.92)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${CARD_BORDER}`, paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
         <BloomLogo size="md" />
-        <div className="hidden lg:flex items-center gap-8 font-round text-sm font-bold" style={{ color: TEXT }}>
-          <a href="#how-it-works" className="hover:opacity-70 transition-opacity">How it works</a>
-          <a href="#curriculum" className="hover:opacity-70 transition-opacity">Curriculum</a>
-          <a href="#schools" className="hover:opacity-70 transition-opacity">For schools</a>
-          <a href="#safety" className="hover:opacity-70 transition-opacity">Safety</a>
-          <a href="#pricing" className="hover:opacity-70 transition-opacity">Pricing</a>
+        <div className="hidden lg:flex items-center gap-8 font-round text-sm font-bold leading-none" style={{ color: TEXT }}>
+          <a href="#how-it-works" className="inline-flex items-center hover:opacity-70 transition-opacity">How it works</a>
+          <a href="#curriculum" className="inline-flex items-center hover:opacity-70 transition-opacity">Curriculum</a>
+          <a href="#schools" className="inline-flex items-center hover:opacity-70 transition-opacity">For schools</a>
+          <a href="#safety" className="inline-flex items-center hover:opacity-70 transition-opacity">Safety</a>
+          <a href="#pricing" className="inline-flex items-center hover:opacity-70 transition-opacity">Pricing</a>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={onSignIn}
-            className="font-round text-sm px-4 py-2 rounded-xl transition-colors"
+            className="font-round text-sm leading-none px-4 py-2 rounded-xl inline-flex items-center transition-colors"
             style={{ color: TEXT_MUTED }}
           >
             Sign in
@@ -312,7 +312,7 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={onTeacherSetup}
-              className="font-round text-sm px-4 py-2 rounded-xl border hidden sm:block transition-colors"
+              className="font-round text-sm leading-none px-4 py-2 rounded-xl border hidden sm:inline-flex items-center transition-colors"
               style={{ color: TEAL, borderColor: `${TEAL}40` }}
             >
               🏫 For teachers
@@ -321,7 +321,7 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={onGetStarted}
-            className="font-bubble text-sm text-white px-4 py-2 rounded-xl"
+            className="font-bubble text-sm leading-none text-white px-4 py-2 rounded-xl inline-flex items-center"
             style={{ background: PRIMARY }}
           >
             Start free
