@@ -1125,6 +1125,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
   const [rewardTreasure, setRewardTreasure] = useState(null)
   const [showTreasureShelf, setShowTreasureShelf] = useState(false)
   const [showJourneyExplore, setShowJourneyExplore] = useState(false)
+  const [exploreTab, setExploreTab] = useState('daily')
   const arcadeStatus = getArcadeUnlockStatus(progress)
 
   // Yaagvi greeting: wave on arrival → settle into mood-based state
@@ -1329,11 +1330,31 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
       </div>
 
       <BloomAdventureHome ageGroup="early" profileName={profileName} progress={progress} dailyNext={(treasureClaimed && arcadeStatus.unlocked ? MODULE_MAP.arcade : dailyJourneyNext?.module)} dailyDone={dailyJourneyDoneCount} dailyRequired={2} dailyClaimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} libraryOpen={showJourneyExplore} onNavigate={handleGatedNavigate} onClaimTreasure={claimTreasure} onToggleLibrary={() => setShowJourneyExplore(value => !value)} onOpenWorld={() => onNavigate('wonderworld')} onOpenTreasureRoom={() => setShowTreasureShelf(true)}/>
-      {showJourneyExplore && <OneDailyJourney ageGroup="early" profileName={profileName} steps={dailyJourneySteps} nextAdventure={arcadeStatus.unlocked ? MODULE_MAP.arcade : dailyJourneyNext?.module} doneCount={dailyJourneyDoneCount} required={2} claimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} onPlayNext={() => handleGatedNavigate((treasureClaimed && arcadeStatus.unlocked ? MODULE_MAP.arcade : dailyJourneyNext?.module)?.id || 'phonics')} onClaimTreasure={claimTreasure} onOpenTreasureRoom={() => setShowTreasureShelf(true)} onOpenWorld={() => onNavigate('wonderworld')} exploreOpen={showJourneyExplore} onToggleExplore={() => setShowJourneyExplore(value => !value)}/>}
-      {showJourneyExplore && <ForYouFeed theme={theme} progress={progress} challenges={challenges} arcadeStatus={arcadeStatus} dailyAdventure={dailyAdventure} onNavigate={handleGatedNavigate} />}
-      {showJourneyExplore && <><LivingAdventure ageGroup="early" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress} onOpenWonderWorld={() => onNavigate('wonderworld')}/><NeverFinishedAdventure ageGroup="early" progress={progress} active={treasureClaimed} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress}/></>}
+      {showJourneyExplore && (
+        <div className="mx-auto mt-4 flex max-w-6xl gap-2 overflow-x-auto px-4 md:px-6 xl:px-8">
+          {[
+            { id: 'daily', label: "📍 Today's path" },
+            { id: 'recommended', label: '✨ Recommended' },
+            { id: 'story', label: '📖 Story adventure' },
+            { id: 'endless', label: '🧭 Endless mode' },
+            ...(skyshipEnabled && !livingAdventureActive ? [{ id: 'skyship', label: '🚀 Skyship' }] : []),
+          ].map(t => (
+            <button key={t.id} onClick={() => setExploreTab(t.id)}
+              className="shrink-0 rounded-full px-4 py-2 font-round text-xs font-black uppercase tracking-wide transition-colors"
+              style={exploreTab === t.id
+                ? { background: theme.primary, color: '#fff' }
+                : { background: '#fff', color: theme.primary, border: `1.5px solid ${theme.primary}40` }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {showJourneyExplore && exploreTab === 'daily' && <OneDailyJourney ageGroup="early" profileName={profileName} steps={dailyJourneySteps} nextAdventure={arcadeStatus.unlocked ? MODULE_MAP.arcade : dailyJourneyNext?.module} doneCount={dailyJourneyDoneCount} required={2} claimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} onPlayNext={() => handleGatedNavigate((treasureClaimed && arcadeStatus.unlocked ? MODULE_MAP.arcade : dailyJourneyNext?.module)?.id || 'phonics')} onClaimTreasure={claimTreasure} onOpenTreasureRoom={() => setShowTreasureShelf(true)} onOpenWorld={() => onNavigate('wonderworld')} exploreOpen={showJourneyExplore} onToggleExplore={() => setShowJourneyExplore(value => !value)}/>}
+      {showJourneyExplore && exploreTab === 'recommended' && <ForYouFeed theme={theme} progress={progress} challenges={challenges} arcadeStatus={arcadeStatus} dailyAdventure={dailyAdventure} onNavigate={handleGatedNavigate} />}
+      {showJourneyExplore && exploreTab === 'story' && <LivingAdventure ageGroup="early" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress} onOpenWonderWorld={() => onNavigate('wonderworld')}/>}
+      {showJourneyExplore && exploreTab === 'endless' && <NeverFinishedAdventure ageGroup="early" progress={progress} active={treasureClaimed} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress}/>}
 
-      {showJourneyExplore && skyshipEnabled && !livingAdventureActive && (
+      {showJourneyExplore && exploreTab === 'skyship' && skyshipEnabled && !livingAdventureActive && (
         <SkyshipAdventure
           progress={progress}
           profileName={profileName}
