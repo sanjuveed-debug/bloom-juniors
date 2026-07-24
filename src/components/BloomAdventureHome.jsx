@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import YaagviCharacter from './YaagviCharacter.jsx'
+import { CountUp } from './Dashboard.jsx'
 import { useSpeech } from '../hooks/useSpeech.js'
 import { ADVENTURE_HOME_COPY, getAdventureHomeNext } from '../utils/adventureHome.js'
 import { getInterestRecommendations } from '../utils/childInterest.js'
@@ -30,7 +31,7 @@ export default function BloomAdventureHome({
 
   return (
     <section className="mx-auto w-full max-w-7xl px-3 pt-4 sm:px-5" data-testid={`adventure-home-${age}`}>
-      <div className="relative overflow-hidden rounded-[32px] border-[3px] shadow-[0_18px_45px_rgba(74,39,20,.18)]" style={{ borderColor: palette.border, background: palette.sky }}>
+      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .45, ease: 'easeOut' }} className="relative overflow-hidden rounded-[32px] border-[3px] shadow-[0_18px_45px_rgba(74,39,20,.18)]" style={{ borderColor: palette.border, background: palette.sky }}>
         <div className="absolute inset-0 bg-cover bg-center opacity-25" style={{ backgroundImage: 'url(/treasure-map-bg.png)' }} />
         <div className="absolute inset-0" style={{ background: `linear-gradient(110deg, ${palette.sky} 5%, ${palette.sky}f2 46%, transparent 100%)` }} />
         <div className="relative grid gap-4 p-4 sm:p-6 lg:grid-cols-[1.18fr_.82fr] lg:p-7">
@@ -98,10 +99,10 @@ export default function BloomAdventureHome({
               <YaagviCharacter state="wave" size="100%" className="absolute inset-0" imageClassName="drop-shadow-2xl" />
             </motion.div>
             <button onClick={() => speak(narration)} aria-label={speaking ? 'Yaagvi is speaking' : 'Hear Yaagvi explain the next adventure'} className="absolute right-2 top-2 grid h-12 w-12 place-items-center rounded-full border-2 border-white bg-[#3a214c] text-xl text-white shadow-lg">{speaking ? '⏸' : '🔊'}</button>
-            <button onClick={onOpenTreasureRoom} className="absolute bottom-3 right-2 rounded-full bg-[#3a214c] px-4 py-2 font-round text-xs font-black text-white shadow-lg">🎁 {treasureCount} treasures</button>
+            <button onClick={onOpenTreasureRoom} className="absolute bottom-3 right-2 rounded-full bg-[#3a214c] px-4 py-2 font-round text-xs font-black text-white shadow-lg">🎁 <CountUp target={treasureCount} /> treasures</button>
           </div>
         </div>
-      </div>
+      </motion.div>
     </section>
   )
 }

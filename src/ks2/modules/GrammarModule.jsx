@@ -119,8 +119,8 @@ export default function GrammarModule({ theme, onDone, onBack, played = 0 }) {
             {curr.sentence.map((word, i) => (
               i === curr.target
                 ? <motion.span key={i}
-                    animate={{ scale: [1, 1.12, 1] }}
-                    transition={{ duration: 1, repeat: Infinity }}
+                    animate={feedback ? { scale: 1 } : { scale: [1, 1.12, 1] }}
+                    transition={feedback ? { duration: .2 } : { duration: 1, repeat: Infinity }}
                     className="font-bubble px-2 py-0.5 rounded-lg text-white"
                     style={{ background: feedback?.correct ? typeColors[curr.type].bg : theme.primary, fontSize: '1.15rem' }}>
                     {word}

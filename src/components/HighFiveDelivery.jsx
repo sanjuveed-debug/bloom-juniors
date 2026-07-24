@@ -7,7 +7,7 @@ import YaagviCharacter from './YaagviCharacter'
 
 const AGE_LINES = {
   toddler: 'A grown-up sent something special for you!',
-  early: 'Yaagvi found a high-five with your name on it!',
+  early: 'Your guide Yaagvi found a high-five with your name on it!',
   junior: 'A message arrived at expedition headquarters!',
 }
 export default function HighFiveDelivery({ progress = {}, profileName = 'Explorer', ageGroup = 'early', onUpdateProgress }) {

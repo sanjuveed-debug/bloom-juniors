@@ -1219,11 +1219,11 @@ const TODDLER_CHOICE_GAMES = {
     background: 'linear-gradient(145deg,#0284c7,#22c55e 58%,#facc15)',
   },
   numbers: {
-    title: 'Counting Falls', place: 'Counting Falls', instruction: 'Touch each picture once, then choose.',
+    title: 'Counting Falls', place: 'Counting Falls', instruction: 'Count the pictures, then choose.',
     questions: played => makeSession(NUMBER_QUESTIONS, 'numbers', played),
     answerOf: question => question.count, optionsOf: question => question.options,
     promptOf: question => `How many ${question.emoji} can you count?`,
-    speechOf: question => `Touch each picture once while you count. How many are there? Your choices are ${question.options.join(', ')}.`,
+    speechOf: question => `Count the pictures. How many are there? Your choices are ${question.options.join(', ')}.`,
     hintOf: () => 'Point to every picture once and say the numbers slowly.',
     correctSpeechOf: question => `You counted ${question.count}! The number waterfall is moving.`,
     renderVisual: question => <div className="flex max-w-sm flex-wrap justify-center gap-2">{Array.from({ length: question.count }, (_, index) => <motion.span key={index} className="text-5xl" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: index * .06, type: 'spring' }}>{question.emoji}</motion.span>)}</div>,

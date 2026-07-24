@@ -11,8 +11,24 @@ const COPY = {
   junior: { title: 'Bloom Brain Championship', seat: 'Enter the championship', correct: 'Locked in — correct!', wrong: 'Not this time. Reset for the next one.' },
 }
 
+// Toddler gets a lighter, warmer stage than the late-night purple used for early/junior —
+// a picture show, not a midnight game show, while staying dark enough for white stage text.
+const STAGE_BG = {
+  toddler: {
+    intro: 'radial-gradient(circle_at_50%_18%,#ffb454_0,#ff7a59_40%,#7a2e3a_82%)',
+    complete: 'radial-gradient(circle_at_50%_30%,#ffcf6b,#ff8a5c_48%,#7a2e3a)',
+    play: 'radial-gradient(circle_at_50%_12%,#ffb454,#ff7a59_46%,#6b2735_100%)',
+  },
+  default: {
+    intro: 'radial-gradient(circle_at_50%_18%,#8d4bd8_0,#30115e_38%,#120728_78%)',
+    complete: 'radial-gradient(circle_at_50%_30%,#9c55e7,#32115f_48%,#120728)',
+    play: 'radial-gradient(circle_at_50%_12%,#7a45bd,#2b1057_46%,#100621)',
+  },
+}
+
 export default function BloomQuizShow({ ageGroup = 'early', profileName = 'Explorer', played = 0, onBack, onComplete }) {
   const copy = COPY[ageGroup] || COPY.early
+  const stageBg = STAGE_BG[ageGroup] || STAGE_BG.default
   const questions = useMemo(() => createBloomQuiz(ageGroup, { played, seed: `${new Date().toISOString().slice(0, 10)}:${Date.now()}` }), [ageGroup, played])
   const { speak, speaking, primeSpeech } = useSpeech()
   const [phase, setPhase] = useState('intro')
@@ -80,7 +96,7 @@ export default function BloomQuizShow({ ageGroup = 'early', profileName = 'Explo
     }, won ? 1000 : 1350)
   }
 
-  if (phase === 'intro') return <div className="relative min-h-[calc(100dvh-68px)] overflow-hidden bg-[radial-gradient(circle_at_50%_18%,#8d4bd8_0,#30115e_38%,#120728_78%)] px-4 py-8 text-white">
+  if (phase === 'intro') return <div className="relative min-h-[calc(100dvh-68px)] overflow-hidden px-4 py-8 text-white" style={{ background: stageBg.intro }}>
     <StageLights />
     <button onClick={onBack} className="relative z-10 rounded-full border border-white/25 bg-white/10 px-4 py-2 font-round text-sm font-black">← Back</button>
     <div className="relative z-10 mx-auto grid max-w-5xl items-center gap-4 sm:grid-cols-[1fr_320px]">
@@ -89,9 +105,9 @@ export default function BloomQuizShow({ ageGroup = 'early', profileName = 'Explo
     </div>
   </div>
 
-  if (phase === 'complete') return <div className="relative grid min-h-[calc(100dvh-68px)] place-items-center overflow-hidden bg-[radial-gradient(circle_at_50%_30%,#9c55e7,#32115f_48%,#120728)] p-5 text-white"><StageLights/><motion.div className="relative z-10 w-full max-w-xl rounded-[34px] border-4 border-[#ffd75b] bg-[#fff4dc] p-6 text-center text-[#381130] shadow-2xl sm:p-9" initial={{ scale: .6, rotate: -3 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring' }}><motion.div className="text-7xl" animate={{ y: [0,-8,0] }} transition={{ repeat: Infinity, duration: 1.4 }}>🎁</motion.div><p className="mt-2 font-round text-xs font-black uppercase tracking-[.2em] text-[#a4481f]">The prize lights chose</p><h2 className="mt-1 font-bubble text-3xl sm:text-4xl">{prize.title}</h2><p className="mt-3 font-round text-base font-black">{correct} of {questions.length} spotlight questions solved</p><div className="my-4 flex justify-center gap-1">{Array.from({length:prize.stars},(_,i)=><span key={i} className="text-4xl">⭐</span>)}</div><p className="font-round text-sm font-bold text-[#765033]">{prize.message}</p><button onClick={() => onComplete?.({ stars: prize.stars, correct, total: questions.length, struggles: mistakes })} className="mt-6 min-h-14 w-full rounded-2xl bg-gradient-to-r from-[#ff7b2c] to-[#ed3a82] font-bubble text-xl text-white shadow-lg">Open my prize →</button></motion.div></div>
+  if (phase === 'complete') return <div className="relative grid min-h-[calc(100dvh-68px)] place-items-center overflow-hidden p-5 text-white" style={{ background: stageBg.complete }}><StageLights/><motion.div className="relative z-10 w-full max-w-xl rounded-[34px] border-4 border-[#ffd75b] bg-[#fff4dc] p-6 text-center text-[#381130] shadow-2xl sm:p-9" initial={{ scale: .6, rotate: -3 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring' }}><motion.div className="text-7xl" animate={{ y: [0,-8,0] }} transition={{ repeat: Infinity, duration: 1.4 }}>🎁</motion.div><p className="mt-2 font-round text-xs font-black uppercase tracking-[.2em] text-[#a4481f]">The prize lights chose</p><h2 className="mt-1 font-bubble text-3xl sm:text-4xl">{prize.title}</h2><p className="mt-3 font-round text-base font-black">{correct} of {questions.length} spotlight questions solved</p><div className="my-4 flex justify-center gap-1">{Array.from({length:prize.stars},(_,i)=><span key={i} className="text-4xl">⭐</span>)}</div><p className="font-round text-sm font-bold text-[#765033]">{prize.message}</p><button onClick={() => onComplete?.({ stars: prize.stars, correct, total: questions.length, struggles: mistakes })} className="mt-6 min-h-14 w-full rounded-2xl bg-gradient-to-r from-[#ff7b2c] to-[#ed3a82] font-bubble text-xl text-white shadow-lg">Open my prize →</button></motion.div></div>
 
-  return <div className="relative min-h-[calc(100dvh-68px)] overflow-hidden bg-[radial-gradient(circle_at_50%_12%,#7a45bd,#2b1057_46%,#100621)] p-3 text-white sm:p-6">
+  return <div className="relative min-h-[calc(100dvh-68px)] overflow-hidden p-3 text-white sm:p-6" style={{ background: stageBg.play }}>
     <StageLights />
     <div className="relative z-10 mx-auto max-w-5xl">
       <div className="flex items-center gap-3"><button onClick={onBack} className="rounded-full border border-white/20 bg-white/10 px-4 py-2 font-round text-sm font-black">← Exit</button><div className="min-w-0 flex-1"><p className="truncate font-bubble text-lg">{copy.title}</p><div className="mt-1 flex gap-1">{questions.map((_,step)=><span key={step} className={`h-2 flex-1 rounded-full ${step<index?'bg-[#59d68a]':step===index?'bg-[#ffd75b]':'bg-white/15'}`}/>)}</div></div><span className="rounded-xl bg-[#ffd75b] px-3 py-2 font-bubble text-[#391137]">{index+1}/{questions.length}</span></div>

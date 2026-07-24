@@ -81,7 +81,7 @@ function timeGreeting() {
 }
 
 // ── CountUp ───────────────────────────────────────────────────────────────────
-function CountUp({ target, duration = 1000 }) {
+export function CountUp({ target, duration = 1000 }) {
   const [v, setV] = useState(0)
   useEffect(() => {
     if (!target) return

@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import React, { useMemo, useRef, useState } from 'react'
+import { AnimatePresence, motion, useInView } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import {
   WONDER_SEEDS,
@@ -50,65 +50,71 @@ const SEED_TEASERS = {
   cloud: 'A tiny rain cloud with dancing drops',
 }
 
-function GrowingSeed({ seed }) {
+function GrowingSeed({ seed, animated = true }) {
   const soil = <div className="absolute bottom-0 left-1/2 h-4 w-16 -translate-x-1/2 rounded-[50%] bg-gradient-to-b from-[#96623a] to-[#4b2d1c] shadow-lg"/>
-  if (seed.id === 'rainbow') return <motion.div role="img" aria-label="Rainbow Seed growing" className="relative h-20 w-20" animate={{y:[0,-3,0],rotate:[-2,2,-2]}} transition={{duration:2,repeat:Infinity}}>
+  if (seed.id === 'rainbow') return <motion.div role="img" aria-label="Rainbow Seed growing" className="relative h-20 w-20" animate={animated?{y:[0,-3,0],rotate:[-2,2,-2]}:undefined} transition={{duration:2,repeat:Infinity}}>
     {soil}<div className="absolute bottom-3 left-1/2 h-9 w-2 -translate-x-1/2 rounded-full bg-emerald-600"/><span className="absolute bottom-5 left-4 h-3 w-5 -rotate-[28deg] rounded-full bg-emerald-400"/>
     <div className="absolute left-1/2 top-0 h-12 w-12 -translate-x-1/2 rounded-[55%_55%_48%_48%] border-2 border-white shadow-[0_0_22px_#f472b6]" style={{background:'conic-gradient(#fb7185,#fb923c,#fde047,#4ade80,#38bdf8,#a78bfa,#fb7185)'}}><span className="absolute left-2 top-1 h-3 w-2 -rotate-12 rounded-full bg-white/70"/></div>
   </motion.div>
-  if (seed.id === 'moonberry') return <motion.div role="img" aria-label="Moonberry Seed growing" className="relative h-20 w-20" animate={{y:[0,-4,0]}} transition={{duration:2.2,repeat:Infinity}}>
+  if (seed.id === 'moonberry') return <motion.div role="img" aria-label="Moonberry Seed growing" className="relative h-20 w-20" animate={animated?{y:[0,-4,0]}:undefined} transition={{duration:2.2,repeat:Infinity}}>
     {soil}<div className="absolute bottom-3 left-1/2 h-9 w-2 -translate-x-1/2 rounded-full bg-emerald-700"/><span className="absolute bottom-6 right-4 h-3 w-5 rotate-[25deg] rounded-full bg-teal-400"/>
     <div className="absolute left-1/2 top-0 grid h-12 w-12 -translate-x-1/2 place-items-center rounded-full border-2 border-violet-200 bg-gradient-to-br from-violet-300 to-indigo-800 text-2xl shadow-[0_0_24px_#a78bfa]">🌙</div>
-    {[18,38,50].map((left,index)=><motion.span key={left} className="absolute top-9 h-3 w-3 rounded-full bg-fuchsia-300 shadow-[0_0_10px_#e879f9]" style={{left}} animate={{scale:[.8,1.25,.8]}} transition={{duration:1.4,repeat:Infinity,delay:index*.2}}/>)}
+    {[18,38,50].map((left,index)=><motion.span key={left} className="absolute top-9 h-3 w-3 rounded-full bg-fuchsia-300 shadow-[0_0_10px_#e879f9]" style={{left}} animate={animated?{scale:[.8,1.25,.8]}:undefined} transition={{duration:1.4,repeat:Infinity,delay:index*.2}}/>)}
   </motion.div>
-  if (seed.id === 'giggle') return <motion.div role="img" aria-label="Giggle Seed growing" className="relative h-20 w-20" animate={{scale:[1,1.07,1],rotate:[-2,2,-2]}} transition={{duration:1.5,repeat:Infinity}}>
+  if (seed.id === 'giggle') return <motion.div role="img" aria-label="Giggle Seed growing" className="relative h-20 w-20" animate={animated?{scale:[1,1.07,1],rotate:[-2,2,-2]}:undefined} transition={{duration:1.5,repeat:Infinity}}>
     {soil}<div className="absolute bottom-3 left-1/2 h-8 w-3 -translate-x-1/2 rounded-full bg-amber-700"/>
     <div className="absolute left-1/2 top-1 h-12 w-14 -translate-x-1/2 rounded-[48%] border-2 border-lime-100 bg-gradient-to-br from-lime-300 to-emerald-600 shadow-[0_0_20px_#86efac]"><span className="absolute left-3 top-4 h-2 w-2 rounded-full bg-[#28451d]"/><span className="absolute right-3 top-4 h-2 w-2 rounded-full bg-[#28451d]"/><span className="absolute left-1/2 top-7 h-2 w-5 -translate-x-1/2 rounded-b-full border-b-2 border-[#28451d]"/><span className="absolute -right-2 top-0 text-sm">✨</span></div>
   </motion.div>
-  return <motion.div role="img" aria-label="Cloud Seed growing" className="relative h-20 w-20" animate={{x:[-3,3,-3],y:[0,-3,0]}} transition={{duration:2.4,repeat:Infinity}}>
+  return <motion.div role="img" aria-label="Cloud Seed growing" className="relative h-20 w-20" animate={animated?{x:[-3,3,-3],y:[0,-3,0]}:undefined} transition={{duration:2.4,repeat:Infinity}}>
     {soil}<div className="absolute bottom-3 left-1/2 h-8 w-2 -translate-x-1/2 rounded-full bg-teal-600"/>
     <div className="absolute left-1/2 top-2 h-10 w-16 -translate-x-1/2 rounded-full border-2 border-white bg-gradient-to-b from-white to-sky-200 shadow-[0_0_22px_#7dd3fc]"><span className="absolute -top-3 left-2 h-9 w-9 rounded-full bg-white"/><span className="absolute -top-2 right-2 h-8 w-8 rounded-full bg-sky-50"/></div>
-    {[23,38,53].map((left,index)=><motion.span key={left} className="absolute top-12 h-4 w-2 rounded-full bg-sky-400" style={{left}} animate={{y:[0,8],opacity:[1,0]}} transition={{duration:1,repeat:Infinity,delay:index*.25}}/>)}
+    {[23,38,53].map((left,index)=><motion.span key={left} className="absolute top-12 h-4 w-2 rounded-full bg-sky-400" style={{left}} animate={animated?{y:[0,8],opacity:[1,0]}:undefined} transition={{duration:1,repeat:Infinity,delay:index*.25}}/>)}
   </motion.div>
 }
 
-function SeedKernel({ seed }) {
-  return <motion.div role="img" aria-label={`${seed.name} planted`} className="relative h-20 w-20" animate={{scale:[1,1.06,1]}} transition={{duration:2.2,repeat:Infinity}}>
+function SeedKernel({ seed, animated = true }) {
+  return <motion.div role="img" aria-label={`${seed.name} planted`} className="relative h-20 w-20" animate={animated?{scale:[1,1.06,1]}:undefined} transition={{duration:2.2,repeat:Infinity}}>
     <div className="absolute bottom-0 left-1/2 h-5 w-16 -translate-x-1/2 rounded-[50%] bg-gradient-to-b from-[#96623a] to-[#4b2d1c] shadow-lg"/>
     <div className="absolute left-1/2 top-5 grid h-11 w-9 -translate-x-1/2 place-items-center rounded-[55%_55%_48%_48%] border-2 border-white text-xl shadow-xl" style={{background:`linear-gradient(145deg,#fff,${seed.color})`,boxShadow:`0 0 20px ${seed.color}88`}}>{seed.icon}</div>
-    <motion.span className="absolute right-2 top-2 text-lg" animate={{rotate:[0,18,0],scale:[.8,1.15,.8]}} transition={{duration:1.5,repeat:Infinity}}>✨</motion.span>
+    <motion.span className="absolute right-2 top-2 text-lg" animate={animated?{rotate:[0,18,0],scale:[.8,1.15,.8]}:undefined} transition={{duration:1.5,repeat:Infinity}}>✨</motion.span>
   </motion.div>
 }
 
-function SeedPlantBase({ seedId, ready = false }) {
+function SeedPlantBase({ seedId, ready = false, animated = true }) {
   const seed = WONDER_SEEDS.find(item => item.id === seedId) || WONDER_SEEDS[0]
-  if (!ready) return <GrowingSeed seed={seed}/>
+  if (!ready) return <GrowingSeed seed={seed} animated={animated}/>
   if (seed.id === 'rainbow') {
     const colors = ['#fb7185', '#fb923c', '#fde047', '#4ade80', '#38bdf8', '#a78bfa']
-    return <motion.div className="relative h-20 w-20" animate={{ rotate: [-2, 2, -2] }} transition={{ duration: 2.4, repeat: Infinity }}><div className="absolute bottom-0 left-1/2 h-12 w-2 -translate-x-1/2 rounded-full bg-green-600"/>{colors.map((color,index)=><span key={color} className="absolute left-1/2 top-2 h-8 w-5 origin-[50%_32px] -translate-x-1/2 rounded-full shadow" style={{background:color,transform:`translateX(-50%) rotate(${index*60}deg)`}}/>)}<span className="absolute left-1/2 top-7 h-6 w-6 -translate-x-1/2 rounded-full bg-amber-300 shadow-[0_0_18px_#fde047]"/></motion.div>
+    return <motion.div className="relative h-20 w-20" animate={animated?{ rotate: [-2, 2, -2] }:undefined} transition={{ duration: 2.4, repeat: Infinity }}><div className="absolute bottom-0 left-1/2 h-12 w-2 -translate-x-1/2 rounded-full bg-green-600"/>{colors.map((color,index)=><span key={color} className="absolute left-1/2 top-2 h-8 w-5 origin-[50%_32px] -translate-x-1/2 rounded-full shadow" style={{background:color,transform:`translateX(-50%) rotate(${index*60}deg)`}}/>)}<span className="absolute left-1/2 top-7 h-6 w-6 -translate-x-1/2 rounded-full bg-amber-300 shadow-[0_0_18px_#fde047]"/></motion.div>
   }
   if (seed.id === 'moonberry') {
-    return <motion.div className="relative h-20 w-20" animate={{ y: [0,-4,0] }} transition={{duration:2,repeat:Infinity}}><div className="absolute bottom-0 left-1/2 h-14 w-2 -translate-x-1/2 rounded-full bg-emerald-700"/>{[[18,22],[46,14],[35,38]].map(([left,top],index)=><span key={index} className="absolute h-7 w-7 rounded-full bg-gradient-to-br from-violet-300 to-indigo-700 shadow-[0_0_18px_#c4b5fd]" style={{left,top}}/>)}<span className="absolute left-7 top-0 text-xl">🌙</span></motion.div>
+    return <motion.div className="relative h-20 w-20" animate={animated?{ y: [0,-4,0] }:undefined} transition={{duration:2,repeat:Infinity}}><div className="absolute bottom-0 left-1/2 h-14 w-2 -translate-x-1/2 rounded-full bg-emerald-700"/>{[[18,22],[46,14],[35,38]].map(([left,top],index)=><span key={index} className="absolute h-7 w-7 rounded-full bg-gradient-to-br from-violet-300 to-indigo-700 shadow-[0_0_18px_#c4b5fd]" style={{left,top}}/>)}<span className="absolute left-7 top-0 text-xl">🌙</span></motion.div>
   }
   if (seed.id === 'giggle') {
-    return <motion.div className="relative h-20 w-20" animate={{scale:[1,1.05,1]}} transition={{duration:1.8,repeat:Infinity}}><div className="absolute bottom-0 left-1/2 h-10 w-4 -translate-x-1/2 rounded bg-amber-800"/><div className="absolute left-2 top-0 h-16 w-16 rounded-[45%] bg-gradient-to-br from-lime-300 to-emerald-600 shadow-xl"/>{[0,1,2,3].map(i=><span key={i} className="absolute h-3 w-3 rounded-full bg-pink-300 shadow-[0_0_9px_#f9a8d4]" style={{left:18+(i%2)*28,top:14+Math.floor(i/2)*26}}/>)}</motion.div>
+    return <motion.div className="relative h-20 w-20" animate={animated?{scale:[1,1.05,1]}:undefined} transition={{duration:1.8,repeat:Infinity}}><div className="absolute bottom-0 left-1/2 h-10 w-4 -translate-x-1/2 rounded bg-amber-800"/><div className="absolute left-2 top-0 h-16 w-16 rounded-[45%] bg-gradient-to-br from-lime-300 to-emerald-600 shadow-xl"/>{[0,1,2,3].map(i=><span key={i} className="absolute h-3 w-3 rounded-full bg-pink-300 shadow-[0_0_9px_#f9a8d4]" style={{left:18+(i%2)*28,top:14+Math.floor(i/2)*26}}/>)}</motion.div>
   }
-  return <motion.div className="relative h-20 w-20" animate={{x:[-3,3,-3],y:[0,-3,0]}} transition={{duration:2.5,repeat:Infinity}}><div className="absolute bottom-0 left-1/2 h-11 w-2 -translate-x-1/2 rounded-full bg-teal-600"/><div className="absolute left-1 top-2 h-10 w-16 rounded-full bg-white shadow-[0_0_20px_#bae6fd]"><span className="absolute -top-3 left-4 h-8 w-8 rounded-full bg-white"/><span className="absolute -top-2 right-2 h-7 w-7 rounded-full bg-sky-50"/></div><span className="absolute bottom-0 left-4 text-lg">💧</span><span className="absolute bottom-1 right-3 text-lg">💧</span></motion.div>
+  return <motion.div className="relative h-20 w-20" animate={animated?{x:[-3,3,-3],y:[0,-3,0]}:undefined} transition={{duration:2.5,repeat:Infinity}}><div className="absolute bottom-0 left-1/2 h-11 w-2 -translate-x-1/2 rounded-full bg-teal-600"/><div className="absolute left-1 top-2 h-10 w-16 rounded-full bg-white shadow-[0_0_20px_#bae6fd]"><span className="absolute -top-3 left-4 h-8 w-8 rounded-full bg-white"/><span className="absolute -top-2 right-2 h-7 w-7 rounded-full bg-sky-50"/></div><span className="absolute bottom-0 left-4 text-lg">💧</span><span className="absolute bottom-1 right-3 text-lg">💧</span></motion.div>
 }
 
-function SeedPlant({ seedId, ready = false, stage = 'sprout', discoveryName = '' }) {
+function SeedPlant({ seedId, ready = false, stage = 'sprout', discoveryName = '', animated = true }) {
   const seed = WONDER_SEEDS.find(item => item.id === seedId) || WONDER_SEEDS[0]
-  if (!ready && stage === 'seed') return <SeedKernel seed={seed}/>
-  const plant = <SeedPlantBase seedId={seedId} ready={ready}/>
+  if (!ready && stage === 'seed') return <SeedKernel seed={seed} animated={animated}/>
+  const plant = <SeedPlantBase seedId={seedId} ready={ready} animated={animated}/>
   if (!ready || !discoveryName) return plant
   const details = getWonderDiscoveryDetails(discoveryName)
   const variant = Math.max(0, seed.discoveries.indexOf(discoveryName))
   const positions = ['-right-2 -top-2', '-left-2 top-2', 'right-0 top-8']
   return <motion.div role="img" aria-label={discoveryName} className="relative h-24 w-24" whileTap={{scale:.9,rotate:variant===1?-5:5}}>
     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 scale-110">{plant}</div>
-    <motion.span className={`absolute ${positions[variant]} grid h-10 w-10 place-items-center rounded-full border-2 border-white text-2xl shadow-xl`} style={{background:`linear-gradient(145deg,#fff,${details.accent}55)`,boxShadow:`0 0 18px ${details.accent}`}} animate={{y:[0,-4,0],rotate:variant===2?[0,15,0]:[0,-8,0]}} transition={{duration:1.7+variant*.25,repeat:Infinity}}>{details.icon}</motion.span>
+    <motion.span className={`absolute ${positions[variant]} grid h-10 w-10 place-items-center rounded-full border-2 border-white text-2xl shadow-xl`} style={{background:`linear-gradient(145deg,#fff,${details.accent}55)`,boxShadow:`0 0 18px ${details.accent}`}} animate={animated?{y:[0,-4,0],rotate:variant===2?[0,15,0]:[0,-8,0]}:undefined} transition={{duration:1.7+variant*.25,repeat:Infinity}}>{details.icon}</motion.span>
     <span className="absolute bottom-1 left-1 h-3 w-3 rounded-full" style={{background:details.accent,boxShadow:`0 0 12px ${details.accent}`}}/>
   </motion.div>
+}
+
+function DiscoveryCard({ item, seed, details, onPlay }) {
+  const ref = useRef(null)
+  const inView = useInView(ref, { margin: '80px', amount: 0.2 })
+  return <motion.button ref={ref} onClick={()=>onPlay(item)} whileTap={{scale:.93}} className="rounded-2xl border-2 bg-[#f6ffe9] p-3 text-center shadow-sm" style={{borderColor:`${details.accent}55`,background:`linear-gradient(145deg,#f6ffe9,${details.accent}20)`}}><div className="mx-auto flex h-24 items-end justify-center"><SeedPlant seedId={item.seedId} ready discoveryName={item.name} animated={inView}/></div><p className="mt-1 font-bubble text-sm">{item.name}</p><p className="font-round text-[9px] font-black uppercase" style={{color:seed.color}}>{item.interactionCount?`Played ${item.interactionCount}×`:'Tap to play'}</p></motion.button>
 }
 
 const LIVING_WORLD_THEMES = {
@@ -283,7 +289,7 @@ export default function WonderWorld({ progress, profileName, ageGroup = 'early',
       {activeTab === 'treasures' && <MysteryEgg collection={treasureCollection} profileName={profileName} onHatch={hatchEgg}/>}
 
       {activeTab === 'world' && (
-      <section className="mt-5 rounded-3xl bg-white/75 p-4 shadow"><div className="flex items-end justify-between"><div><p className="font-round text-[10px] font-black uppercase tracking-[.18em] text-emerald-700">Made by your world</p><h2 className="font-bubble text-2xl">{copy.discoveries}</h2><p className="font-round text-xs font-bold text-[#78583e]">Tap any friend to make it react.</p></div><p className="font-bubble text-emerald-700">{world.discoveries.length}</p></div>{recentDiscoveries.length?<div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">{recentDiscoveries.map(item=>{const seed=WONDER_SEEDS.find(seedItem=>seedItem.id===item.seedId)||WONDER_SEEDS[0],details=getWonderDiscoveryDetails(item.name);return <motion.button key={item.id} onClick={()=>playWithDiscovery(item)} whileTap={{scale:.93}} className="rounded-2xl border-2 bg-[#f6ffe9] p-3 text-center shadow-sm" style={{borderColor:`${details.accent}55`,background:`linear-gradient(145deg,#f6ffe9,${details.accent}20)`}}><div className="mx-auto flex h-24 items-end justify-center"><SeedPlant seedId={item.seedId} ready discoveryName={item.name}/></div><p className="mt-1 font-bubble text-sm">{item.name}</p><p className="font-round text-[9px] font-black uppercase" style={{color:seed.color}}>{item.interactionCount?`Played ${item.interactionCount}×`:'Tap to play'}</p></motion.button>})}</div>:<div className="mt-3 rounded-2xl border-2 border-dashed border-emerald-700/15 p-6 text-center"><p className="text-4xl">🌱</p><p className="mt-1 font-bubble">Your first discovery begins with a Wonder Seed.</p></div>}</section>
+      <section className="mt-5 rounded-3xl bg-white/75 p-4 shadow"><div className="flex items-end justify-between"><div><p className="font-round text-[10px] font-black uppercase tracking-[.18em] text-emerald-700">Made by your world</p><h2 className="font-bubble text-2xl">{copy.discoveries}</h2><p className="font-round text-xs font-bold text-[#78583e]">Tap any friend to make it react.</p></div><p className="font-bubble text-emerald-700">{world.discoveries.length}</p></div>{recentDiscoveries.length?<div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">{recentDiscoveries.map(item=>{const seed=WONDER_SEEDS.find(seedItem=>seedItem.id===item.seedId)||WONDER_SEEDS[0],details=getWonderDiscoveryDetails(item.name);return <DiscoveryCard key={item.id} item={item} seed={seed} details={details} onPlay={playWithDiscovery}/>})}</div>:<div className="mt-3 rounded-2xl border-2 border-dashed border-emerald-700/15 p-6 text-center"><p className="text-4xl">🌱</p><p className="mt-1 font-bubble">Your first discovery begins with a Wonder Seed.</p></div>}</section>
       )}
     </main>
     <AnimatePresence>{questCelebration&&<motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-[320] grid place-items-center overflow-y-auto bg-[#1e1238]/85 p-4 backdrop-blur-md"><motion.div initial={{scale:.55,y:60}} animate={{scale:1,y:0}} exit={{scale:.8,opacity:0}} transition={{type:'spring'}} className="w-full max-w-md overflow-hidden rounded-[34px] border-4 border-yellow-200 bg-gradient-to-b from-[#fff8c9] via-[#f5d9ff] to-[#b7f7de] p-6 text-center shadow-2xl"><motion.div className="text-8xl" animate={{y:[0,-10,0],rotate:[-5,5,-5]}} transition={{duration:1.8,repeat:Infinity}}>{companionQuest.icon}</motion.div><p className="font-round text-xs font-black uppercase tracking-[.2em] text-[#6b348c]">Buddy quest complete</p><h2 className="mt-1 font-bubble text-3xl text-[#32113f]">You found them all!</h2><p className="mt-2 font-round text-sm font-bold text-[#66456f]">{buddy.name} found a reward for your Living World.</p><div className="mt-4 grid grid-cols-2 gap-3"><div className="rounded-2xl bg-white/80 p-3 shadow"><p className="text-4xl">🌱</p><p className="font-bubble text-sm">1 Wonder Seed</p></div><div className="rounded-2xl bg-white/80 p-3 shadow"><p className="text-4xl">✨</p><p className="font-bubble text-sm">5 Sparkle Dust</p></div></div><button onClick={()=>setQuestCelebration(false)} className="mt-5 min-h-14 w-full rounded-2xl bg-gradient-to-r from-[#7a3bad] to-[#ec4899] font-bubble text-lg text-white shadow-lg">KEEP MY REWARDS →</button></motion.div></motion.div>}</AnimatePresence>

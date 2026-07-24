@@ -7,6 +7,9 @@ import { PREMIUM_GATING_ENABLED } from '../config/premiumContent.js'
 import { getModuleGrowth, growthEmoji } from '../utils/growthLevels.js'
 import ParentProgressStory from './ParentProgressStory.jsx'
 import { getParentInterestInsight } from '../utils/childInterest.js'
+import { getCompanionBond } from '../utils/companionBond.js'
+import { getDreamProjectState } from '../utils/dreamProject.js'
+import { normaliseTreasureCollection } from '../utils/treasureRewards.js'
 
 const PREMIUM_PRICE_LABEL = 'AED 19/month'
 
@@ -536,6 +539,32 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
                 ))}
               </div>
             </div>
+
+            {/* Living World summary — same story the child sees in Companion Bond / Dream Build / Treasure Room, surfaced here too */}
+            {(() => {
+              const bond = getCompanionBond(progress)
+              const dream = getDreamProjectState(progress, profileAgeGroup || 'early')
+              const treasureCount = normaliseTreasureCollection(progress.treasureCollection).items.length
+              return (
+                <div className="rounded-3xl p-4 shadow" style={{ background: theme.card }}>
+                  <p className="font-bubble text-lg mb-2" style={{ color: theme.text }}>Living World 🌱</p>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="rounded-2xl p-3" style={{ background: `${theme.primary}12`, border: `1px solid ${theme.primary}30` }}>
+                      <p className="font-bubble text-sm truncate" style={{ color: theme.text }}>{bond.companion.name}</p>
+                      <p className="font-round text-[10px] font-black uppercase opacity-65" style={{ color: theme.text }}>Lv{bond.stage.level} · {bond.stage.name}</p>
+                    </div>
+                    <div className="rounded-2xl p-3" style={{ background: `${theme.primary}12`, border: `1px solid ${theme.primary}30` }}>
+                      <p className="font-bubble text-sm" style={{ color: theme.text }}>{dream.state.stage}/{dream.project.stages.length}</p>
+                      <p className="font-round text-[10px] font-black uppercase opacity-65" style={{ color: theme.text }}>Dream Build</p>
+                    </div>
+                    <div className="rounded-2xl p-3" style={{ background: `${theme.primary}12`, border: `1px solid ${theme.primary}30` }}>
+                      <p className="font-bubble text-sm" style={{ color: theme.text }}>{treasureCount}</p>
+                      <p className="font-round text-[10px] font-black uppercase opacity-65" style={{ color: theme.text }}>Treasures</p>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* Adaptive mastery journey */}
             {progress.livingAdventure && (
