@@ -2332,6 +2332,8 @@ export default function GameArcade({ avatar, progress, profileName, onAddStars, 
       correct: payload.correct,
       struggles: payload.struggles || [],
       stayOnModule: false,
+      // Quiz already shows its own "Open my prize" completion screen — don't stack a second one.
+      suppressCompletionModal: activeGame === 'quiz',
     })
     setActiveGame(null)
   }, [onAddStars, activeGame, speak, progress, onUpdateProgress])

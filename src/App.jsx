@@ -481,7 +481,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, ve
     }
     // Bonus award modules (dailygift, event) don't log game sessions
     const isBonusModule = module === 'dailygift' || module === 'event'
-    const { total = 0, correct = 0, struggles = [], stayOnModule = false } = sessionData
+    const { total = 0, correct = 0, struggles = [], stayOnModule = false, suppressCompletionModal = false } = sessionData
     let learningEventId = ''
     if (!isBonusModule) {
       const duration = screenEntryRef.current
@@ -574,7 +574,9 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, ve
       addSticker({ type: 'challenge', emoji: '🏆' })
     }
     if (!stayOnModule && !isBonusModule) {
-      window.dispatchEvent(new CustomEvent('bloom:game-complete', { detail: { module, stars: count, total, correct, eventId: learningEventId } }))
+      if (!suppressCompletionModal) {
+        window.dispatchEvent(new CustomEvent('bloom:game-complete', { detail: { module, stars: count, total, correct, eventId: learningEventId } }))
+      }
       return
     }
     const skyshipEngineMissionActive =

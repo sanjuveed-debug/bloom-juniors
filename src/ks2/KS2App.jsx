@@ -677,6 +677,7 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
   }, [update, todayKey])
 
   const handleModuleDone = useCallback((moduleId, rawCorrect, rawTotal, evidence = {}) => {
+    const { suppressCompletionModal = false } = evidence
     trackActivityComplete(moduleId, 'junior')
 
     const total = Math.max(1, Number.isFinite(Number(rawTotal)) ? Number(rawTotal) : 1)
@@ -715,7 +716,9 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
     confetti({ particleCount: 120, spread: 130, origin: { x: 0.5, y: 0.3 } })
     const eventId=`learning:${profileId || 'local'}:${moduleId}:${Date.now()}`
     window.dispatchEvent(new CustomEvent('yaagvi:celebrate',{detail:{module:moduleId,stars,eventId}}))
-    window.dispatchEvent(new CustomEvent('bloom:game-complete',{detail:{module:moduleId,stars,total,correct,eventId,reward:`${xpEarned} XP earned${treasure>0?` · ${treasure} expedition treasure`:''}.`}}))
+    if (!suppressCompletionModal) {
+      window.dispatchEvent(new CustomEvent('bloom:game-complete',{detail:{module:moduleId,stars,total,correct,eventId,reward:`${xpEarned} XP earned${treasure>0?` · ${treasure} expedition treasure`:''}.`}}))
+    }
   }, [update, logSession, todayKey, profileId])
 
   const handleExerciseDone = useCallback(() => {
@@ -784,7 +787,7 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
     science:      <ScienceModule      {...props} played={p('science')}     onDone={(s, t, e) => handleModuleDone('science', s, t, e)} />,
     worldmap:     <WorldMapModule     {...props} played={p('worldmap')}    onDone={(s, t, e) => handleModuleDone('worldmap', s, t, e)} />,
     spirituality: <SpiritualityModule {...props} played={p('spirituality')} onDone={(s, t, e) => handleModuleDone('spirituality', s, t, e)} />,
-    games:        <GamesModule        {...props} played={p('games')} gamesUnlocked={gamesUnlocked} onComplete={({ correct, total }) => handleModuleDone('games', correct, total)} />,
+    games:        <GamesModule        {...props} played={p('games')} gamesUnlocked={gamesUnlocked} onComplete={({ correct, total }) => handleModuleDone('games', correct, total, { suppressCompletionModal: true })} />,
     exercise:     <ExerciseModule     {...props} onDone={handleExerciseDone} />,
   }
 
