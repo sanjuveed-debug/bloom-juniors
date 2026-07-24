@@ -87,69 +87,6 @@ function DeveloperVideo() {
   )
 }
 
-function WaitlistForm({ source = 'hero' }) {
-  const [email, setEmail] = useState('')
-  const [status, setStatus] = useState('idle')
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!email.trim() || status !== 'idle') return
-    setStatus('sending')
-    try {
-      const res = await fetch('/api/waitlist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), module: source }),
-      })
-      setStatus(res.ok ? 'done' : 'error')
-    } catch {
-      setStatus('error')
-    }
-  }
-
-  if (status === 'done') {
-    return (
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="flex items-center gap-3 rounded-2xl p-4"
-        style={{ background: 'rgba(22,163,74,0.08)', border: '1.5px solid rgba(22,163,74,0.25)' }}
-      >
-        <span className="text-2xl">🎉</span>
-        <div>
-          <p className="font-bubble text-base" style={{ color: TEXT }}>You're on the list!</p>
-          <p className="font-round text-xs" style={{ color: TEXT_MUTED }}>Check your inbox — 50% off early bird offer inside.</p>
-        </div>
-      </motion.div>
-    )
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="flex gap-2 flex-col sm:flex-row">
-      <input
-        type="email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        placeholder="Enter your email"
-        className="flex-1 rounded-2xl px-4 py-3.5 font-round text-sm outline-none"
-        style={{ background: '#FFFFFF', border: '1.5px solid rgba(66,32,6,0.16)', color: TEXT }}
-      />
-      <motion.button
-        type="submit"
-        whileTap={{ scale: 0.95 }}
-        disabled={status === 'sending'}
-        className="rounded-2xl px-6 py-3.5 font-bubble text-sm text-white shadow-lg whitespace-nowrap"
-        style={{ background: PRIMARY, opacity: status === 'sending' ? 0.7 : 1 }}
-      >
-        {status === 'sending' ? 'Joining…' : 'Join waitlist →'}
-      </motion.button>
-      {status === 'error' && (
-        <p className="font-round text-red-600 text-xs mt-1 sm:col-span-2">Something went wrong — try again.</p>
-      )}
-    </form>
-  )
-}
-
 const VIDEO_DURATION = 12000  // ms to show video before switching to mascot
 const MASCOT_DURATION = 8000  // ms to show mascot before switching back
 
@@ -279,11 +216,13 @@ function WelcomeIntro() {
     >
       <motion.div
         className="flex flex-col items-center"
-        initial={{ opacity: 0, scale: 0.4, rotateY: -130, y: 60 }}
+        initial={{ opacity: 0, scale: 0.08, y: -280, filter: 'blur(10px)' }}
         animate={leaving
-          ? { opacity: 0, scale: 0.7, rotateY: 60, y: -30 }
-          : { opacity: 1, scale: 1, rotateY: 0, y: 0 }}
-        transition={{ type: 'spring', stiffness: 140, damping: 15 }}
+          ? { opacity: 0, scale: 1.5, y: -60, filter: 'blur(6px)' }
+          : { opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+        transition={leaving
+          ? { duration: 0.4, ease: 'easeIn' }
+          : { type: 'spring', stiffness: 90, damping: 11, mass: 0.9 }}
       >
         <motion.img
           src="/yaagvi-mascot.webp"
@@ -292,7 +231,14 @@ function WelcomeIntro() {
           height={220}
           className="w-40 sm:w-52 h-auto drop-shadow-2xl"
           animate={leaving ? {} : { rotate: [0, -6, 6, -4, 0] }}
-          transition={{ duration: 1, delay: 0.5 }}
+          transition={{ duration: 1, delay: 0.9 }}
+        />
+        <motion.div
+          className="rounded-full -mt-3"
+          style={{ width: 90, height: 16, background: 'radial-gradient(ellipse, rgba(66,32,6,0.28), transparent 72%)' }}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={leaving ? { scale: 0, opacity: 0 } : { scale: 1, opacity: 1 }}
+          transition={{ delay: 0.55, duration: 0.4 }}
         />
         <motion.p
           initial={{ opacity: 0, y: 10 }}
@@ -322,6 +268,11 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
     <div className="min-h-screen overflow-x-hidden" style={{ background: 'linear-gradient(160deg,#FFF7ED 0%,#FFEDD5 45%,#FFF7ED 100%)' }}>
       <WelcomeIntro />
 
+      {/* ── TOP ANNOUNCEMENT BAR ─────────────────────────────────────────────── */}
+      <div className="text-center px-4" style={{ background: TEXT, color: '#FFFFFF', padding: '8px 16px', fontSize: '.88rem', fontWeight: 750 }}>
+        ✨ Safe, ad-free British curriculum learning for ages 3–9
+      </div>
+
       {/* ── NAV ──────────────────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-40 flex items-center justify-between px-4 py-3 md:px-8"
         style={{ background: 'rgba(255,247,237,0.92)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${CARD_BORDER}`, paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
@@ -330,7 +281,6 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
           <a href="#how-it-works" className="inline-flex items-center hover:opacity-70 transition-opacity">How it works</a>
           <a href="#schools" className="inline-flex items-center hover:opacity-70 transition-opacity">For schools</a>
           <a href="#safety" className="inline-flex items-center hover:opacity-70 transition-opacity">Safety</a>
-          <a href="#pricing" className="inline-flex items-center hover:opacity-70 transition-opacity">Pricing</a>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -782,43 +732,14 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
         </div>
       </section>
 
-      {/* ── FOUNDING FAMILIES ────────────────────────────────────────────────── */}
-      <section className="px-4 pb-16 md:px-8">
-        <div className="mx-auto max-w-2xl rounded-[28px] p-8 md:p-10 text-center"
-          style={{ background: '#FFFFFF', border: `2px dashed ${PRIMARY}45` }}>
-          <p className="font-round text-xs font-bold uppercase tracking-widest mb-3" style={{ color: PRIMARY }}>Founding families</p>
-          <h2 className="font-bubble text-3xl mb-3" style={{ color: TEXT }}>Be among our first families</h2>
-          <p className="font-round text-sm leading-relaxed mb-2 max-w-lg mx-auto" style={{ color: TEXT_MUTED }}>
-            We're a new app, built by a parent for parents — not a big team with years of reviews behind us yet.
-            If you join now, what you tell us directly shapes what we build next.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3 mt-6 mb-2">
-            {['Direct line to the founder', 'Your feedback shapes the roadmap', 'Free core learning path, always'].map(perk => (
-              <span key={perk} className="font-round text-xs font-bold px-3 py-1.5 rounded-full"
-                style={{ color: '#15803D', background: 'rgba(22,163,74,0.10)', border: '1px solid rgba(22,163,74,0.25)' }}>
-                ✓ {perk}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── PREMIUM WAITLIST ─────────────────────────────────────────────────── */}
-      <section id="pricing" className="px-4 pb-16 md:px-8">
-        <div className="mx-auto max-w-xl rounded-[28px] p-8 text-center"
-          style={{ background: '#FFFFFF', border: `1.5px solid ${CARD_BORDER}`, boxShadow: '0 4px 16px rgba(66,32,6,0.05)' }}>
-          <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 mb-4"
-            style={{ background: '#FEF3C7', color: '#92400E' }}>
-            <span className="font-bubble text-xs">⭐ PREMIUM — COMING SOON</span>
-          </div>
-          <h2 className="font-bubble text-3xl mb-2" style={{ color: TEXT }}>Unlock everything</h2>
-          <p className="font-round text-sm mb-2" style={{ color: TEXT_MUTED }}>
-            World Explorer, Wonder Lab, Planet World, Puzzle Quest and more — 8 premium modules launching soon.
-          </p>
-          <p className="font-round text-sm font-bold mb-6" style={{ color: '#B45309' }}>
-            Join the waitlist for 50% off your first 3 months.
-          </p>
-          <WaitlistForm source="landing-premium" />
+      {/* ── FOUNDING FAMILIES (compact strip) ────────────────────────────────── */}
+      <section className="px-4 pb-10 md:px-8">
+        <div className="mx-auto max-w-3xl flex flex-wrap items-center justify-center gap-2 rounded-full px-4 py-2.5 text-center"
+          style={{ background: '#FFFFFF', border: `1.5px dashed ${PRIMARY}45` }}>
+          <span className="font-round text-xs font-bold" style={{ color: PRIMARY }}>🌱 Founding families:</span>
+          <span className="font-round text-xs" style={{ color: TEXT_MUTED }}>
+            Built by a parent, for parents — join now and your feedback shapes what we build next.
+          </span>
         </div>
       </section>
 
