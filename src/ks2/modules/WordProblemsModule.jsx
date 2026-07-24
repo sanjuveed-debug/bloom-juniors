@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { sessionSeedFor, seededShuffle } from '../../utils/seededRandom'
+import InteractiveYaagvi, { useYaagviReactions } from '../../components/InteractiveYaagvi'
 
 const PROBLEMS = [
   {
@@ -127,7 +128,14 @@ export default function WordProblemsModule({ theme, onDone, onBack, played = 0 }
   const missedRef = useRef(false)
   const timersRef = useRef([])
 
+  const { reaction: yaagviReaction, react: reactYaagvi } = useYaagviReactions({
+    activityKey: q,
+    active: !feedback && q < problems.length,
+  })
+
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
+
+  useEffect(() => { reactYaagvi('question') }, [q, reactYaagvi])
 
   const handle = (ans) => {
     if (lockedRef.current || completedRef.current) return
@@ -136,6 +144,7 @@ export default function WordProblemsModule({ theme, onDone, onBack, played = 0 }
     const ns = score + (correct && !missedRef.current ? 1 : 0)
     if (!correct) missedRef.current = true
     if (correct) confetti({ particleCount: 60, spread: 80, origin: { x: 0.5, y: 0.4 } })
+    reactYaagvi(correct ? 'correct' : 'wrong', correct ? { streak: ns % 3 === 0 ? 3 : 1 } : { attempt: 1 })
     setFeedback({ correct })
     setShowWorking(correct)
     const id = window.setTimeout(() => {
@@ -151,6 +160,7 @@ export default function WordProblemsModule({ theme, onDone, onBack, played = 0 }
       setShowWorking(false)
       if (q + 1 >= problems.length) {
         completedRef.current = true
+        reactYaagvi('complete')
         onDone(ns, problems.length, { questions: problems })
       } else {
         setQ(q + 1)
@@ -172,6 +182,7 @@ export default function WordProblemsModule({ theme, onDone, onBack, played = 0 }
       </div>
 
       <div className="flex-1 overflow-y-auto flex flex-col items-center px-5 pt-5 pb-8 gap-4">
+        <InteractiveYaagvi reaction={yaagviReaction} placement="strip" className="max-w-sm" />
         <div className="w-full max-w-sm p-5 rounded-3xl" style={{ background: theme.card, border: `1px solid ${theme.primary}40` }}>
           <p className="font-round text-white text-base leading-relaxed">{curr.q}</p>
         </div>

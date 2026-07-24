@@ -4,6 +4,7 @@ import confetti from 'canvas-confetti'
 import { sessionSeedFor, seededShuffle } from '../../utils/seededRandom'
 import { useSpeech } from '../../hooks/useSpeech'
 import MatchingActivity from '../../components/MatchingActivity'
+import InteractiveYaagvi, { useYaagviReactions } from '../../components/InteractiveYaagvi'
 
 // Y3-4 and Y5-6 statutory word lists (NC England)
 const WORD_SETS = {
@@ -195,7 +196,14 @@ export default function SpellingModule({ theme, onDone, onBack, played = 0 }) {
   const missedRef = useRef(false)
   const timersRef = useRef([])
 
+  const { reaction: yaagviReaction, react: reactYaagvi } = useYaagviReactions({
+    activityKey: `${level}-${q}`,
+    active: Boolean(level) && !result && !matchPairs && !feedback,
+  })
+
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
+
+  useEffect(() => { if (level && !matchPairs) reactYaagvi('question') }, [level, q, matchPairs, reactYaagvi])
 
   const startLevel = (lv) => {
     const shuffled = seededShuffle(WORD_SETS[lv], sessionSeedFor('spelling-' + lv, played)).slice(0, 10)
@@ -222,6 +230,7 @@ export default function SpellingModule({ theme, onDone, onBack, played = 0 }) {
     const ns = score + (correct && !missedRef.current ? 1 : 0)
     if (!correct) missedRef.current = true
     if (correct) confetti({ particleCount: 50, spread: 70, origin: { x: 0.5, y: 0.4 } })
+    reactYaagvi(correct ? 'correct' : 'wrong', correct ? { streak: ns % 3 === 0 ? 3 : 1 } : { attempt: 1 })
     setFeedback({ correct, word: correct ? words[q].word : null })
     const id = window.setTimeout(() => {
       timersRef.current = timersRef.current.filter(t => t !== id)
@@ -234,6 +243,7 @@ export default function SpellingModule({ theme, onDone, onBack, played = 0 }) {
       }
       setHint(false)
       if (q + 1 >= words.length) {
+        reactYaagvi('complete')
         confetti({ particleCount: 150, spread: 100, origin: { x: 0.5, y: 0.3 } })
         setResult({ score: ns, total: words.length })
       } else {
@@ -379,6 +389,7 @@ export default function SpellingModule({ theme, onDone, onBack, played = 0 }) {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-6 gap-5">
+        <InteractiveYaagvi reaction={yaagviReaction} placement="strip" className="max-w-sm" />
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-2xl"
           style={{ background: `${theme.primary}25`, border: `1px solid ${theme.primary}40` }}>
           <span className="text-sm">🎯</span>

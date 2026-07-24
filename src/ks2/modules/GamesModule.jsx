@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import BloomQuizShow from '../../components/BloomQuizShow.jsx'
+import YaagviCharacter from '../../components/YaagviCharacter.jsx'
 import { dailySeedFor, seededShuffle } from '../../utils/seededRandom'
 
 const pick = (items) => items[Math.floor(Math.random() * items.length)]
@@ -20,7 +21,7 @@ function FinishScreen({ theme, title, score, total = score, onDone }) {
   const lockedRef = useRef(false)
   return (
     <div className="flex flex-col items-center justify-center gap-5 py-10 text-center">
-      <div className="text-6xl">🏆</div>
+      <YaagviCharacter state="celebrate" size={130} />
       <p className="font-bubble text-white text-2xl">{title}</p>
       <p className="font-round text-white/60">Score: {score}</p>
       <motion.button
@@ -889,7 +890,7 @@ export default function GamesModule({ theme, onBack, gamesUnlocked, played = 0, 
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: theme.bg }}>
         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }} className="text-center">
-          <div className="text-6xl mb-4">🎮</div>
+          <YaagviCharacter state="celebrate" size={130} className="mx-auto mb-4" />
           <h2 className="font-bubble text-white text-2xl mb-2">Game Complete</h2>
           <p className="font-round text-white/60 mb-6">Score: {result.score}</p>
           <div className="flex gap-3 justify-center">

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { buildJuniorPersonalisedPassage } from '../../utils/personalisedStories.js'
+import InteractiveYaagvi, { useYaagviReactions } from '../../components/InteractiveYaagvi'
 
 const PASSAGES = [
   {
@@ -53,7 +54,14 @@ export default function ReadingModule({ theme, onDone, onBack, progress = {}, pr
     [progress, profileName],
   )
 
+  const { reaction: yaagviReaction, react: reactYaagvi } = useYaagviReactions({
+    activityKey: `${passage?.id}-${q}`,
+    active: phase === 'quiz' && !feedback,
+  })
+
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
+
+  useEffect(() => { if (phase === 'quiz') reactYaagvi('question') }, [phase, q, reactYaagvi])
 
   const startPassage = (p) => {
     lockedRef.current = false
@@ -69,6 +77,7 @@ export default function ReadingModule({ theme, onDone, onBack, progress = {}, pr
     const ns = score + (correct && !missedRef.current ? 1 : 0)
     if (!correct) missedRef.current = true
     if (correct) confetti({ particleCount: 40, spread: 60, origin: { x: 0.5, y: 0.4 } })
+    reactYaagvi(correct ? 'correct' : 'wrong', correct ? { streak: ns % 3 === 0 ? 3 : 1 } : { attempt: 1 })
     setFeedback({ correct })
     const id = window.setTimeout(() => {
       timersRef.current = timersRef.current.filter(t => t !== id)
@@ -79,6 +88,7 @@ export default function ReadingModule({ theme, onDone, onBack, progress = {}, pr
       }
       if (q + 1 >= passage.questions.length) {
         completedRef.current = true
+        reactYaagvi('complete')
         setScore(ns)
         setPhase('result')
         onDone(ns, passage.questions.length, { questions: passage.questions })
@@ -175,6 +185,7 @@ export default function ReadingModule({ theme, onDone, onBack, progress = {}, pr
         <span className="font-round text-white/60 text-sm">{q + 1}/{passage.questions.length}</span>
       </div>
       <div className="flex-1 flex flex-col items-center justify-center px-6 gap-5">
+        <InteractiveYaagvi reaction={yaagviReaction} placement="strip" className="max-w-sm" />
         <span className="font-round text-xs px-3 py-1 rounded-full" style={{ background: `${theme.primary}40`, color: theme.accent }}>
           {TYPE_BADGE[curr.type]}
         </span>

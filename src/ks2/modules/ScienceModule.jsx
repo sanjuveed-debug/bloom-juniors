@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { sessionSeedFor, seededShuffle } from '../../utils/seededRandom'
+import InteractiveYaagvi, { useYaagviReactions } from '../../components/InteractiveYaagvi'
 
 const TOPICS = {
   'Plants 🌱': [
@@ -41,6 +42,13 @@ export default function ScienceModule({ theme, onDone, onBack, played = 0 }) {
   const completedRef = useRef(false)
   const missedRef = useRef(false)
 
+  const { reaction: yaagviReaction, react: reactYaagvi } = useYaagviReactions({
+    activityKey: `${topic}-${q}`,
+    active: Boolean(topic) && !feedback,
+  })
+
+  useEffect(() => { if (topic) reactYaagvi('question') }, [topic, q, reactYaagvi])
+
   const startTopic = (t) => {
     lockedRef.current = false
     completedRef.current = false
@@ -59,6 +67,7 @@ export default function ScienceModule({ theme, onDone, onBack, played = 0 }) {
     const ns = score + (correct && !missedRef.current ? 1 : 0)
     if (!correct) missedRef.current = true
     if (correct) confetti({ particleCount: 45, spread: 65, origin: { x: 0.5, y: 0.4 } })
+    reactYaagvi(correct ? 'correct' : 'wrong', correct ? { streak: ns % 3 === 0 ? 3 : 1 } : { attempt: 1 })
     setFeedback({ correct, fact: correct ? questions[q].fact : null, ns })
   }
 
@@ -72,6 +81,7 @@ export default function ScienceModule({ theme, onDone, onBack, played = 0 }) {
     }
     if (q + 1 >= questions.length) {
       completedRef.current = true
+      reactYaagvi('complete')
       onDone(ns, questions.length, { questions })
     } else {
       setQ(q + 1)
@@ -113,6 +123,7 @@ export default function ScienceModule({ theme, onDone, onBack, played = 0 }) {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-5 gap-5">
+        <InteractiveYaagvi reaction={yaagviReaction} placement="strip" className="max-w-sm" />
         <div className="w-full max-w-sm p-6 rounded-3xl text-center" style={{ background: theme.card, border: `1px solid ${theme.primary}40` }}>
           <p className="font-bubble text-white text-xl leading-snug">{curr.q}</p>
         </div>

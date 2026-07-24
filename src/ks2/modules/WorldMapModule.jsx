@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { sessionSeedFor, seededShuffle } from '../../utils/seededRandom'
+import InteractiveYaagvi, { useYaagviReactions } from '../../components/InteractiveYaagvi'
 
 const COUNTRIES = [
   { country: 'France',       flag: '🇫🇷', continent: 'Europe',   capital: 'Paris',        opts: ['Paris', 'Lyon', 'Brussels', 'Rome']           },
@@ -46,7 +47,14 @@ export default function WorldMapModule({ theme, onDone, onBack, played = 0 }) {
   const missedRef = useRef(false)
   const timersRef = useRef([])
 
+  const { reaction: yaagviReaction, react: reactYaagvi } = useYaagviReactions({
+    activityKey: q,
+    active: !feedback && q < questions.length,
+  })
+
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
+
+  useEffect(() => { reactYaagvi('question') }, [q, reactYaagvi])
 
   const handle = (ans) => {
     if (lockedRef.current || completedRef.current) return
@@ -55,6 +63,7 @@ export default function WorldMapModule({ theme, onDone, onBack, played = 0 }) {
     const ns = score + (correct && !missedRef.current ? 1 : 0)
     if (!correct) missedRef.current = true
     if (correct) confetti({ particleCount: 50, spread: 70, origin: { x: 0.5, y: 0.4 } })
+    reactYaagvi(correct ? 'correct' : 'wrong', correct ? { streak: ns % 3 === 0 ? 3 : 1 } : { attempt: 1 })
     setFeedback({ correct, ans: correct ? curr.capital : null })
     const id = window.setTimeout(() => {
       timersRef.current = timersRef.current.filter(t => t !== id)
@@ -65,6 +74,7 @@ export default function WorldMapModule({ theme, onDone, onBack, played = 0 }) {
       }
       if (q + 1 >= questions.length) {
         completedRef.current = true
+        reactYaagvi('complete')
         onDone(ns, questions.length, { questions })
       } else {
         setQ(q + 1)
@@ -86,6 +96,7 @@ export default function WorldMapModule({ theme, onDone, onBack, played = 0 }) {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-5 gap-6">
+        <InteractiveYaagvi reaction={yaagviReaction} placement="strip" className="max-w-sm" />
         <div className="w-full max-w-sm p-6 rounded-3xl text-center" style={{ background: theme.card, border: `1px solid ${theme.primary}40` }}>
           <motion.div className="text-8xl mb-3"
             key={curr.country}
