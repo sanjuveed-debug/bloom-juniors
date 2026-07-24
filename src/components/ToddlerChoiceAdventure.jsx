@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useSpeech } from '../hooks/useSpeech.js'
 import { speakThenAdvance } from '../utils/speechAdvance.js'
+import YaagviCharacter from './YaagviCharacter.jsx'
 
 export default function ToddlerChoiceAdventure({
   moduleId,
@@ -27,6 +28,7 @@ export default function ToddlerChoiceAdventure({
   const [selected, setSelected] = useState(null)
   const [guideAnswer, setGuideAnswer] = useState(false)
   const [message, setMessage] = useState('')
+  const [mascotState, setMascotState] = useState('wave')
   const attemptsRef = useRef(0)
   const lockedRef = useRef(false)
   const completedRef = useRef(false)
@@ -66,6 +68,7 @@ export default function ToddlerChoiceAdventure({
       attemptsRef.current += 1
       const guided = attemptsRef.current >= 2
       setGuideAnswer(guided)
+      setMascotState(guided ? 'point' : 'think')
       setMessage(guided ? 'Yaagvi made the matching choice glow!' : 'Good try — use Yaagvi’s clue!')
       const clue = guided
         ? `Look for the choice with the golden glow. ${hintOf(current)}`
@@ -80,6 +83,7 @@ export default function ToddlerChoiceAdventure({
 
     const nextScore = score + (attemptsRef.current === 0 ? 1 : 0)
     setScore(nextScore)
+    setMascotState('celebrate')
     setMessage('You found it!')
     confetti({ particleCount: 55, spread: 85, origin: { y: .55 } })
     speakThenAdvance(speak, correctSpeechOf(current), { mood: 'celebrate', rate: 0.84 }, () => {
@@ -110,7 +114,7 @@ export default function ToddlerChoiceAdventure({
 
       <main className="relative z-10 mx-auto mt-2 max-w-4xl rounded-[32px] border-4 border-white/35 bg-[#fff8e8]/95 p-4 text-[#3b1607] shadow-2xl sm:p-7">
         <div className="flex items-center gap-3">
-          <motion.img src="/yaagvi-mascot-single.webp" alt="Yaagvi guides the activity" className="h-16 w-16 object-contain drop-shadow-md sm:h-20 sm:w-20" animate={{ y: [0, -3, 0] }} transition={{ duration: 2, repeat: Infinity }} />
+          <YaagviCharacter state={mascotState} autoIdle={2200} size={72} imageClassName="drop-shadow-md" />
           <div className="min-w-0 flex-1">
             <p className="font-round text-xs font-black uppercase tracking-[.14em] text-[#a33b19]">Today’s little adventure</p>
             <p className="font-bubble text-base leading-tight sm:text-xl">{instruction}</p>

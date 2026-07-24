@@ -1,5 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
+import YaagviCharacter from './YaagviCharacter.jsx'
 
 const DESTINATIONS = {
   phonics:{icon:'🎤',place:'Echo Jungle',title:'Sound Pop',mission:'Listen, spot the sound, and wake the singing birds.',pos:'18% 46%',pose:'wave'}, math:{icon:'🔢',place:'Number Falls',title:'Number World',mission:'Solve a number puzzle to reveal the next map clue.',pos:'37% 38%',pose:'point'}, tricky:{icon:'⭐',place:'Starry Caves',title:'Star Catch',mission:'Catch the tricky words before their sparkle fades.',pos:'9% 64%',pose:'celebrate'}, story:{icon:'📖',place:'Story Tree',title:'Story Room',mission:'Open today’s story and find the hidden sound clues.',pos:'14% 38%',pose:'read'},
@@ -27,7 +28,7 @@ export default function ModuleArrival({ moduleId, profileName, onStart, onBack, 
         <p className="font-bubble text-sm uppercase tracking-[.18em] text-[#9a3412]">📍 {toddler?'Let’s visit':junior?'Mission location':'Arrived at'} {d.place}</p><div className="mt-3 flex items-center gap-3"><span className="text-5xl">{d.icon}</span><h2 className="font-bubble text-4xl leading-tight text-[#3b1607] sm:text-5xl">{d.title}</h2></div>
         <p className="mt-4 max-w-md font-round text-xl font-bold leading-snug text-[#6b351b]">{d.mission}</p><p className="mt-3 font-round text-sm font-semibold text-[#9a5b35]">{toddler?'One tiny activity · big pictures · happy celebration':junior?'Focused mission · earn XP · recover treasure':'One mission · a few minutes · stars move the adventure forward'}</p>
         <div className="mt-7 flex gap-3"><motion.button whileTap={{scale:.94}} onClick={()=>{ window.dispatchEvent(new CustomEvent('bloom:module-started',{detail:{moduleId,ageGroup}})); onStart?.() }} className="min-h-14 flex-1 rounded-2xl bg-gradient-to-r from-orange-500 to-pink-500 px-6 font-bubble text-xl text-white shadow-lg">{toddler?'Play! →':junior?'Start mission →':'Let’s explore →'}</motion.button><button onClick={onBack} className="min-h-14 rounded-2xl border-2 border-[#7c3f20]/20 bg-white/70 px-5 font-bubble text-[#6b351b]">Map</button></div>
-      </div><motion.div className="relative mx-auto h-60 w-52 self-end sm:h-80 sm:w-60" animate={{y:[0,-8,0],rotate:[-1,1,-1]}} transition={{duration:3,repeat:Infinity,ease:'easeInOut'}}><div className="absolute inset-x-5 bottom-4 h-8 rounded-full bg-[#6b351b]/20 blur-md"/><img src={`/yaagvi-poses/${d.pose}.png?v2`} alt={`Yaagvi welcomes ${profileName||'the explorer'}`} className="relative h-full w-full object-contain drop-shadow-xl"/></motion.div></div>
+      </div><motion.div className="relative mx-auto h-60 w-52 self-end sm:h-80 sm:w-60" animate={{y:[0,-8,0],rotate:[-1,1,-1]}} transition={{duration:3,repeat:Infinity,ease:'easeInOut'}}><div className="absolute inset-x-5 bottom-4 h-8 rounded-full bg-[#6b351b]/20 blur-md"/><YaagviCharacter state={d.pose} size="100%" imageClassName="drop-shadow-xl" /></motion.div></div>
     </motion.section>
   </motion.div>
 }

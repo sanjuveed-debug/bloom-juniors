@@ -14,6 +14,7 @@ const POSES = {
   think:     `/yaagvi-poses/think.png?${ASSET_VERSION}`,
   read:      `/yaagvi-poses/read.png?${ASSET_VERSION}`,
   clap:      `/yaagvi-poses/clap.png?${ASSET_VERSION}`,
+  'think-alt': `/yaagvi-poses/think-alt.png?${ASSET_VERSION}`,
 }
 
 // CSS injected once
@@ -146,6 +147,12 @@ const CSS = `
     50%      { transform: scale(1.08); }
   }
 
+  /* Think-alt — slow sway, same rhythm as think */
+  .yaagvi-anim-think-alt {
+    animation: yaagvi-sway 2s ease-in-out infinite;
+    transform-origin: bottom center;
+  }
+
   /* Speech bubble */
   .yaagvi-speech {
     position: absolute;
@@ -195,7 +202,8 @@ const CSS = `
     .yaagvi-anim-point,
     .yaagvi-anim-think,
     .yaagvi-anim-read,
-    .yaagvi-anim-clap {
+    .yaagvi-anim-clap,
+    .yaagvi-anim-think-alt {
       animation: none;
     }
     .yaagvi-dashboard::before { animation: none; }
@@ -214,7 +222,7 @@ function injectStyles() {
  * YaagviCharacter
  *
  * Props:
- *   state    — 'idle' | 'wave' | 'celebrate' | 'dance' | 'point' | 'think' | 'read' | 'clap'
+ *   state    — 'idle' | 'wave' | 'celebrate' | 'dance' | 'point' | 'think' | 'think-alt' | 'read' | 'clap'
  *   size     — number (px width) or string CSS value. Default: 180
  *   speech   — string | null  Optional speech bubble text
  *   autoIdle — number | null  ms after which state resets to 'idle' (e.g. 2500)
