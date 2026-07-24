@@ -4,7 +4,10 @@ import {
   loadSession, createSession, clearSession, clearGuardian, verifyGuardianLogin,
 } from '../utils/guardian'
 import { isSupabaseConfigured, supabase } from '../lib/supabase.js'
-import { ensureCloudClass, loadCloudGuardian, saveCloudGuardian } from '../services/cloudStore.js'
+import {
+  ensureCloudClass, loadCloudGuardian, saveCloudGuardian,
+  updateCloudParentPin, verifyCloudParentPin,
+} from '../services/cloudStore.js'
 import { trackEvent } from '../utils/analytics.js'
 
 const APP_ORIGIN =
@@ -109,7 +112,7 @@ export function useGuardian() {
         throw error
       }
 
-      await saveCloudGuardian(next)
+      await saveCloudGuardian(next, { includePin: true })
     }
 
     saveGuardian(next)
@@ -203,7 +206,7 @@ export function useGuardian() {
     })
 
     try {
-      await saveCloudGuardian(baseTeacher)
+      await saveCloudGuardian(baseTeacher, { includePin: true })
     } catch {
       const message = 'Could not save teacher profile to the cloud. Please check your connection and try again.'
       setAuthError(message)
@@ -259,11 +262,37 @@ export function useGuardian() {
     const localGuardian = loadGuardian()
     const requestedEmail = email?.trim() || localGuardian?.email || ''
 
-    if (localGuardian && !accountPassword && verifyGuardianLogin(localGuardian, requestedEmail, pin)) {
-      const s = createSession()
-      setGuardian(localGuardian)
-      setSession(s)
-      return true
+    if (localGuardian && !accountPassword) {
+      if (verifyGuardianLogin(localGuardian, requestedEmail, pin)) {
+        const s = createSession()
+        setGuardian(localGuardian)
+        setSession(s)
+        return true
+      }
+      // Local PIN cache can go stale (e.g. the PIN was changed on another
+      // device, or via a reset flow). Fall back to the cloud check using any
+      // still-valid Supabase session before failing the quick-unlock outright.
+      if (isSupabaseConfigured) {
+        const cleanedPin = String(pin || '').replace(/\D/g, '').slice(0, 4)
+        const { data: sessionData } = await supabase.auth.getSession()
+        const hasCloudSession = Boolean(sessionData?.session?.access_token)
+        let pinValid = false
+        try { pinValid = await verifyCloudParentPin(cleanedPin) } catch {}
+        if (pinValid) {
+          const refreshed = { ...localGuardian, pin: cleanedPin }
+          saveGuardian(refreshed)
+          const s = createSession()
+          setGuardian(refreshed)
+          setSession(s)
+          return true
+        }
+        // No live cloud session means we genuinely can't verify the PIN
+        // remotely — that's not the same as "PIN is wrong," so say so
+        // instead of leaving a correct PIN stuck behind a dead-end message.
+        if (!hasCloudSession) {
+          return 'Your saved sign-in has expired. Tap "Use a different account" below and sign in with your email and password.'
+        }
+      }
     }
 
     if (isSupabaseConfigured && accountPassword) {
@@ -285,12 +314,14 @@ export function useGuardian() {
       }
       if (!cloudGuardian) {
         if (verifyGuardianLogin(localGuardian, email, pin)) {
-          await saveCloudGuardian(localGuardian)
+          await saveCloudGuardian(localGuardian, { includePin: true })
           cloudGuardian = localGuardian
         }
       }
       const cleanPin = String(pin || '').replace(/\D/g, '').slice(0, 4)
-      if (!cloudGuardian || cloudGuardian.pin !== cleanPin) {
+      let pinValid = false
+      try { pinValid = await verifyCloudParentPin(cleanPin) } catch {}
+      if (!cloudGuardian || !pinValid) {
         await supabase.auth.signOut()
         setAuthError('Parent PIN is incorrect.')
         return false
@@ -376,9 +407,15 @@ export function useGuardian() {
 
     const localGuardian = loadGuardian()
     const base = cloudGuardian || localGuardian || {}
-    const updated = { ...base, pin: cleanNewPin }
+    const updated = { ...base, pin: cleanNewPin, hasParentPin: true }
 
-    try { await saveCloudGuardian(updated) } catch {}
+    try {
+      const changed = await updateCloudParentPin(cleanNewPin)
+      if (!changed) throw new Error('PIN update failed')
+    } catch {
+      await supabase.auth.signOut()
+      return { ok: false, message: 'Could not update PIN. Please try again.' }
+    }
     saveGuardian(updated)
     setGuardian(updated)
 
@@ -415,6 +452,15 @@ export function useGuardian() {
     }
   }, [guardian])
 
+  const verifyParentPin = useCallback(async (pin) => {
+    const cleanPin = String(pin || '').replace(/\D/g, '').slice(0, 4)
+    if (cleanPin.length !== 4) return false
+    if (isSupabaseConfigured) {
+      try { return await verifyCloudParentPin(cleanPin) } catch { return false }
+    }
+    return verifyGuardianLogin(guardian, guardian?.email, cleanPin)
+  }, [guardian])
+
   return {
     guardian,
     isLoggedIn,
@@ -429,5 +475,6 @@ export function useGuardian() {
     resetPin,
     updateAccountPassword,
     updateGuardian,
+    verifyParentPin,
   }
 }

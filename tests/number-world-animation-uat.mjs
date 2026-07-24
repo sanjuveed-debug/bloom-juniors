@@ -22,10 +22,16 @@ for (const viewport of [
   check(`${viewport.name}: no horizontal overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth))
 
   const wrong = page.locator('[data-answer-choice][data-correct-answer="false"]').first()
+  const promptBefore = await page.locator('[data-answer-choice]').first().getAttribute('data-answer-choice')
   await wrong.click()
   await page.waitForTimeout(700)
   check(`${viewport.name}: first mistake produces thinking pose`, await yaagvi.getAttribute('data-yaagvi-state') === 'think')
   check(`${viewport.name}: reaction message is visible`, await yaagvi.getByText(/look once more/i).isVisible())
+  const correctButton = page.locator('[data-answer-choice][data-correct-answer="true"]')
+  check(`${viewport.name}: a mistake does not reveal the correct answer`, !((await correctButton.getAttribute('style')) || '').includes('rgb(34, 197, 94)'))
+  await page.waitForTimeout(2200)
+  check(`${viewport.name}: child retries the same question`, await page.locator('[data-answer-choice]').first().getAttribute('data-answer-choice') === promptBefore)
+  check(`${viewport.name}: answer choices unlock for retry`, await correctButton.isEnabled())
 
   await page.screenshot({
     path: `tests/uat_number_world_yaagvi_${viewport.name}.png`,

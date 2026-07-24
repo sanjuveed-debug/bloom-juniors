@@ -39,6 +39,10 @@ export default function PiggyBankGame({
   onComplete,
 }) {
   const theme = themeOverride || THEMES[avatar] || THEMES.yaagvi || THEMES.rumi
+  // THEMES.bg is a light pastel meant for light-mode screens; this game's UI (white text,
+  // translucent white panels) needs a dark backdrop, so derive one from the avatar's own
+  // dark accent (theme.text) instead of the flat light theme.bg or a fixed cosmic default.
+  const screenBg = `linear-gradient(160deg, ${theme.text || '#13052c'}, #05070f)`
   const rounds = useMemo(() => getRounds(ageGroup), [ageGroup])
   const { speak } = useSpeech()
   const [roundIndex, setRoundIndex] = useState(0)
@@ -135,7 +139,7 @@ export default function PiggyBankGame({
 
   if (done) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-5 py-10" style={{ background: theme.bg || 'linear-gradient(160deg,#13052c,#071b39)' }}>
+      <div className="min-h-screen flex items-center justify-center px-5 py-10" style={{ background: screenBg }}>
         <div className="w-full max-w-md rounded-[32px] border border-white/15 bg-white/10 p-6 text-center shadow-2xl backdrop-blur">
           <div className="text-7xl">🐷</div>
           <h1 className="font-bubble mt-3 text-3xl text-white">Piggy Bank Saved!</h1>
@@ -166,7 +170,7 @@ export default function PiggyBankGame({
   }
 
   return (
-    <div className="min-h-screen overflow-y-auto px-4 pb-10 pt-safe" style={{ background: theme.bg || 'linear-gradient(160deg,#13052c,#071b39)' }}>
+    <div className="min-h-screen overflow-y-auto px-4 pb-10 pt-safe" style={{ background: screenBg }}>
       <div className="mx-auto max-w-4xl">
         <div className="flex items-center justify-between gap-3 py-4">
           <button

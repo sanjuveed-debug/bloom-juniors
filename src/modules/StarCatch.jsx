@@ -4,6 +4,7 @@ import confetti from 'canvas-confetti'
 import { useSpeech } from '../hooks/useSpeech'
 import { THEMES } from '../themes'
 import { speakThenAdvance } from '../utils/speechAdvance'
+import InteractiveYaagvi, { useYaagviReactions } from '../components/InteractiveYaagvi'
 
 // Official Read Write Inc. (RWI) Red Words — progressive sets
 const WORD_SETS = [
@@ -56,6 +57,7 @@ function SentenceMatchPhase({ theme, speak, onComplete }) {
   const completedRef = useRef(false)
   const timersRef = useRef([])
   const spokenQ = useRef(-1)
+  const missedRef = useRef(false)
   const current = questions[q]
 
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
@@ -73,21 +75,27 @@ function SentenceMatchPhase({ theme, speak, onComplete }) {
     lockedRef.current = true
     setPicked(emoji)
     const correct = emoji === current.match
-    const nextScore = score + (correct ? 1 : 0)
+    const nextScore = score + (correct && !missedRef.current ? 1 : 0)
     if (correct) {
       setScore(nextScore)
       confetti({ particleCount: 70, spread: 90, origin: { x: 0.5, y: 0.6 } })
     }
+    if (!correct) missedRef.current = true
     setFeedback(correct ? 'correct' : 'wrong')
     const feedbackText = correct ? `Yes! ${current.text} Brilliant!` : `Let's listen again. ${current.text}`
     speakThenAdvance(speak, feedbackText, { mood: correct ? 'celebrate' : 'instruct', rate: 0.85 }, () => {
       setFeedback(null)
       setPicked(null)
+      if (!correct) {
+        lockedRef.current = false
+        return
+      }
       if (q + 1 >= questions.length) {
         completedRef.current = true
         onComplete(nextScore, questions.length)
       } else {
         setQ(v => v + 1)
+        missedRef.current = false
         lockedRef.current = false
       }
     }, timersRef, { minMs: 1200, maxMs: 6000 })
@@ -165,8 +173,14 @@ export default function StarCatch({ avatar, progress, onAddStars, onBack, profil
 
   const currentWord = shuffledWords[wordIndex % shuffledWords.length]
 
+  const { reaction: yaagviReaction, react: reactYaagvi } = useYaagviReactions({
+    activityKey: `${phase}-${wordIndex}-${round}`,
+    active: phase === 'catch',
+  })
+
   // Speak the instruction whenever the word changes
   useEffect(() => {
+    reactYaagvi('question')
     const timer = setTimeout(() => {
       speak(`Find the word: ${currentWord}`, { mood: 'instruct' })
     }, 400)
@@ -191,6 +205,7 @@ export default function StarCatch({ avatar, progress, onAddStars, onBack, profil
       setCaught(prev => new Set([...prev, star.id]))
       const finalScore = score + 1
       setScore(finalScore)
+      reactYaagvi('correct', { streak: finalScore % 3 === 0 ? 3 : 1 })
       setFeedback({ type: 'correct', msg: `✨ "${currentWord.toUpperCase()}" — well done!` })
       confetti({
         particleCount: 80,
@@ -201,6 +216,7 @@ export default function StarCatch({ avatar, progress, onAddStars, onBack, profil
       const feedbackText = `Yes! ${currentWord}! Brilliant, ${profileName || 'superstar'}!`
       if (round >= totalRounds) {
         completedRef.current = true
+        reactYaagvi('complete')
         speakThenAdvance(speak, feedbackText, { mood: 'celebrate' }, () => {
           if (setLevel >= 2) {
             pendingScoreRef.current = finalScore
@@ -226,6 +242,7 @@ export default function StarCatch({ avatar, progress, onAddStars, onBack, profil
       // (wrong-word speak can kill the pending instruction TTS fetch)
       speak(star.word, { rate: 0.85 })
       setWrongWords(prev => [...prev, currentWord])
+      reactYaagvi('wrong', { attempt: wrongWords.length + 1 })
       setFeedback({ type: 'wrong', msg: `That says "${star.word}" — keep looking for "${currentWord}"!` })
       setShaking(prev => new Set([...prev, star.id]))
       const id = window.setTimeout(() => {
@@ -236,7 +253,7 @@ export default function StarCatch({ avatar, progress, onAddStars, onBack, profil
       }, 1200)
       timersRef.current.push(id)
     }
-  }, [caught, shaking, currentWord, score, round, totalRounds, wrongWords, speak, nextRound, onAddStars, profileName, setLevel])
+  }, [caught, shaking, currentWord, score, round, totalRounds, wrongWords, speak, nextRound, onAddStars, profileName, setLevel, reactYaagvi])
 
   if (phase === 'sentences') {
     return (
@@ -300,6 +317,10 @@ export default function StarCatch({ avatar, progress, onAddStars, onBack, profil
         </div>
       </div>
 
+      <div className="px-4">
+        <InteractiveYaagvi reaction={yaagviReaction} placement="strip" />
+      </div>
+
       {/* Target word card */}
       <motion.div
         key={currentWord}
@@ -338,15 +359,14 @@ export default function StarCatch({ avatar, progress, onAddStars, onBack, profil
             return (
               <motion.button
                 key={`${round}-${star.id}`}
+                data-companion-answer={star.isTarget ? 'correct' : 'wrong'}
                 animate={
-                  isCaught  ? { scale: [1, 1.5, 0], opacity: [1, 1, 0] } :
-                  isShaking ? { x: [0, -12, 12, -10, 10, -6, 6, 0] } :
-                              { scale: [1, 1.04, 1] }
+                  isCaught ? { scale: [1, 1.5, 0], opacity: [1, 1, 0] } :
+                             { scale: [1, 1.04, 1] }
                 }
                 transition={
-                  isCaught  ? { duration: 0.45 } :
-                  isShaking ? { duration: 0.55, ease: 'easeInOut' } :
-                              { duration: 2.4, repeat: Infinity, ease: 'easeInOut' }
+                  isCaught ? { duration: 0.45 } :
+                             { duration: 2.4, repeat: Infinity, ease: 'easeInOut' }
                 }
                 disabled={isCaught}
                 className="aspect-square rounded-3xl flex flex-col items-center justify-center shadow-xl"

@@ -28,7 +28,7 @@ function LegacySkyship({ powered, colour = 'blue' }) {
           <div className="absolute left-[102px] top-1 h-14 w-16 overflow-hidden rounded-t-[32px] border-4 border-orange-100"
             style={{ background: 'linear-gradient(180deg,#67E8F9,#0F766E)' }}>
             <div className="absolute inset-x-2 bottom-0 h-7 rounded-t-full bg-slate-900/45" />
-            <motion.img src="/yaagvi-poses/wave.png" alt="Yaagvi piloting the skyship"
+            <motion.img src="/yaagvi-poses/wave.png?v2" alt="Yaagvi piloting the skyship"
               className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition:'50% 12%' }}
               animate={{ y:[1,-1,1], rotate:[-.5,.5,-.5] }} transition={{duration:2,repeat:Infinity}} />
           </div>

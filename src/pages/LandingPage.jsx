@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import BloomLogo from '../components/BloomLogo'
 import SchoolEnquiryForm from '../components/SchoolEnquiryForm'
 import LandingDemo from '../components/LandingDemo'
@@ -13,12 +13,6 @@ const PRIMARY_LIGHT = '#EA580C'
 const TEAL = '#0F766E'
 const CARD_BORDER = 'rgba(66,32,6,0.10)'
 
-const AGE_GROUPS = [
-  { emoji: '🧸', label: 'Tiny Stars', range: 'Ages 3–4', color: '#F97316', desc: 'Colours, shapes, numbers & animals through gentle tap games.' },
-  { emoji: '🌟', label: 'Little Stars', range: 'Ages 4–6', color: '#0F766E', desc: 'Phonics, maths, stories, art & world exploration.' },
-  { emoji: '🚀', label: 'Super Kids', range: 'Ages 7–9', color: '#DC2626', desc: 'Times tables, fractions, reading, science & more.' },
-]
-
 const FEATURES = [
   { emoji: '🧒', title: 'A companion, not a worksheet', desc: 'Yaagvi reacts to effort, struggle and progress so your child feels seen and encouraged while they learn.' },
   { emoji: '🗺️', title: 'A visible mastery journey', desc: 'The Mastery Map lights up sounds and skills as children practise — progress they can see and feel proud of.' },
@@ -26,57 +20,6 @@ const FEATURES = [
   { emoji: '🎮', title: 'A healthy daily rhythm', desc: 'Children complete their learning path first, then the arcade opens. Study first, play after — built into the design.' },
   { emoji: '📚', title: 'Built for British progression', desc: 'Phonics, maths, reading and wider learning carefully sequenced for ages 3–9, aligned with EYFS, KS1 and early KS2.' },
   { emoji: '🔒', title: 'Safe by design', desc: 'No ads, no social feeds, no random purchases. PIN-protected parent area with full progress visibility.' },
-]
-
-const THREE_HOOKS = [
-  {
-    emoji: '💛',
-    title: 'Yaagvi notices how they learn',
-    desc: 'When your child is confident, stuck, tired or improving, Yaagvi responds with the right encouragement — not a generic "well done."',
-    color: '#F59E0B',
-  },
-  {
-    emoji: '🗺️',
-    title: 'The Mastery Map makes progress visible',
-    desc: 'Every sound, skill and activity lights up as they practise. Children can see exactly what they are getting better at.',
-    color: '#0F766E',
-  },
-  {
-    emoji: '🏅',
-    title: 'The Parent Handoff turns learning into a moment',
-    desc: 'After a win, Bloom Juniors creates a full-screen badge card: "Show this to someone you love!" — learning becomes a family conversation.',
-    color: '#10B981',
-  },
-]
-
-const CURRICULUM = [
-  {
-    stage: 'EYFS',
-    range: 'Ages 3–5',
-    emoji: '🧸',
-    color: '#F97316',
-    items: ['Listening and attention', 'Early number sense and counting', 'Colours, shapes and patterns', 'First phonics readiness', 'Stories and imagination'],
-  },
-  {
-    stage: 'KS1',
-    range: 'Ages 5–7',
-    emoji: '🌟',
-    color: '#0F766E',
-    items: ['Pure-sound phonics progression', 'CVC words and blending', 'Reading confidence', 'Number bonds and early maths', 'Topic and world learning'],
-  },
-  {
-    stage: 'Early KS2',
-    range: 'Ages 7–9',
-    emoji: '🚀',
-    color: '#DC2626',
-    items: ['Times tables and fractions', 'Grammar and comprehension', 'Science and geography', 'Problem solving', 'Wider world exploration'],
-  },
-]
-
-const PARENT_NOTICES = [
-  { emoji: '📖', text: 'My child started asking to do their reading before school — I didn\'t have to ask.', label: 'On building the habit' },
-  { emoji: '🗺️', text: 'Seeing the Mastery Map light up made phonics feel like collecting progress, not doing homework.', label: 'On visible progress' },
-  { emoji: '🏅', text: 'Instead of asking what they did, the handoff badge meant they explained it themselves.', label: 'On the parent moment' },
 ]
 
 const HOW_STEPS = [
@@ -118,9 +61,11 @@ function DeveloperVideo() {
           <video
             ref={videoRef}
             src="/developer-story.mp4"
+            poster="/founder.jpg"
             className="w-full h-full object-cover"
             playsInline
             preload="metadata"
+            aria-label="Video: Bloom Juniors founder explaining why he built a free, ad-free British curriculum learning app"
             onEnded={() => setPlaying(false)}
             onError={() => setFailed(true)}
           />
@@ -269,7 +214,7 @@ function HeroVisual() {
             >
               <img
                 src="/yaagvi-mascot.webp"
-                alt="Bloom mascot"
+                alt="Yaagvi, the friendly mascot who guides children through free British curriculum learning games on Bloom Juniors"
                 width={288}
                 height={288}
                 className="w-52 md:w-72 h-auto drop-shadow-xl relative z-10"
@@ -306,28 +251,91 @@ function HeroVisual() {
   )
 }
 
-export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) {
-  const [openFaq, setOpenFaq] = useState(null)
+// One-time 3D welcome flourish — Yaagvi flips/flies in to greet a first-time visitor,
+// then settles away so it never blocks or repeats on scroll/re-render.
+function WelcomeIntro() {
+  const reduceMotion = useReducedMotion()
+  const [visible, setVisible] = useState(true)
+  const [leaving, setLeaving] = useState(false)
 
-  const faqs = [
-    { q: 'Is it really free?', a: 'Yes — Sound Pop (phonics), Number World (maths), Story Room, Da Vinci Studio and Fun Exercise are completely free, forever. Premium modules unlock the full library.' },
-    { q: 'What age is it designed for?', a: 'Three age groups: Tiny Stars (3–4), Little Stars (4–6), and Super Kids (7–9). Each child gets their own profile and experience.' },
-    { q: 'Do I need to install anything?', a: 'No app store needed. Visit the website and tap "Add to Home Screen" to install it like an app on any phone, tablet or computer.' },
-    { q: 'How is screen time managed?', a: 'The Parent Zone lets you set session time limits, review what your child practised, and see full progress reports.' },
-    { q: 'Is my child\'s data safe?', a: 'All data is encrypted and stored securely. We never share personal information with third parties.' },
-  ]
+  useEffect(() => {
+    if (reduceMotion) { setVisible(false); return }
+    const leaveTimer = setTimeout(() => setLeaving(true), 2200)
+    const goneTimer = setTimeout(() => setVisible(false), 2700)
+    return () => { clearTimeout(leaveTimer); clearTimeout(goneTimer) }
+  }, [reduceMotion])
+
+  if (reduceMotion || !visible) return null
 
   return (
+    <motion.div
+      className="fixed inset-0 z-[200] flex items-center justify-center"
+      style={{ background: 'radial-gradient(circle at 50% 45%, rgba(255,247,237,0.97), rgba(255,237,213,0.99))', perspective: 900 }}
+      initial={{ opacity: 1 }}
+      animate={{ opacity: leaving ? 0 : 1 }}
+      transition={{ duration: 0.5, ease: 'easeInOut' }}
+      onClick={() => setLeaving(true)}
+      role="presentation"
+    >
+      <motion.div
+        className="flex flex-col items-center"
+        initial={{ opacity: 0, scale: 0.4, rotateY: -130, y: 60 }}
+        animate={leaving
+          ? { opacity: 0, scale: 0.7, rotateY: 60, y: -30 }
+          : { opacity: 1, scale: 1, rotateY: 0, y: 0 }}
+        transition={{ type: 'spring', stiffness: 140, damping: 15 }}
+      >
+        <motion.img
+          src="/yaagvi-mascot.webp"
+          alt="Yaagvi waving hello"
+          width={220}
+          height={220}
+          className="w-40 sm:w-52 h-auto drop-shadow-2xl"
+          animate={leaving ? {} : { rotate: [0, -6, 6, -4, 0] }}
+          transition={{ duration: 1, delay: 0.5 }}
+        />
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: leaving ? 0 : 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="font-bubble text-xl sm:text-2xl mt-3 text-center px-6"
+          style={{ color: PRIMARY }}
+        >
+          Hi! I'm Yaagvi 👋🌸
+        </motion.p>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: leaving ? 0 : 1 }}
+          transition={{ delay: 0.55 }}
+          className="font-round text-sm text-center px-6 mt-1"
+          style={{ color: TEXT_MUTED }}
+        >
+          Welcome to Bloom Juniors — let's learn together!
+        </motion.p>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) {
+  return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: 'linear-gradient(160deg,#FFF7ED 0%,#FFEDD5 45%,#FFF7ED 100%)' }}>
+      <WelcomeIntro />
 
       {/* ── NAV ──────────────────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-40 flex items-center justify-between px-4 py-3 md:px-8"
         style={{ background: 'rgba(255,247,237,0.92)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${CARD_BORDER}`, paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
         <BloomLogo size="md" />
+        <div className="hidden lg:flex items-center gap-8 font-round text-sm font-bold leading-none" style={{ color: TEXT }}>
+          <a href="#how-it-works" className="inline-flex items-center hover:opacity-70 transition-opacity">How it works</a>
+          <a href="#schools" className="inline-flex items-center hover:opacity-70 transition-opacity">For schools</a>
+          <a href="#safety" className="inline-flex items-center hover:opacity-70 transition-opacity">Safety</a>
+          <a href="#pricing" className="inline-flex items-center hover:opacity-70 transition-opacity">Pricing</a>
+        </div>
         <div className="flex items-center gap-2">
           <button
             onClick={onSignIn}
-            className="font-round text-sm px-4 py-2 rounded-xl transition-colors"
+            className="font-round text-sm leading-none px-4 py-2 rounded-xl inline-flex items-center transition-colors"
             style={{ color: TEXT_MUTED }}
           >
             Sign in
@@ -336,7 +344,7 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={onTeacherSetup}
-              className="font-round text-sm px-4 py-2 rounded-xl border hidden sm:block transition-colors"
+              className="font-round text-sm leading-none px-4 py-2 rounded-xl border hidden sm:inline-flex items-center transition-colors"
               style={{ color: TEAL, borderColor: `${TEAL}40` }}
             >
               🏫 For teachers
@@ -345,7 +353,7 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={onGetStarted}
-            className="font-bubble text-sm text-white px-4 py-2 rounded-xl"
+            className="font-bubble text-sm leading-none text-white px-4 py-2 rounded-xl inline-flex items-center"
             style={{ background: PRIMARY }}
           >
             Start free
@@ -397,10 +405,9 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
             </div>
 
             <h1 className="font-bubble text-5xl md:text-6xl leading-tight mb-4" style={{ color: TEXT }}>
-              Learning that feels<br />
-              <span style={{ color: PRIMARY_LIGHT }}>
-                personal to your child.
-              </span>
+              Your child will ask to do their{' '}
+              <span style={{ color: PRIMARY_LIGHT }}>homework</span>
+              <br />— before you've had your coffee.
             </h1>
 
             <p className="font-round text-lg md:text-xl max-w-xl leading-relaxed mb-6" style={{ color: TEXT_MUTED }}>
@@ -460,8 +467,101 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
         </motion.div>
       </section>
 
-      {/* ── HOW IT WORKS ─────────────────────────────────────────────────────── */}
+      {/* ── TRUST BAR ────────────────────────────────────────────────────────── */}
+      <section id="safety" className="px-4 pb-12 md:px-8">
+        <div className="mx-auto max-w-4xl text-center">
+          <p className="font-round text-xs font-bold uppercase tracking-widest mb-5" style={{ color: TEXT_FAINT }}>
+            Built for families who want screen time that means something
+          </p>
+          <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-4">
+            {[
+              { icon: '🇬🇧', label: 'British curriculum aligned' },
+              { icon: '🔒', label: 'GDPR-safe · no child accounts' },
+              { icon: '🚫', label: 'Zero ads, zero purchases' },
+              { icon: '👨‍👩‍👧', label: 'Parent-guided by design' },
+            ].map((item, i) => (
+              <motion.div
+                key={item.label}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.06 }}
+                className="flex items-center gap-2 font-round text-sm font-bold"
+                style={{ color: TEXT_MUTED }}
+              >
+                <span className="text-lg">{item.icon}</span>{item.label}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── WHO ARE YOU LEARNING WITH (early fork) ───────────────────────────── */}
       <section className="px-4 pb-16 md:px-8">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="font-bubble text-2xl md:text-3xl text-center mb-8" style={{ color: TEXT }}>Who are you learning with today?</h2>
+          <div className="grid sm:grid-cols-2 gap-5">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -4 }}
+              className="rounded-[24px] p-6 md:p-8 flex flex-col"
+              style={{ background: '#FFFFFF', border: `1.5px solid ${PRIMARY}30`, boxShadow: '0 4px 16px rgba(66,32,6,0.06)' }}
+            >
+              <div className="text-4xl mb-4">🏠</div>
+              <p className="font-bubble text-xl mb-2" style={{ color: TEXT }}>For Home</p>
+              <p className="font-round text-sm leading-relaxed mb-6 flex-grow" style={{ color: TEXT_MUTED }}>
+                A free profile for your child, a daily guided path with Yaagvi, and a parent dashboard that shows exactly what they've practised.
+              </p>
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={onGetStarted}
+                className="font-bubble text-white text-sm py-3 rounded-2xl"
+                style={{ background: PRIMARY }}
+              >
+                Start free at home →
+              </motion.button>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -4 }}
+              transition={{ delay: 0.08 }}
+              className="rounded-[24px] p-6 md:p-8 flex flex-col"
+              style={{ background: TEXT, boxShadow: '0 4px 16px rgba(66,32,6,0.1)' }}
+            >
+              <div className="text-4xl mb-4">🏫</div>
+              <p className="font-bubble text-xl mb-2 text-white">For Schools &amp; Nurseries</p>
+              <p className="font-round text-sm leading-relaxed mb-6 flex-grow text-white/75">
+                Class-wide progress tracking with zero admin — no individual pupil logins needed. Used alongside your regular teaching.
+              </p>
+              {onTeacherSetup ? (
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={onTeacherSetup}
+                  className="font-bubble text-sm py-3 rounded-2xl"
+                  style={{ background: '#FFFFFF', color: TEXT }}
+                >
+                  🏫 Get free school access →
+                </motion.button>
+              ) : (
+                <a
+                  href="/schools"
+                  className="font-bubble text-sm py-3 rounded-2xl text-center"
+                  style={{ background: '#FFFFFF', color: TEXT }}
+                >
+                  🏫 See schools page →
+                </a>
+              )}
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ─────────────────────────────────────────────────────── */}
+      <section id="how-it-works" className="px-4 pb-16 md:px-8">
         <div className="mx-auto max-w-4xl">
           <h2 className="font-bubble text-3xl md:text-4xl text-center mb-2" style={{ color: TEXT }}>How it works</h2>
           <p className="font-round text-sm text-center mb-10" style={{ color: TEXT_FAINT }}>Up and learning in under 2 minutes.</p>
@@ -523,10 +623,10 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
           </p>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {[
-              { src: '/screens/app-toddler.png', alt: 'Tiny Stars dashboard for ages 3-4', caption: 'Tiny Stars (3–4): two tiny games a day', color: '#F97316' },
-              { src: '/screens/app-activity.png', alt: 'Fruits learning activity', caption: 'Tap-to-learn activities with voice guidance', color: '#F59E0B' },
-              { src: '/screens/app-matchup.png', alt: 'Match Up maths activity with Yaagvi mascot', caption: 'Yaagvi cheers along every activity', color: '#DB2777' },
-              { src: '/screens/app-arcade.png', alt: 'Game Arcade reward screen', caption: 'Finish the path → the arcade opens', color: '#0F766E' },
+              { src: '/screens/app-toddler.png', alt: 'Free British curriculum learning dashboard for a 3-4 year old on Bloom Juniors, ad-free and no downloads needed', caption: 'Tiny Stars (3–4): two tiny games a day', color: '#F97316' },
+              { src: '/screens/app-activity.png', alt: 'Free EYFS counting activity with picture-based questions and voice guidance from Yaagvi', caption: 'Tap-to-learn activities with voice guidance', color: '#F59E0B' },
+              { src: '/screens/app-matchup.png', alt: 'Free KS1 logic puzzle game where a child plans moves to guide their character to the goal', caption: 'Puzzle Quest builds early problem-solving skills', color: '#DB2777' },
+              { src: '/screens/app-arcade.png', alt: 'Game Arcade reward screen, unlocked after completing daily British curriculum learning activities', caption: 'Finish the path → the arcade opens', color: '#0F766E' },
             ].map((shot, i) => (
               <motion.figure
                 key={shot.src}
@@ -551,57 +651,6 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
                   {shot.caption}
                 </figcaption>
               </motion.figure>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── WHY CHILDREN COME BACK ───────────────────────────────────────────── */}
-      <section className="px-4 pb-16 md:px-8">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="font-bubble text-3xl md:text-4xl text-center mb-2" style={{ color: TEXT }}>Why children come back tomorrow</h2>
-          <p className="font-round text-sm text-center mb-10" style={{ color: TEXT_FAINT }}>Three features designed to make learning feel personal.</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {THREE_HOOKS.map((h, i) => (
-              <motion.div
-                key={h.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, type: 'spring', stiffness: 220 }}
-                className="rounded-[24px] p-6"
-                style={{ background: '#FFFFFF', border: `1.5px solid ${h.color}30`, boxShadow: '0 4px 16px rgba(66,32,6,0.05)' }}
-              >
-                <div className="text-4xl mb-4">{h.emoji}</div>
-                <p className="font-bubble text-lg mb-2 leading-snug" style={{ color: TEXT }}>{h.title}</p>
-                <p className="font-round text-sm leading-relaxed" style={{ color: TEXT_MUTED }}>{h.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── AGE GROUPS ───────────────────────────────────────────────────────── */}
-      <section className="px-4 pb-16 md:px-8">
-        <div className="mx-auto max-w-4xl">
-          <p className="font-round text-xs font-bold uppercase tracking-widest text-center mb-6" style={{ color: TEXT_FAINT }}>Three experiences, one account</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {AGE_GROUPS.map((g, i) => (
-              <motion.div
-                key={g.label}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                whileHover={{ scale: 1.04, y: -4 }}
-                transition={{ delay: i * 0.1, type: 'spring', stiffness: 260 }}
-                className="rounded-[24px] p-5 text-center cursor-default"
-                style={{ background: '#FFFFFF', border: `1.5px solid ${g.color}30`, boxShadow: '0 4px 16px rgba(66,32,6,0.05)' }}
-              >
-                <div className="text-4xl mb-3">{g.emoji}</div>
-                <p className="font-bubble text-xl mb-1" style={{ color: TEXT }}>{g.label}</p>
-                <p className="font-round text-xs font-bold mb-3" style={{ color: g.color }}>{g.range}</p>
-                <p className="font-round text-sm leading-relaxed" style={{ color: TEXT_MUTED }}>{g.desc}</p>
-              </motion.div>
             ))}
           </div>
         </div>
@@ -633,73 +682,8 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
         </div>
       </section>
 
-      {/* ── STUDY FIRST SECTION ──────────────────────────────────────────────── */}
-      <section className="px-4 pb-16 md:px-8">
-        <div className="mx-auto max-w-2xl rounded-[28px] overflow-hidden"
-          style={{ background: PRIMARY, boxShadow: '0 16px 40px rgba(194,65,12,0.25)' }}>
-          <div className="p-8 md:p-10 text-center">
-            <div className="text-5xl mb-4">🎮</div>
-            <h2 className="font-bubble text-white text-3xl mb-3">Games as the reward</h2>
-            <p className="font-round text-white/85 text-base leading-relaxed max-w-lg mx-auto">
-              Children complete 2 study modules first — then the Game Arcade unlocks as their reward.
-              No guilt. No battles. The habit builds itself.
-            </p>
-            <div className="mt-6 flex items-center justify-center gap-4 flex-wrap">
-              <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'rgba(255,255,255,0.18)' }}>
-                <p className="font-bubble text-white text-2xl">📚</p>
-                <p className="font-round text-white/85 text-xs mt-1">Study first</p>
-              </div>
-              <motion.span
-                className="font-bubble text-white text-2xl"
-                animate={{ x: [0, 6, 0] }}
-                transition={{ duration: 1.2, repeat: Infinity }}
-              >→</motion.span>
-              <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'rgba(255,255,255,0.18)' }}>
-                <p className="font-bubble text-white text-2xl">🎮</p>
-                <p className="font-round text-white/85 text-xs mt-1">Games unlock</p>
-              </div>
-              <motion.span
-                className="font-bubble text-white text-2xl"
-                animate={{ x: [0, 6, 0] }}
-                transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }}
-              >→</motion.span>
-              <div className="rounded-2xl px-4 py-3 text-center" style={{ background: 'rgba(255,255,255,0.18)' }}>
-                <p className="font-bubble text-white text-2xl">🔥</p>
-                <p className="font-round text-white/85 text-xs mt-1">Habit built</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── WHAT PARENTS NOTICE ──────────────────────────────────────────────── */}
-      <section className="px-4 pb-16 md:px-8">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="font-bubble text-3xl text-center mb-2" style={{ color: TEXT }}>What parents will notice</h2>
-          <p className="font-round text-xs text-center mb-8" style={{ color: TEXT_FAINT }}>Based on how the app is designed to work.</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {PARENT_NOTICES.map((t, i) => (
-              <motion.div
-                key={t.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                whileHover={{ scale: 1.02 }}
-                transition={{ delay: 0.05 + i * 0.1 }}
-                className="rounded-[20px] p-5 cursor-default"
-                style={{ background: '#FFFFFF', border: `1px solid ${CARD_BORDER}`, boxShadow: '0 4px 14px rgba(66,32,6,0.05)' }}
-              >
-                <div className="text-3xl mb-3">{t.emoji}</div>
-                <p className="font-round text-sm leading-relaxed mb-4" style={{ color: TEXT_MUTED }}>"{t.text}"</p>
-                <p className="font-round text-xs uppercase tracking-wider" style={{ color: TEXT_FAINT }}>{t.label}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── FROM THE DEVELOPER ───────────────────────────────────────────────── */}
-      <section className="px-4 pb-16 md:px-8">
+      <section id="founder" className="px-4 pb-16 md:px-8">
         <div className="mx-auto max-w-2xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -736,46 +720,8 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
         </div>
       </section>
 
-      {/* ── CURRICULUM ───────────────────────────────────────────────────────── */}
-      <section className="px-4 pb-16 md:px-8">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="font-bubble text-3xl md:text-4xl text-center mb-2" style={{ color: TEXT }}>Built for early learning progression</h2>
-          <p className="font-round text-sm text-center mb-4" style={{ color: TEXT_FAINT }}>Phonics follows a systematic pure-sound progression — single letter sounds first, then digraphs and vowel patterns.</p>
-          <p className="font-round text-xs text-center mb-10" style={{ color: TEXT_FAINT }}>Aligned with the approach commonly used in UK classrooms.</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {CURRICULUM.map((c, i) => (
-              <motion.div
-                key={c.stage}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="rounded-[24px] p-5"
-                style={{ background: '#FFFFFF', border: `1.5px solid ${c.color}28`, boxShadow: '0 4px 14px rgba(66,32,6,0.05)' }}
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-3xl">{c.emoji}</span>
-                  <div>
-                    <p className="font-bubble text-xl leading-none" style={{ color: TEXT }}>{c.stage}</p>
-                    <p className="font-round text-xs font-bold mt-0.5" style={{ color: c.color }}>{c.range}</p>
-                  </div>
-                </div>
-                <ul className="space-y-1.5">
-                  {c.items.map(item => (
-                    <li key={item} className="flex items-start gap-2">
-                      <span className="mt-0.5 text-xs" style={{ color: c.color }}>✓</span>
-                      <span className="font-round text-sm" style={{ color: TEXT_MUTED }}>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── FOR SCHOOLS ──────────────────────────────────────────────────────── */}
-      <section className="pb-16" style={{ background: 'linear-gradient(180deg, #FFEDD5 0%, #FDE3C7 50%, #FFEDD5 100%)' }}>
+      <section id="schools" className="pb-16" style={{ background: 'linear-gradient(180deg, #FFEDD5 0%, #FDE3C7 50%, #FFEDD5 100%)' }}>
         <div className="mx-auto max-w-4xl px-4 md:px-8 py-14">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -836,8 +782,29 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
         </div>
       </section>
 
-      {/* ── PREMIUM WAITLIST ─────────────────────────────────────────────────── */}
+      {/* ── FOUNDING FAMILIES ────────────────────────────────────────────────── */}
       <section className="px-4 pb-16 md:px-8">
+        <div className="mx-auto max-w-2xl rounded-[28px] p-8 md:p-10 text-center"
+          style={{ background: '#FFFFFF', border: `2px dashed ${PRIMARY}45` }}>
+          <p className="font-round text-xs font-bold uppercase tracking-widest mb-3" style={{ color: PRIMARY }}>Founding families</p>
+          <h2 className="font-bubble text-3xl mb-3" style={{ color: TEXT }}>Be among our first families</h2>
+          <p className="font-round text-sm leading-relaxed mb-2 max-w-lg mx-auto" style={{ color: TEXT_MUTED }}>
+            We're a new app, built by a parent for parents — not a big team with years of reviews behind us yet.
+            If you join now, what you tell us directly shapes what we build next.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3 mt-6 mb-2">
+            {['Direct line to the founder', 'Your feedback shapes the roadmap', 'Free core learning path, always'].map(perk => (
+              <span key={perk} className="font-round text-xs font-bold px-3 py-1.5 rounded-full"
+                style={{ color: '#15803D', background: 'rgba(22,163,74,0.10)', border: '1px solid rgba(22,163,74,0.25)' }}>
+                ✓ {perk}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PREMIUM WAITLIST ─────────────────────────────────────────────────── */}
+      <section id="pricing" className="px-4 pb-16 md:px-8">
         <div className="mx-auto max-w-xl rounded-[28px] p-8 text-center"
           style={{ background: '#FFFFFF', border: `1.5px solid ${CARD_BORDER}`, boxShadow: '0 4px 16px rgba(66,32,6,0.05)' }}>
           <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 mb-4"
@@ -852,41 +819,6 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
             Join the waitlist for 50% off your first 3 months.
           </p>
           <WaitlistForm source="landing-premium" />
-        </div>
-      </section>
-
-      {/* ── FAQ ──────────────────────────────────────────────────────────────── */}
-      <section className="px-4 pb-16 md:px-8">
-        <div className="mx-auto max-w-2xl">
-          <h2 className="font-bubble text-3xl text-center mb-8" style={{ color: TEXT }}>Common questions</h2>
-          <div className="flex flex-col gap-2">
-            {faqs.map((faq, i) => (
-              <div key={i}
-                className="rounded-[16px] overflow-hidden"
-                style={{ background: '#FFFFFF', border: `1px solid ${CARD_BORDER}` }}>
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between p-4 text-left"
-                >
-                  <span className="font-round text-sm font-bold" style={{ color: TEXT }}>{faq.q}</span>
-                  <span className="font-bold text-lg ml-3" style={{ color: TEXT_FAINT }}>{openFaq === i ? '−' : '+'}</span>
-                </button>
-                <AnimatePresence>
-                  {openFaq === i && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <p className="font-round text-sm px-4 pb-4 leading-relaxed" style={{ color: TEXT_MUTED }}>{faq.a}</p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -916,20 +848,46 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
       </main>
 
       {/* ── FOOTER ───────────────────────────────────────────────────────────── */}
-      <footer className="border-t px-4 py-10 text-center md:px-8" style={{ borderColor: CARD_BORDER }}>
-        <p className="font-round text-sm mb-2" style={{ color: TEXT_MUTED }}>
-          🌻 Built with love, for every curious child
-        </p>
-        <p className="font-round text-xs mb-3" style={{ color: TEXT_FAINT }}>
-          Questions or feedback?{' '}
-          <a href="mailto:hello@bloomjuniors.com" className="underline transition-colors" style={{ color: PRIMARY }}>
-            hello@bloomjuniors.com
-          </a>
-        </p>
-        <p className="font-round text-xs" style={{ color: TEXT_FAINT }}>
-          © 2026 Bloom Juniors · Learning app for ages 3–9 · Worldwide ·
-          <a href="/privacy" className="ml-1 underline">Privacy Policy</a>
-        </p>
+      <footer className="border-t px-4 pt-12 pb-8 md:px-8" style={{ borderColor: CARD_BORDER }}>
+        <div className="mx-auto max-w-5xl">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 mb-10">
+            <div className="col-span-2 sm:col-span-1">
+              <BloomLogo size="sm" />
+              <p className="font-round text-sm mt-3 leading-relaxed max-w-[220px]" style={{ color: TEXT_MUTED }}>
+                Free, ad-free British curriculum learning for ages 3–9. Built by a parent, for parents.
+              </p>
+            </div>
+            <div>
+              <p className="font-round text-xs font-bold uppercase tracking-widest mb-4" style={{ color: TEXT }}>Product</p>
+              <div className="flex flex-col gap-2.5">
+                <a href="#how-it-works" className="font-round text-sm transition-colors" style={{ color: TEXT_MUTED }}>How it works</a>
+                <a href="#schools" className="font-round text-sm transition-colors" style={{ color: TEXT_MUTED }}>For schools</a>
+              </div>
+            </div>
+            <div>
+              <p className="font-round text-xs font-bold uppercase tracking-widest mb-4" style={{ color: TEXT }}>Company</p>
+              <div className="flex flex-col gap-2.5">
+                <a href="#founder" className="font-round text-sm transition-colors" style={{ color: TEXT_MUTED }}>Our story</a>
+                <a href="/schools" className="font-round text-sm transition-colors" style={{ color: TEXT_MUTED }}>Schools &amp; nurseries</a>
+              </div>
+            </div>
+            <div>
+              <p className="font-round text-xs font-bold uppercase tracking-widest mb-4" style={{ color: TEXT }}>Get in touch</p>
+              <div className="flex flex-col gap-2.5">
+                <a href="mailto:hello@bloomjuniors.com" className="font-round text-sm transition-colors" style={{ color: TEXT_MUTED }}>Contact us</a>
+                <a href="/privacy" className="font-round text-sm transition-colors" style={{ color: TEXT_MUTED }}>Privacy Policy</a>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 border-t" style={{ borderColor: CARD_BORDER }}>
+            <p className="font-round text-xs" style={{ color: TEXT_FAINT }}>
+              © 2026 Bloom Juniors · Learning app for ages 3–9 · Worldwide
+            </p>
+            <p className="font-round text-xs" style={{ color: TEXT_FAINT }}>
+              🌻 Built with love, for every curious child
+            </p>
+          </div>
+        </div>
       </footer>
     </div>
   )

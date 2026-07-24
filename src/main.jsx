@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { MotionConfig } from 'framer-motion'
 import { registerSW } from 'virtual:pwa-register'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
@@ -31,9 +32,11 @@ registerSW({
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
-    <VoiceStatusToast />
+    <MotionConfig reducedMotion="user">
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+      <VoiceStatusToast />
+    </MotionConfig>
   </React.StrictMode>,
 )

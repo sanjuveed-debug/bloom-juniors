@@ -1,14 +1,20 @@
 import { useState, useEffect, useRef } from 'react'
 
+// Cache-busting query so Cloudflare's CDN (and browsers) don't keep serving
+// the pre-transparency version of these assets from a prior deploy — public/
+// files keep the same filename across deploys, so the CDN cache never
+// invalidates on its own when only the file content changes.
+const ASSET_VERSION = 'v2'
 const POSES = {
-  idle:      '/yaagvi-poses/idle.png',
-  wave:      '/yaagvi-poses/wave.png',
-  celebrate: '/yaagvi-poses/celebrate.png',
-  dance:     '/yaagvi-poses/dance.png',
-  point:     '/yaagvi-poses/point.png',
-  think:     '/yaagvi-poses/think.png',
-  read:      '/yaagvi-poses/read.png',
-  clap:      '/yaagvi-poses/clap.png',
+  idle:      `/yaagvi-poses/idle.png?${ASSET_VERSION}`,
+  wave:      `/yaagvi-poses/wave.png?${ASSET_VERSION}`,
+  celebrate: `/yaagvi-poses/celebrate.png?${ASSET_VERSION}`,
+  dance:     `/yaagvi-poses/dance.png?${ASSET_VERSION}`,
+  point:     `/yaagvi-poses/point.png?${ASSET_VERSION}`,
+  think:     `/yaagvi-poses/think.png?${ASSET_VERSION}`,
+  read:      `/yaagvi-poses/read.png?${ASSET_VERSION}`,
+  clap:      `/yaagvi-poses/clap.png?${ASSET_VERSION}`,
+  'think-alt': `/yaagvi-poses/think-alt.png?${ASSET_VERSION}`,
 }
 
 // CSS injected once
@@ -141,6 +147,12 @@ const CSS = `
     50%      { transform: scale(1.08); }
   }
 
+  /* Think-alt — slow sway, same rhythm as think */
+  .yaagvi-anim-think-alt {
+    animation: yaagvi-sway 2s ease-in-out infinite;
+    transform-origin: bottom center;
+  }
+
   /* Speech bubble */
   .yaagvi-speech {
     position: absolute;
@@ -190,7 +202,8 @@ const CSS = `
     .yaagvi-anim-point,
     .yaagvi-anim-think,
     .yaagvi-anim-read,
-    .yaagvi-anim-clap {
+    .yaagvi-anim-clap,
+    .yaagvi-anim-think-alt {
       animation: none;
     }
     .yaagvi-dashboard::before { animation: none; }
@@ -209,7 +222,7 @@ function injectStyles() {
  * YaagviCharacter
  *
  * Props:
- *   state    — 'idle' | 'wave' | 'celebrate' | 'dance' | 'point' | 'think' | 'read' | 'clap'
+ *   state    — 'idle' | 'wave' | 'celebrate' | 'dance' | 'point' | 'think' | 'think-alt' | 'read' | 'clap'
  *   size     — number (px width) or string CSS value. Default: 180
  *   speech   — string | null  Optional speech bubble text
  *   autoIdle — number | null  ms after which state resets to 'idle' (e.g. 2500)

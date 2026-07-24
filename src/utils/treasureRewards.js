@@ -44,6 +44,11 @@ export function normaliseTreasureCollection(collection) {
     sparkleDust: Math.max(0, Number(source.sparkleDust) || 0),
     claimStreak: Math.max(0, Number(source.claimStreak) || 0),
     lastClaimDate: typeof source.lastClaimDate === 'string' ? source.lastClaimDate : '',
+    roomLayout: source.roomLayout && typeof source.roomLayout === 'object' ? source.roomLayout : {},
+    roomLayoutUpdatedAt: Math.max(0, Number(source.roomLayoutUpdatedAt) || 0),
+    treasureInteractions: source.treasureInteractions && typeof source.treasureInteractions === 'object' ? source.treasureInteractions : {},
+    secretGames: source.secretGames && typeof source.secretGames === 'object' ? source.secretGames : {},
+    treasureLoadout: source.treasureLoadout && typeof source.treasureLoadout === 'object' ? source.treasureLoadout : {},
   }
 }
 

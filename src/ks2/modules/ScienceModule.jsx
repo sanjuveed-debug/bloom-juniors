@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { sessionSeedFor, seededShuffle } from '../../utils/seededRandom'
+import InteractiveYaagvi, { useYaagviReactions } from '../../components/InteractiveYaagvi'
 
 const TOPICS = {
   'Plants 🌱': [
@@ -39,10 +40,19 @@ export default function ScienceModule({ theme, onDone, onBack, played = 0 }) {
   const [feedback, setFeedback] = useState(null)
   const lockedRef = useRef(false)
   const completedRef = useRef(false)
+  const missedRef = useRef(false)
+
+  const { reaction: yaagviReaction, react: reactYaagvi } = useYaagviReactions({
+    activityKey: `${topic}-${q}`,
+    active: Boolean(topic) && !feedback,
+  })
+
+  useEffect(() => { if (topic) reactYaagvi('question') }, [topic, q, reactYaagvi])
 
   const startTopic = (t) => {
     lockedRef.current = false
     completedRef.current = false
+    missedRef.current = false
     setTopic(t)
     setQuestions(seededShuffle([...TOPICS[t]], sessionSeedFor('science-' + t, played)))
     setQ(0)
@@ -54,20 +64,28 @@ export default function ScienceModule({ theme, onDone, onBack, played = 0 }) {
     if (lockedRef.current || completedRef.current) return
     lockedRef.current = true
     const correct = ans === questions[q].ans
-    const ns = score + (correct ? 1 : 0)
+    const ns = score + (correct && !missedRef.current ? 1 : 0)
+    if (!correct) missedRef.current = true
     if (correct) confetti({ particleCount: 45, spread: 65, origin: { x: 0.5, y: 0.4 } })
-    setFeedback({ correct, ans: questions[q].ans, fact: questions[q].fact, ns })
+    reactYaagvi(correct ? 'correct' : 'wrong', correct ? { streak: ns % 3 === 0 ? 3 : 1 } : { attempt: 1 })
+    setFeedback({ correct, fact: correct ? questions[q].fact : null, ns })
   }
 
   const advance = () => {
     if (completedRef.current) return
     const ns = feedback.ns
     setFeedback(null)
+    if (!feedback.correct) {
+      lockedRef.current = false
+      return
+    }
     if (q + 1 >= questions.length) {
       completedRef.current = true
-      onDone(ns, questions.length)
+      reactYaagvi('complete')
+      onDone(ns, questions.length, { questions })
     } else {
       setQ(q + 1)
+      missedRef.current = false
       lockedRef.current = false
     }
   }
@@ -105,6 +123,7 @@ export default function ScienceModule({ theme, onDone, onBack, played = 0 }) {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-5 gap-5">
+        <InteractiveYaagvi reaction={yaagviReaction} placement="strip" className="max-w-sm" />
         <div className="w-full max-w-sm p-6 rounded-3xl text-center" style={{ background: theme.card, border: `1px solid ${theme.primary}40` }}>
           <p className="font-bubble text-white text-xl leading-snug">{curr.q}</p>
         </div>
@@ -114,18 +133,20 @@ export default function ScienceModule({ theme, onDone, onBack, played = 0 }) {
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
               className="w-full max-w-sm rounded-2xl overflow-hidden">
               <div className={`px-5 py-3 font-bubble text-lg text-white ${feedback.correct ? 'bg-green-500/80' : 'bg-orange-500/70'}`}>
-                {feedback.correct ? '✓ Correct!' : `✗ Answer: ${feedback.ans}`}
+                {feedback.correct ? '✓ Correct!' : '✗ Think like a scientist and try this one again'}
               </div>
               <div className="px-5 py-3" style={{ background: `${theme.primary}20` }}>
-                <p className="font-round text-xs mb-1" style={{ color: theme.accent }}>🔬 Did you know?</p>
-                <p className="font-round text-white/80 text-sm">{feedback.fact}</p>
+                {feedback.correct && <>
+                  <p className="font-round text-xs mb-1" style={{ color: theme.accent }}>🔬 Did you know?</p>
+                  <p className="font-round text-white/80 text-sm">{feedback.fact}</p>
+                </>}
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={advance}
                   className="mt-3 w-full py-2.5 rounded-xl font-bubble text-white text-sm"
                   style={{ background: feedback.correct ? '#22C55E' : theme.primary }}
                 >
-                  {q + 1 >= questions.length ? 'Finish ✓' : 'Next →'}
+                  {feedback.correct ? (q + 1 >= questions.length ? 'Finish ✓' : 'Next →') : 'Try this question again'}
                 </motion.button>
               </div>
             </motion.div>
@@ -137,8 +158,8 @@ export default function ScienceModule({ theme, onDone, onBack, played = 0 }) {
             <motion.button key={opt} data-companion-answer={opt === curr.ans ? 'correct' : 'wrong'} whileTap={{ scale: 0.96 }} onClick={() => handle(opt)}
               className="py-4 px-5 rounded-2xl font-round text-white text-sm text-left"
               style={{
-                background: feedback && opt === curr.ans ? '#22C55E30' : theme.card,
-                border: feedback && opt === curr.ans ? '2px solid #22C55E' : `2px solid ${theme.primary}30`,
+                background: feedback?.correct && opt === curr.ans ? '#22C55E30' : theme.card,
+                border: feedback?.correct && opt === curr.ans ? '2px solid #22C55E' : `2px solid ${theme.primary}30`,
               }}>
               {opt}
             </motion.button>

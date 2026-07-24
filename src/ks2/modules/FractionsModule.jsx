@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { sessionSeedFor, seededShuffle } from '../../utils/seededRandom'
+import InteractiveYaagvi, { useYaagviReactions } from '../../components/InteractiveYaagvi'
 
 // SVG fraction bar — shaded n out of d parts
 function FractionBar({ n, d, color = '#22C55E' }) {
@@ -83,25 +84,41 @@ export default function FractionsModule({ theme, onDone, onBack, played = 0 }) {
   const current = questions[q]
   const lockedRef = useRef(false)
   const completedRef = useRef(false)
+  const missedRef = useRef(false)
   const timersRef = useRef([])
 
+  const { reaction: yaagviReaction, react: reactYaagvi } = useYaagviReactions({
+    activityKey: q,
+    active: !feedback && q < questions.length,
+  })
+
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
+
+  useEffect(() => { reactYaagvi('question') }, [q, reactYaagvi])
 
   const handle = (ans) => {
     if (lockedRef.current || completedRef.current) return
     lockedRef.current = true
     const correct = ans == current.ans
-    const ns = score + (correct ? 1 : 0)
+    const ns = score + (correct && !missedRef.current ? 1 : 0)
+    if (!correct) missedRef.current = true
     if (correct) confetti({ particleCount: 45, spread: 65, origin: { x: 0.5, y: 0.4 } })
-    setFeedback({ correct, ans: current.ans })
+    reactYaagvi(correct ? 'correct' : 'wrong', correct ? { streak: ns % 3 === 0 ? 3 : 1 } : { attempt: 1 })
+    setFeedback({ correct })
     const id = window.setTimeout(() => {
       timersRef.current = timersRef.current.filter(t => t !== id)
       setFeedback(null)
+      if (!correct) {
+        lockedRef.current = false
+        return
+      }
       if (q + 1 >= questions.length) {
         completedRef.current = true
-        onDone(ns, questions.length)
+        reactYaagvi('complete')
+        onDone(ns, questions.length, { questions })
       } else {
         setQ(q + 1)
+        missedRef.current = false
         lockedRef.current = false
       }
     }, 1100)
@@ -119,6 +136,7 @@ export default function FractionsModule({ theme, onDone, onBack, played = 0 }) {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6">
+        <InteractiveYaagvi reaction={yaagviReaction} placement="strip" className="max-w-sm" />
         <div className="w-full max-w-sm p-6 rounded-3xl text-center" style={{ background: theme.card, border: `1px solid ${theme.primary}40` }}>
           <p className="font-bubble text-white text-xl mb-5" style={{ textShadow: `0 0 15px ${theme.glow}` }}>
             {current.q}
@@ -142,7 +160,7 @@ export default function FractionsModule({ theme, onDone, onBack, played = 0 }) {
           {feedback && (
             <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
               className={`px-6 py-3 rounded-2xl font-bubble text-lg ${feedback.correct ? 'bg-green-500/80' : 'bg-orange-500/70'} text-white`}>
-              {feedback.correct ? '✓ Correct!' : `✗ Answer: ${feedback.ans}`}
+              {feedback.correct ? '✓ Correct!' : '✗ Try a different fraction'}
             </motion.div>
           )}
         </AnimatePresence>
@@ -152,8 +170,8 @@ export default function FractionsModule({ theme, onDone, onBack, played = 0 }) {
             <motion.button key={opt} data-companion-answer={String(opt) === String(current.ans) ? 'correct' : 'wrong'} whileTap={{ scale: 0.88 }} onClick={() => handle(opt)}
               className="py-5 rounded-2xl font-bubble text-white text-xl"
               style={{
-                background: feedback && String(opt) === String(current.ans) ? '#22C55E40' : theme.card,
-                border: feedback && String(opt) === String(current.ans) ? '2px solid #22C55E' : `2px solid ${theme.primary}30`,
+                background: feedback?.correct && String(opt) === String(current.ans) ? '#22C55E40' : theme.card,
+                border: feedback?.correct && String(opt) === String(current.ans) ? '2px solid #22C55E' : `2px solid ${theme.primary}30`,
               }}>
               {opt}
             </motion.button>

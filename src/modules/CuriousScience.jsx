@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSpeech } from '../hooks/useSpeech'
+import { useModuleStart } from '../hooks/useModuleStart'
 import { THEMES } from '../themes'
 
 const CATEGORIES = ['All', '🌤️ Sky', '🐾 Animals', '🌱 Plants', '🪐 Space', '🧍 Us', '🌍 Earth']
@@ -149,6 +150,7 @@ function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5) }
 export default function CuriousScience({ avatar, onBack, profileName, onAddStars }) {
   const theme  = THEMES[avatar] || THEMES.rumi
   const { speak } = useSpeech()
+  const startSignal = useModuleStart('science')
 
   const [cat,       setCat]       = useState('All')
   const [revealed,  setRevealed]  = useState(new Set())
@@ -158,9 +160,10 @@ export default function CuriousScience({ avatar, onBack, profileName, onAddStars
   const [completedCats, setCompletedCats] = useState(() => new Set())
 
   useEffect(() => {
+    if (!startSignal) return
     speak(`Welcome to the Wonder Lab, ${profileName || 'scientist'}! Tap any card to discover why!`, { mood: 'celebrate' })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [startSignal])
 
   const visible = shuffled.filter(q => cat === 'All' || q.cat === cat)
 
@@ -176,7 +179,7 @@ export default function CuriousScience({ avatar, onBack, profileName, onAddStars
       const earned = Math.floor(newCount / 5) - rewardedCount
       if (earned > 0) {
         setRewardedCount(c => c + earned)
-        onAddStars?.('science', earned, { total: QUESTIONS.length, correct: newCount, struggles: [] })
+        onAddStars?.('science', earned, { total: QUESTIONS.length, correct: newCount, struggles: [], stayOnModule: true })
       }
 
       const catQuestions = QUESTIONS.filter(x => x.cat === q.cat)
@@ -186,7 +189,7 @@ export default function CuriousScience({ avatar, onBack, profileName, onAddStars
       })
       if (revealedInCat.length >= catQuestions.length && !completedCats.has(q.cat)) {
         setCompletedCats(prev => new Set([...prev, q.cat]))
-        onAddStars?.('science', 2, { total: catQuestions.length, correct: catQuestions.length, struggles: [] })
+        onAddStars?.('science', 2, { total: catQuestions.length, correct: catQuestions.length, struggles: [], stayOnModule: true })
       }
     }
   }

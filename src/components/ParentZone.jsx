@@ -5,6 +5,11 @@ import { isDigestOptedIn, setDigestOptIn, buildDigestPayload, sendDigestEmail, m
 import { loadPremiumStatus, startPremiumCheckout, openBillingPortal } from '../services/cloudStore.js'
 import { PREMIUM_GATING_ENABLED } from '../config/premiumContent.js'
 import { getModuleGrowth, growthEmoji } from '../utils/growthLevels.js'
+import ParentProgressStory from './ParentProgressStory.jsx'
+import { getParentInterestInsight } from '../utils/childInterest.js'
+import { getCompanionBond } from '../utils/companionBond.js'
+import { getDreamProjectState } from '../utils/dreamProject.js'
+import { normaliseTreasureCollection } from '../utils/treasureRewards.js'
 
 const PREMIUM_PRICE_LABEL = 'AED 19/month'
 
@@ -172,14 +177,14 @@ function PremiumCard({ theme, guardianEmail }) {
   )
 }
 
-export default function ParentZone({ avatar, progress, profileId, onBack, onSetChallenge, onAddSticker, onReset, onSwitchProfiles, profileName, profileAgeGroup, parentPin, onUpdateProgress, onUpdateProfile, onLogout, guardianEmail, onUpdateGuardian, classroomMode }) {
+export default function ParentZone({ avatar, progress, profileId, onBack, onSetChallenge, onAddSticker, onReset, onSwitchProfiles, profileName, profileAgeGroup, parentPin, verifyParentPin, onUpdateProgress, onUpdateProfile, onLogout, guardianEmail, onUpdateGuardian, classroomMode }) {
   const theme = THEMES[avatar] || THEMES.rumi
   const [pin, setPin] = useState('')
   const [unlocked, setUnlocked] = useState(false)
   const [pinError, setPinError] = useState(false)
   const [pinAttempts, setPinAttempts] = useState(0)
   const [lockedUntil, setLockedUntil] = useState(0)
-  const [tab, setTab] = useState('analytics')
+  const [tab, setTab] = useState('story')
   const [selectedChallenge, setSelectedChallenge] = useState(null)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [resetPin, setResetPin] = useState('')
@@ -200,6 +205,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
 
   useEffect(() => () => clearTimeout(pinTimerRef.current), [])
   const expectedPin = String(parentPin || '')
+  const pinConfigured = Boolean(expectedPin || verifyParentPin)
   const isLockedOut = lockedUntil > Date.now()
   const lockoutSeconds = Math.max(0, Math.ceil((lockedUntil - Date.now()) / 1000))
 
@@ -256,17 +262,21 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
     })
     return all.sort((a, b) => b.count - a.count).slice(0, 5)
   }, [struggles])
+  const interestInsight = useMemo(() => getParentInterestInsight(progress, profileAgeGroup || 'early'), [progress, profileAgeGroup])
 
   const handlePin = useCallback((digit) => {
-    if (!expectedPin || isLockedOut) return
+    if (!pinConfigured || isLockedOut) return
     setPinError(false)
     setPin(prev => {
       if (prev.length >= 4) return prev
       const next = `${prev}${digit}`.slice(0, 4)
       if (next.length === 4) {
         clearTimeout(pinTimerRef.current)
-        pinTimerRef.current = window.setTimeout(() => {
-          if (next === expectedPin) {
+        pinTimerRef.current = window.setTimeout(async () => {
+          const valid = verifyParentPin
+            ? await verifyParentPin(next)
+            : next === expectedPin
+          if (valid) {
             setPinAttempts(0)
             setLockedUntil(0)
             setUnlocked(true)
@@ -280,11 +290,11 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
           })
           setPinError(true)
           setPin('')
-        }, next === expectedPin ? 300 : 400)
+        }, 300)
       }
       return next
     })
-  }, [expectedPin, isLockedOut])
+  }, [expectedPin, pinConfigured, isLockedOut, verifyParentPin])
 
   const handleSetChallenge = useCallback(() => {
     if (!selectedChallenge) return
@@ -327,7 +337,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
             <p className="font-round text-sm mt-1 opacity-70" style={{ color: theme.text }}>Enter your parent PIN to continue</p>
           </div>
 
-          {!expectedPin && (
+          {!pinConfigured && (
             <p className="mb-4 rounded-2xl bg-red-500/12 px-4 py-3 text-center font-round text-sm font-bold text-red-500">
               Parent PIN is not set for this account. Please register again or contact support.
             </p>
@@ -366,7 +376,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
                   if (digit === '⌫') setPin(p => p.slice(0, -1))
                   else if (digit !== '') handlePin(String(digit))
                 }}
-                disabled={digit === '' || !expectedPin || isLockedOut}
+                disabled={digit === '' || !pinConfigured || isLockedOut}
                 className="h-14 rounded-2xl font-bubble text-2xl shadow-md disabled:opacity-0"
                 style={{ background: digit === '⌫' ? '#EF4444' : theme.card, color: theme.text }}>
                 {digit}
@@ -379,6 +389,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
   }
 
   const TABS = [
+        { id: 'story',     label: 'Weekly Story' },
         { id: 'analytics', label: 'Stats' },
         { id: 'map',       label: 'Progress' },
         { id: 'quiz',      label: 'Challenge' },
@@ -421,6 +432,22 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
       </div>
 
       {/* Premium upgrade (parents only — schools have their own licence) */}
+      <section className="mx-4 mb-3 rounded-3xl border-2 border-white/60 bg-white/80 p-4 shadow-lg" data-testid="parent-interest-insight">
+        <div className="flex items-start gap-3">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-pink-500 text-2xl text-white shadow">💛</div>
+          <div className="min-w-0 flex-1">
+            <p className="font-round text-[10px] font-black uppercase tracking-[.18em]" style={{ color: theme.primary }}>What keeps {profileName || 'your child'} engaged</p>
+            <h2 className="font-bubble text-xl" style={{ color: theme.text }}>{interestInsight.ready ? `${interestInsight.favourite.label} is the current favourite` : 'The Interest Engine is observing real play'}</h2>
+            <p className="mt-1 font-round text-xs font-bold opacity-70" style={{ color: theme.text }}>{interestInsight.ready ? `${interestInsight.sessionsObserved} choices observed. Surprise Me currently introduces ${interestInsight.exploring.label}.` : 'After a few game choices, this card will show what is replayed, completed, and left early.'}</p>
+          </div>
+        </div>
+        {interestInsight.ready && <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          <div className="rounded-2xl bg-emerald-50 p-3"><p className="font-round text-[9px] font-black uppercase text-emerald-700">LOVES RETURNING TO</p><p className="mt-1 font-bubble text-sm text-emerald-950">{interestInsight.favourite.emoji} {interestInsight.favourite.label}</p></div>
+          <div className="rounded-2xl bg-violet-50 p-3"><p className="font-round text-[9px] font-black uppercase text-violet-700">DISCOVERING NEXT</p><p className="mt-1 font-bubble text-sm text-violet-950">🎲 {interestInsight.exploring.label}</p></div>
+          <div className="rounded-2xl bg-amber-50 p-3"><p className="font-round text-[9px] font-black uppercase text-amber-700">MAY NEED A REDESIGN</p><p className="mt-1 font-bubble text-sm text-amber-950">{interestInsight.friction ? `${interestInsight.friction.emoji} ${interestInsight.friction.label}` : 'No repeated quick exits yet'}</p></div>
+        </div>}
+      </section>
+
       {!classroomMode && <PremiumCard theme={theme} guardianEmail={guardianEmail} />}
 
       {/* Tabs */}
@@ -440,6 +467,19 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
 
       {/* Tab content */}
       <AnimatePresence mode="wait">
+
+        {/* ── WEEKLY PARENT STORY ── */}
+        {tab === 'story' && (
+          <motion.div key="story" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <ParentProgressStory
+              progress={progress}
+              profileName={profileName || 'Your child'}
+              ageGroup={profileAgeGroup || 'early'}
+              theme={theme}
+              onUpdateProgress={onUpdateProgress}
+            />
+          </motion.div>
+        )}
 
         {/* ── ANALYTICS TAB ── */}
         {tab === 'analytics' && (
@@ -499,6 +539,32 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
                 ))}
               </div>
             </div>
+
+            {/* Living World summary — same story the child sees in Companion Bond / Dream Build / Treasure Room, surfaced here too */}
+            {(() => {
+              const bond = getCompanionBond(progress)
+              const dream = getDreamProjectState(progress, profileAgeGroup || 'early')
+              const treasureCount = normaliseTreasureCollection(progress.treasureCollection).items.length
+              return (
+                <div className="rounded-3xl p-4 shadow" style={{ background: theme.card }}>
+                  <p className="font-bubble text-lg mb-2" style={{ color: theme.text }}>Living World 🌱</p>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="rounded-2xl p-3" style={{ background: `${theme.primary}12`, border: `1px solid ${theme.primary}30` }}>
+                      <p className="font-bubble text-sm truncate" style={{ color: theme.text }}>{bond.companion.name}</p>
+                      <p className="font-round text-[10px] font-black uppercase opacity-65" style={{ color: theme.text }}>Lv{bond.stage.level} · {bond.stage.name}</p>
+                    </div>
+                    <div className="rounded-2xl p-3" style={{ background: `${theme.primary}12`, border: `1px solid ${theme.primary}30` }}>
+                      <p className="font-bubble text-sm" style={{ color: theme.text }}>{dream.state.stage}/{dream.project.stages.length}</p>
+                      <p className="font-round text-[10px] font-black uppercase opacity-65" style={{ color: theme.text }}>Dream Build</p>
+                    </div>
+                    <div className="rounded-2xl p-3" style={{ background: `${theme.primary}12`, border: `1px solid ${theme.primary}30` }}>
+                      <p className="font-bubble text-sm" style={{ color: theme.text }}>{treasureCount}</p>
+                      <p className="font-round text-[10px] font-black uppercase opacity-65" style={{ color: theme.text }}>Treasures</p>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* Adaptive mastery journey */}
             {progress.livingAdventure && (

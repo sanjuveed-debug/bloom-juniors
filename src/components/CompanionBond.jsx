@@ -1,7 +1,33 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import confetti from 'canvas-confetti'
 import { COMPANION_BOND_STAGES, getCompanionBond } from '../utils/companionBond.js'
 import { getCompanionPowerState } from '../utils/companionPowers.js'
+import YaagviCharacter from './YaagviCharacter.jsx'
+
+function CompanionLevelUpReveal({ previousStage, newStage, onClose }) {
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      confetti({ particleCount: 130, spread: 130, origin: { y: 0.45 } })
+    }, 250)
+    return () => window.clearTimeout(timer)
+  }, [])
+  return (
+    <motion.div data-testid="companion-levelup-reveal" className="fixed inset-0 z-[300] grid place-items-center overflow-y-auto bg-[#1c0c2d]/88 p-4 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.div className="relative w-full max-w-lg overflow-hidden rounded-[36px] border-4 p-6 text-center shadow-2xl" style={{ borderColor: newStage.aura, background: `linear-gradient(160deg, #fff5df 0%, ${newStage.aura}26 100%)` }}
+        initial={{ scale: 0.7, y: 40 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 210, damping: 18 }}>
+        <p className="relative font-round text-xs font-black uppercase tracking-[.2em] text-[#a33e18]">Your friendship grew!</p>
+        <div className="relative mx-auto my-4 flex justify-center"><YaagviCharacter state="celebrate" size={150} /></div>
+        {previousStage && <p className="relative font-round text-sm font-bold text-[#9a5b35]">{previousStage.name} →</p>}
+        <h2 className="relative mt-1 font-bubble text-3xl text-[#3b1607]">{newStage.name} {newStage.accessory}</h2>
+        <p className="relative mx-auto mt-3 max-w-sm font-round text-sm font-bold text-[#694021]">{newStage.ability}</p>
+        <motion.button whileTap={{ scale: 0.95 }} onClick={onClose} className="relative mt-6 min-h-14 w-full rounded-2xl bg-gradient-to-r from-orange-500 to-pink-500 font-bubble text-xl text-white shadow-lg">
+          Yay! →
+        </motion.button>
+      </motion.div>
+    </motion.div>
+  )
+}
 
 function CompanionArt({ companion, stage, compact = false }) {
   const size = compact ? 'h-10 w-10' : 'h-24 w-24'
@@ -15,8 +41,17 @@ export function CompanionBadge({ progress, ageGroup = 'early', moduleId = '', on
   const bond = getCompanionBond(progress)
   const powerState = getCompanionPowerState(progress, ageGroup)
   const previousPoints = useRef(bond.points)
+  const previousStageLevel = useRef(bond.stage.level)
   const [message,setMessage] = useState('')
+  const [levelUp,setLevelUp] = useState(null)
   const toddler = ageGroup === 'toddler', junior = ageGroup === 'junior'
+  useEffect(()=>{
+    if (bond.stage.level > previousStageLevel.current) {
+      const previousStage = COMPANION_BOND_STAGES.find(item => item.level === previousStageLevel.current) || null
+      setLevelUp({ previousStage, newStage: bond.stage })
+    }
+    previousStageLevel.current = bond.stage.level
+  },[bond.stage.level])
   useEffect(()=>{
     if (bond.points > previousPoints.current) {
       setMessage(toddler?'We grew together!':junior?`Bond +${bond.points-previousPoints.current} · strong work.`:`I felt that learning win! +${bond.points-previousPoints.current}`)
@@ -42,6 +77,7 @@ export function CompanionBadge({ progress, ageGroup = 'early', moduleId = '', on
       <motion.button data-testid="companion-power" whileTap={{scale:.88}} onClick={usePower} className={`relative grid h-10 w-10 min-h-0 shrink-0 place-items-center rounded-full border-2 font-bubble text-lg shadow-inner ${powerState.available?'border-[#f4b63e] bg-[#fff2a8] text-[#4a1f56]':'border-[#c9bca7] bg-[#ece6dc] grayscale'}`} aria-label={`${powerState.power.name}, ${powerState.available} charges`}>{powerState.power.icon}<span className="absolute -bottom-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-[#4a1f56] px-1 font-round text-[9px] font-black text-white">{powerState.available}</span></motion.button>
     </div>
     <AnimatePresence>{message&&<motion.div initial={{opacity:0,y:8,scale:.9}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:-5}} className="absolute right-0 top-[52px] z-[260] w-52 rounded-2xl border-2 border-white bg-[#32113f] p-3 font-round text-xs font-extrabold text-white shadow-2xl">{message}<span className="absolute -top-2 right-5 h-4 w-4 rotate-45 border-l-2 border-t-2 border-white bg-[#32113f]"/></motion.div>}</AnimatePresence>
+    <AnimatePresence>{levelUp&&<CompanionLevelUpReveal previousStage={levelUp.previousStage} newStage={levelUp.newStage} onClose={()=>setLevelUp(null)} />}</AnimatePresence>
   </div>
 }
 

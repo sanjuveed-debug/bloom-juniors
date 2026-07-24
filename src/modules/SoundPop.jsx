@@ -9,6 +9,7 @@ import { buildSoundPopCompletion } from '../utils/moduleScoring'
 import { speakThenAdvance } from '../utils/speechAdvance'
 import InteractiveYaagvi, { useYaagviReactions } from '../components/InteractiveYaagvi'
 import AdventureCompleteBanner from '../components/AdventureCompleteBanner'
+import { questionSignature } from '../utils/adaptiveLearning'
 
 // ── RWI-aligned phonics sound bank ────────────────────────────────────────────
 // Set 0 Letter Sounds   : m  a  s  d  t  i  n  p  g  o  c  k  u  b  f  e  l  h  r  j  v  y  w  z  x
@@ -909,6 +910,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
   const [showHint,         setShowHint]         = useState(false)
   const totalRounds = 10
   const timersRef = useRef(new Set())
+  const questionSignaturesRef = useRef(new Set())
   const { reaction: yaagviReaction, react: reactYaagvi } = useYaagviReactions({
     activityKey: `${mode || 'menu'}-${round}-${question?.targetKey || ''}-${selected || ''}`,
     active: mode === 'pop' && Boolean(question) && selected === null,
@@ -951,20 +953,15 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
     if (!usedMapRef.current[key]) usedMapRef.current[key] = new Set()
     usedMapRef.current[key].add(q.targetWord)
     setQuestion(q)
+    questionSignaturesRef.current.add(questionSignature('phonics', `${q.targetKey}:${q.targetWord}`))
     setSelected(null)
     setFeedback(null)
     reactYaagvi('question')
   }, [pickNextSound, reactYaagvi])
 
-  useEffect(() => {
-    speak(avatarTheme.intro + ' Choose your game!', { mood: 'instruct', voice: 'gb' })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
   const startPop = () => {
     setMode('pop')
     nextRound(pickNextSound())
-    speak('Listen for the sound and tap the right word!', { mood: 'instruct', voice: 'gb' })
     reactYaagvi('listen')
   }
 
@@ -1056,6 +1053,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
             correctAnswers: newScore,
             bonusStars: newScore,
             wrongSounds: [],
+            questionSignatures: [...questionSignaturesRef.current],
           })
           speak(`Amazing ${profileName || 'superstar'}! You blended ${newScore} words! You are a blending champion!`, { mood: 'celebrate' })
           onAddStars('phonics', completion.stars, completion.sessionData)
@@ -1120,6 +1118,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
               correctAnswers: newCorrectAnswers,
               bonusStars: newScore,
               wrongSounds,
+              questionSignatures: [...questionSignaturesRef.current],
             })
             speak(`Amazing ${name}! You scored ${newScore} stars! You are a phonics superstar!`, { mood: 'celebrate' })
             onAddStars('phonics', completion.stars, completion.sessionData)
@@ -1210,6 +1209,14 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
           <div className="text-6xl mb-2">🎤</div>
           <h2 className="font-bubble text-3xl mb-6 text-center" style={{ color: theme.text }}>Sound Pop</h2>
           <InteractiveYaagvi reaction={yaagviReaction} placement="strip" className="max-w-sm" />
+          <motion.button
+            whileTap={{ scale: 0.94 }}
+            onClick={() => speak(`${avatarTheme.intro} Choose a sound adventure!`, { mood: 'instruct', voice: 'gb' })}
+            className="mb-4 rounded-full border-2 px-5 py-2 font-bubble text-sm shadow-sm"
+            style={{ background: theme.card, borderColor: `${theme.primary}55`, color: theme.text }}
+          >
+            🔊 Hear Yaagvi
+          </motion.button>
           <div className="w-full max-w-sm space-y-4">
             <motion.button
               whileTap={{ scale: 0.95 }}

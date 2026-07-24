@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useSpeech } from '../hooks/useSpeech'
@@ -396,6 +396,8 @@ export default function WorldGK({ avatar, onAddStars, onBack, profileName }) {
   const [qNum,     setQNum]     = useState(0)
   const [done,     setDone]     = useState(false)
   const [expanded, setExpanded] = useState(null)
+  const [missedCurrent, setMissedCurrent] = useState(false)
+  const strugglesRef = useRef([])
   const TOTAL_Q = 8
 
   const visibleCountries = region === 'All' ? COUNTRIES : COUNTRIES.filter(c => c.region === region)
@@ -417,6 +419,8 @@ export default function WorldGK({ avatar, onAddStars, onBack, profileName }) {
     setQNum(0)
     setDone(false)
     setChosen(null)
+    setMissedCurrent(false)
+    strugglesRef.current = []
     setQuestion(q)
     if (mode === 'History') {
       speak(`${q.question} ${q.correct.title}.`, { mood: 'question' })
@@ -430,17 +434,22 @@ export default function WorldGK({ avatar, onAddStars, onBack, profileName }) {
     setChosen(opt)
     const isHistoryQuiz = quizMode === 'History'
     const isCorrect = isHistoryQuiz ? opt === question.correct.yearLabel : opt.name === question.correct.name
-    const newScore = score + (isCorrect ? 1 : 0)
+    const newScore = score + (isCorrect && !missedCurrent ? 1 : 0)
     const rightAns = quizMode === 'Capitals' ? question.correct.capital
       : quizMode === 'Flags' ? question.correct.name
       : quizMode === 'Currencies' ? question.correct.currency
       : question.correct.yearLabel
 
     if (isCorrect) {
+      setScore(newScore)
       speak(`Correct! ${rightAns}! Well done!`, { mood: 'celebrate' })
       confetti({ particleCount: 40, spread: 70, origin: { x: 0.5, y: 0.4 } })
     } else {
-      speak(`Not quite! The answer is ${rightAns}. Keep going!`, { mood: 'instruct' })
+      if (!missedCurrent) strugglesRef.current.push(question.question)
+      setMissedCurrent(true)
+      speak('Good try. Look at the map clue and try the same question again.', { mood: 'instruct' })
+      setTimeout(() => setChosen(null), 1400)
+      return
     }
 
     setTimeout(() => {
@@ -448,12 +457,13 @@ export default function WorldGK({ avatar, onAddStars, onBack, profileName }) {
       if (next >= TOTAL_Q) {
         setDone(true)
         const stars = getWorldExplorerStars(newScore)
-        onAddStars('worldgk', stars, { total: TOTAL_Q, correct: newScore, struggles: [] })
+        onAddStars('worldgk', stars, { total: TOTAL_Q, correct: newScore, struggles: strugglesRef.current })
         speak(`Amazing ${profileName || 'explorer'}! You got ${newScore} out of ${TOTAL_Q}!`, { mood: 'celebrate' })
         confetti({ particleCount: 120, spread: 120, origin: { x: 0.5, y: 0.3 } })
       } else {
         setQNum(next)
         setChosen(null)
+        setMissedCurrent(false)
         const q = quizMode === 'History'
           ? makeHistoryQuestion(visibleHistoryEvents)
           : makeQuestion(getCountryPool(), quizMode)
@@ -465,7 +475,7 @@ export default function WorldGK({ avatar, onAddStars, onBack, profileName }) {
         }
       }
     }, 1600)
-  }, [chosen, question, qNum, score, quizMode, getCountryPool, visibleHistoryEvents, profileName, onAddStars, speak])
+  }, [chosen, question, qNum, score, missedCurrent, quizMode, getCountryPool, visibleHistoryEvents, profileName, onAddStars, speak])
 
   // ── Done ─────────────────────────────────────────────────────────────────
   if (inQuiz && done) {
@@ -554,7 +564,7 @@ export default function WorldGK({ avatar, onAddStars, onBack, profileName }) {
               let borderColor = 'transparent'
               let bg = theme.card
               if (chosen) {
-                if (isCorrect) { bg = '#22c55e18'; borderColor = '#22c55e' }
+                if (isCorrect && isChosen) { bg = '#22c55e18'; borderColor = '#22c55e' }
                 else if (isChosen) { bg = '#ef444418'; borderColor = '#ef4444' }
               }
               return (

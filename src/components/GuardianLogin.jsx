@@ -81,10 +81,12 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
     setLoading(true)
     // Small delay so the button feels responsive
     await new Promise(r => setTimeout(r, 350))
-    const ok = await onLogin(fullLogin ? email.trim() : '', pin, fullLogin ? password : '')
+    const result = await onLogin(fullLogin ? email.trim() : '', pin, fullLogin ? password : '')
     setLoading(false)
-    if (!ok) {
-      setError(fullLogin ? 'Email, password, or PIN is incorrect. Please try again.' : 'PIN is incorrect. Please try again.')
+    if (result !== true) {
+      setError(typeof result === 'string'
+        ? result
+        : fullLogin ? 'Email, password, or PIN is incorrect. Please try again.' : 'PIN is incorrect. Please try again.')
       setPin('')
       setShaking(true)
       setTimeout(() => setShaking(false), 600)
