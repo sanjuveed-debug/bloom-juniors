@@ -359,15 +359,14 @@ export default function StarCatch({ avatar, progress, onAddStars, onBack, profil
             return (
               <motion.button
                 key={`${round}-${star.id}`}
+                data-companion-answer={star.isTarget ? 'correct' : 'wrong'}
                 animate={
-                  isCaught  ? { scale: [1, 1.5, 0], opacity: [1, 1, 0] } :
-                  isShaking ? { x: [0, -12, 12, -10, 10, -6, 6, 0] } :
-                              { scale: [1, 1.04, 1] }
+                  isCaught ? { scale: [1, 1.5, 0], opacity: [1, 1, 0] } :
+                             { scale: [1, 1.04, 1] }
                 }
                 transition={
-                  isCaught  ? { duration: 0.45 } :
-                  isShaking ? { duration: 0.55, ease: 'easeInOut' } :
-                              { duration: 2.4, repeat: Infinity, ease: 'easeInOut' }
+                  isCaught ? { duration: 0.45 } :
+                             { duration: 2.4, repeat: Infinity, ease: 'easeInOut' }
                 }
                 disabled={isCaught}
                 className="aspect-square rounded-3xl flex flex-col items-center justify-center shadow-xl"
