@@ -732,17 +732,6 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
         </div>
       </section>
 
-      {/* ── FOUNDING FAMILIES (compact strip) ────────────────────────────────── */}
-      <section className="px-4 pb-10 md:px-8">
-        <div className="mx-auto max-w-3xl flex flex-wrap items-center justify-center gap-2 rounded-full px-4 py-2.5 text-center"
-          style={{ background: '#FFFFFF', border: `1.5px dashed ${PRIMARY}45` }}>
-          <span className="font-round text-xs font-bold" style={{ color: PRIMARY }}>🌱 Founding families:</span>
-          <span className="font-round text-xs" style={{ color: TEXT_MUTED }}>
-            Built by a parent, for parents — join now and your feedback shapes what we build next.
-          </span>
-        </div>
-      </section>
-
       </main>
 
       {/* ── FOOTER ───────────────────────────────────────────────────────────── */}
