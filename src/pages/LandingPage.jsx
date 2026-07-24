@@ -743,29 +743,6 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
         </div>
       </section>
 
-      {/* ── FINAL CTA ────────────────────────────────────────────────────────── */}
-      <section className="px-4 pb-20 md:px-8 text-center">
-        <div className="mx-auto max-w-xl">
-          <h2 className="font-bubble text-4xl mb-3" style={{ color: TEXT }}>Start today — it's free</h2>
-          <p className="font-round text-base mb-8" style={{ color: TEXT_MUTED }}>
-            No credit card. No setup. Your child can be learning in under 2 minutes.
-          </p>
-          <motion.button
-            whileTap={{ scale: 0.96 }}
-            onClick={onGetStarted}
-            className="font-bubble text-xl text-white px-10 py-5 rounded-2xl shadow-lg"
-            style={{ background: PRIMARY, boxShadow: '0 12px 32px rgba(194,65,12,0.3)' }}
-          >
-            Create a free account →
-          </motion.button>
-          <p className="font-round text-xs mt-5" style={{ color: TEXT_FAINT }}>
-            Create account → add child profile → choose age path → start first activity.
-          </p>
-          <p className="font-round text-xs mt-1" style={{ color: TEXT_FAINT }}>Takes under 2 minutes. No card needed.</p>
-          <p className="font-round text-xs mt-4" style={{ color: TEXT_FAINT }}>Already have an account? <button onClick={onSignIn} className="underline" style={{ color: TEXT_MUTED }}>Sign in here</button></p>
-        </div>
-      </section>
-
       </main>
 
       {/* ── FOOTER ───────────────────────────────────────────────────────────── */}
