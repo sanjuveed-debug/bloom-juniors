@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import BloomLogo from '../components/BloomLogo'
 import SchoolEnquiryForm from '../components/SchoolEnquiryForm'
 import LandingDemo from '../components/LandingDemo'
@@ -20,30 +20,6 @@ const FEATURES = [
   { emoji: '🎮', title: 'A healthy daily rhythm', desc: 'Children complete their learning path first, then the arcade opens. Study first, play after — built into the design.' },
   { emoji: '📚', title: 'Built for British progression', desc: 'Phonics, maths, reading and wider learning carefully sequenced for ages 3–9, aligned with EYFS, KS1 and early KS2.' },
   { emoji: '🔒', title: 'Safe by design', desc: 'No ads, no social feeds, no random purchases. PIN-protected parent area with full progress visibility.' },
-]
-
-const CURRICULUM = [
-  {
-    stage: 'EYFS',
-    range: 'Ages 3–5',
-    emoji: '🧸',
-    color: '#F97316',
-    items: ['Listening and attention', 'Early number sense and counting', 'Colours, shapes and patterns', 'First phonics readiness', 'Stories and imagination'],
-  },
-  {
-    stage: 'KS1',
-    range: 'Ages 5–7',
-    emoji: '🌟',
-    color: '#0F766E',
-    items: ['Pure-sound phonics progression', 'CVC words and blending', 'Reading confidence', 'Number bonds and early maths', 'Topic and world learning'],
-  },
-  {
-    stage: 'Early KS2',
-    range: 'Ages 7–9',
-    emoji: '🚀',
-    color: '#DC2626',
-    items: ['Times tables and fractions', 'Grammar and comprehension', 'Science and geography', 'Problem solving', 'Wider world exploration'],
-  },
 ]
 
 const HOW_STEPS = [
@@ -275,19 +251,76 @@ function HeroVisual() {
   )
 }
 
-export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) {
-  const [openFaq, setOpenFaq] = useState(null)
+// One-time 3D welcome flourish — Yaagvi flips/flies in to greet a first-time visitor,
+// then settles away so it never blocks or repeats on scroll/re-render.
+function WelcomeIntro() {
+  const reduceMotion = useReducedMotion()
+  const [visible, setVisible] = useState(true)
+  const [leaving, setLeaving] = useState(false)
 
-  const faqs = [
-    { q: 'Is it really free?', a: 'Yes — Sound Pop (phonics), Number World (maths), Story Room, Da Vinci Studio and Fun Exercise are completely free, forever. Premium modules unlock the full library.' },
-    { q: 'What age is it designed for?', a: 'Three age groups: Tiny Stars (3–4), Little Stars (4–6), and Super Kids (7–9). Each child gets their own profile and experience.' },
-    { q: 'Do I need to install anything?', a: 'No app store needed. Visit the website and tap "Add to Home Screen" to install it like an app on any phone, tablet or computer.' },
-    { q: 'How is screen time managed?', a: 'The Parent Zone lets you set session time limits, review what your child practised, and see full progress reports.' },
-    { q: 'Is my child\'s data safe?', a: 'All data is encrypted and stored securely. We never share personal information with third parties.' },
-  ]
+  useEffect(() => {
+    if (reduceMotion) { setVisible(false); return }
+    const leaveTimer = setTimeout(() => setLeaving(true), 2200)
+    const goneTimer = setTimeout(() => setVisible(false), 2700)
+    return () => { clearTimeout(leaveTimer); clearTimeout(goneTimer) }
+  }, [reduceMotion])
+
+  if (reduceMotion || !visible) return null
 
   return (
+    <motion.div
+      className="fixed inset-0 z-[200] flex items-center justify-center"
+      style={{ background: 'radial-gradient(circle at 50% 45%, rgba(255,247,237,0.97), rgba(255,237,213,0.99))', perspective: 900 }}
+      initial={{ opacity: 1 }}
+      animate={{ opacity: leaving ? 0 : 1 }}
+      transition={{ duration: 0.5, ease: 'easeInOut' }}
+      onClick={() => setLeaving(true)}
+      role="presentation"
+    >
+      <motion.div
+        className="flex flex-col items-center"
+        initial={{ opacity: 0, scale: 0.4, rotateY: -130, y: 60 }}
+        animate={leaving
+          ? { opacity: 0, scale: 0.7, rotateY: 60, y: -30 }
+          : { opacity: 1, scale: 1, rotateY: 0, y: 0 }}
+        transition={{ type: 'spring', stiffness: 140, damping: 15 }}
+      >
+        <motion.img
+          src="/yaagvi-mascot.webp"
+          alt="Yaagvi waving hello"
+          width={220}
+          height={220}
+          className="w-40 sm:w-52 h-auto drop-shadow-2xl"
+          animate={leaving ? {} : { rotate: [0, -6, 6, -4, 0] }}
+          transition={{ duration: 1, delay: 0.5 }}
+        />
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: leaving ? 0 : 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="font-bubble text-xl sm:text-2xl mt-3 text-center px-6"
+          style={{ color: PRIMARY }}
+        >
+          Hi! I'm Yaagvi 👋🌸
+        </motion.p>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: leaving ? 0 : 1 }}
+          transition={{ delay: 0.55 }}
+          className="font-round text-sm text-center px-6 mt-1"
+          style={{ color: TEXT_MUTED }}
+        >
+          Welcome to Bloom Juniors — let's learn together!
+        </motion.p>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) {
+  return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: 'linear-gradient(160deg,#FFF7ED 0%,#FFEDD5 45%,#FFF7ED 100%)' }}>
+      <WelcomeIntro />
 
       {/* ── NAV ──────────────────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-40 flex items-center justify-between px-4 py-3 md:px-8"
@@ -295,7 +328,6 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
         <BloomLogo size="md" />
         <div className="hidden lg:flex items-center gap-8 font-round text-sm font-bold leading-none" style={{ color: TEXT }}>
           <a href="#how-it-works" className="inline-flex items-center hover:opacity-70 transition-opacity">How it works</a>
-          <a href="#curriculum" className="inline-flex items-center hover:opacity-70 transition-opacity">Curriculum</a>
           <a href="#schools" className="inline-flex items-center hover:opacity-70 transition-opacity">For schools</a>
           <a href="#safety" className="inline-flex items-center hover:opacity-70 transition-opacity">Safety</a>
           <a href="#pricing" className="inline-flex items-center hover:opacity-70 transition-opacity">Pricing</a>
@@ -688,44 +720,6 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
         </div>
       </section>
 
-      {/* ── CURRICULUM ───────────────────────────────────────────────────────── */}
-      <section id="curriculum" className="px-4 pb-16 md:px-8">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="font-bubble text-3xl md:text-4xl text-center mb-2" style={{ color: TEXT }}>Built for early learning progression</h2>
-          <p className="font-round text-sm text-center mb-4" style={{ color: TEXT_FAINT }}>Phonics follows a systematic pure-sound progression — single letter sounds first, then digraphs and vowel patterns.</p>
-          <p className="font-round text-xs text-center mb-10" style={{ color: TEXT_FAINT }}>Aligned with the approach commonly used in UK classrooms.</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {CURRICULUM.map((c, i) => (
-              <motion.div
-                key={c.stage}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="rounded-[24px] p-5"
-                style={{ background: '#FFFFFF', border: `1.5px solid ${c.color}28`, boxShadow: '0 4px 14px rgba(66,32,6,0.05)' }}
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-3xl">{c.emoji}</span>
-                  <div>
-                    <p className="font-bubble text-xl leading-none" style={{ color: TEXT }}>{c.stage}</p>
-                    <p className="font-round text-xs font-bold mt-0.5" style={{ color: c.color }}>{c.range}</p>
-                  </div>
-                </div>
-                <ul className="space-y-1.5">
-                  {c.items.map(item => (
-                    <li key={item} className="flex items-start gap-2">
-                      <span className="mt-0.5 text-xs" style={{ color: c.color }}>✓</span>
-                      <span className="font-round text-sm" style={{ color: TEXT_MUTED }}>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── FOR SCHOOLS ──────────────────────────────────────────────────────── */}
       <section id="schools" className="pb-16" style={{ background: 'linear-gradient(180deg, #FFEDD5 0%, #FDE3C7 50%, #FFEDD5 100%)' }}>
         <div className="mx-auto max-w-4xl px-4 md:px-8 py-14">
@@ -828,41 +822,6 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
         </div>
       </section>
 
-      {/* ── FAQ ──────────────────────────────────────────────────────────────── */}
-      <section className="px-4 pb-16 md:px-8">
-        <div className="mx-auto max-w-2xl">
-          <h2 className="font-bubble text-3xl text-center mb-8" style={{ color: TEXT }}>Common questions</h2>
-          <div className="flex flex-col gap-2">
-            {faqs.map((faq, i) => (
-              <div key={i}
-                className="rounded-[16px] overflow-hidden"
-                style={{ background: '#FFFFFF', border: `1px solid ${CARD_BORDER}` }}>
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between p-4 text-left"
-                >
-                  <span className="font-round text-sm font-bold" style={{ color: TEXT }}>{faq.q}</span>
-                  <span className="font-bold text-lg ml-3" style={{ color: TEXT_FAINT }}>{openFaq === i ? '−' : '+'}</span>
-                </button>
-                <AnimatePresence>
-                  {openFaq === i && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <p className="font-round text-sm px-4 pb-4 leading-relaxed" style={{ color: TEXT_MUTED }}>{faq.a}</p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── FINAL CTA ────────────────────────────────────────────────────────── */}
       <section className="px-4 pb-20 md:px-8 text-center">
         <div className="mx-auto max-w-xl">
@@ -902,7 +861,6 @@ export default function LandingPage({ onGetStarted, onSignIn, onTeacherSetup }) 
               <p className="font-round text-xs font-bold uppercase tracking-widest mb-4" style={{ color: TEXT }}>Product</p>
               <div className="flex flex-col gap-2.5">
                 <a href="#how-it-works" className="font-round text-sm transition-colors" style={{ color: TEXT_MUTED }}>How it works</a>
-                <a href="#curriculum" className="font-round text-sm transition-colors" style={{ color: TEXT_MUTED }}>Curriculum</a>
                 <a href="#schools" className="font-round text-sm transition-colors" style={{ color: TEXT_MUTED }}>For schools</a>
               </div>
             </div>
