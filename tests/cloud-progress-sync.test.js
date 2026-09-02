@@ -1,6 +1,40 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { mergeProgress } from '../src/services/cloudStore.js'
+import { buildCloudGuardianRow, mergeProgress } from '../src/services/cloudStore.js'
+
+test('new guardian rows include the required parent PIN', () => {
+  const row = buildCloudGuardianRow({
+    guardianName: 'Parent Name',
+    relationship: 'Parent',
+    email: 'parent@example.com',
+    phone: '',
+    pin: '12x34',
+    consentAccepted: true,
+    registeredAt: '2026-08-04T08:00:00.000Z',
+  }, 'user-123', { includePin: true })
+
+  assert.equal(row.user_id, 'user-123')
+  assert.equal(row.parent_pin, '1234')
+})
+
+test('guardian row creation rejects a missing parent PIN', () => {
+  assert.throws(
+    () => buildCloudGuardianRow({ guardianName: 'Parent' }, 'user-123', { includePin: true }),
+    /four-digit parent PIN/i,
+  )
+})
+
+test('routine guardian updates do not overwrite the stored parent PIN', () => {
+  const row = buildCloudGuardianRow({
+    guardianName: 'Parent Name',
+    relationship: 'Parent',
+    email: 'parent@example.com',
+    consentAccepted: true,
+    registeredAt: '2026-08-04T08:00:00.000Z',
+  }, 'user-123')
+
+  assert.equal(Object.hasOwn(row, 'parent_pin'), false)
+})
 
 test('a fresh browser baseline cannot erase an earned cloud world', () => {
   const cloud = {
@@ -66,4 +100,34 @@ test('offline progress from two devices merges without moving modules backwards'
   assert.equal(merged.sessions.length, 2)
   assert.deepEqual(merged.timestables, { score: 12, level: 3, played: 5, correct: 9 })
   assert.deepEqual(merged.bodyparts, { score: 8, level: 2, played: 3, correct: 7 })
+})
+
+test('cloud reminder delivery marker survives a newer local learning update', () => {
+  const merged = mergeProgress(
+    {
+      revision: 10,
+      updatedAt: 1_000,
+      returnReminder: {
+        enabled: true,
+        time: '18:00',
+        timezone: 'Asia/Dubai',
+        lastSentDate: '',
+        updatedAt: 500,
+      },
+    },
+    {
+      revision: 9,
+      updatedAt: 900,
+      returnReminder: {
+        enabled: true,
+        time: '18:00',
+        timezone: 'Asia/Dubai',
+        lastSentDate: '2026-07-25',
+        updatedAt: 600,
+      },
+    },
+  )
+
+  assert.equal(merged.returnReminder.lastSentDate, '2026-07-25')
+  assert.equal(merged.returnReminder.updatedAt, 600)
 })

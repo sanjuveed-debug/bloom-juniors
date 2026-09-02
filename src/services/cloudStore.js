@@ -7,6 +7,15 @@ import { mergeParentHighFives } from '../utils/parentHighFives.js'
 import { mergeProjectAdventures } from '../utils/projectAdventures.js'
 import { mergeTreasureLoadouts } from '../utils/treasureLoadout.js'
 import { mergeChildInterest } from '../utils/childInterest.js'
+import { mergeWeeklyBloomAdventure } from '../utils/weeklyBloomAdventure.js'
+import { mergeReturnReminder } from '../utils/returnReminder.js'
+import { mergeWonderWhy } from '../utils/wonderWhy.js'
+import { mergeFoundationProfile } from '../utils/foundationProfile.js'
+import { mergeScienceInvestigations } from '../utils/scienceInvestigations.js'
+import { mergeRetentionTelemetry } from '../utils/retentionTelemetry.js'
+import { mergeRetentionFeedback } from '../utils/retentionFeedback.js'
+import { mergeHomeToWorld } from '../utils/homeToWorld.js'
+import { mergeAvatarWorkshops } from '../utils/avatarWorkshop.js'
 
 function isMissingAuthSession(error) {
   const message = String(error?.message || '').toLowerCase()
@@ -52,6 +61,7 @@ const MODULE_KEYS = [
   // Early years
   'phonics', 'math', 'tricky', 'arcade', 'logic', 'shapes', 'davinci',
   'anatomy', 'science', 'worldgk', 'exercise', 'planets',
+  'wonderwhy',
   // Tiny Stars
   'bodyparts', 'colours', 'numbers', 'fruits', 'animals', 'alphabet', 'quizshow',
   // Junior Explorers
@@ -279,6 +289,15 @@ export function mergeProgress(local = {}, cloud = {}) {
     projectAdventures: mergeProjectAdventures(local.projectAdventures, cloud.projectAdventures),
     parentHighFives: mergeParentHighFives(local.parentHighFives, cloud.parentHighFives),
     childInterest: mergeChildInterest(local.childInterest, cloud.childInterest),
+    weeklyBloomAdventure: mergeWeeklyBloomAdventure(local.weeklyBloomAdventure, cloud.weeklyBloomAdventure),
+    returnReminder: mergeReturnReminder(local.returnReminder, cloud.returnReminder),
+    wonderWhy: mergeWonderWhy(local.wonderWhy, cloud.wonderWhy),
+    foundationProfile: mergeFoundationProfile(local.foundationProfile, cloud.foundationProfile),
+    scienceInvestigations: mergeScienceInvestigations(local.scienceInvestigations, cloud.scienceInvestigations),
+    retentionTelemetry: mergeRetentionTelemetry(local.retentionTelemetry, cloud.retentionTelemetry),
+    retentionFeedback: mergeRetentionFeedback(local.retentionFeedback, cloud.retentionFeedback),
+    homeToWorld: mergeHomeToWorld(local.homeToWorld, cloud.homeToWorld),
+    avatarWorkshop: mergeAvatarWorkshops(local.avatarWorkshop, cloud.avatarWorkshop),
   }
 }
 
@@ -363,10 +382,7 @@ export async function startPremiumCheckout(email) {
   window.location.assign(data.url)
 }
 
-export async function saveCloudGuardian(guardian, { includePin = false } = {}) {
-  const userId = await getCloudUserId()
-  if (!userId) return null
-
+export function buildCloudGuardianRow(guardian, userId, { includePin = false } = {}) {
   const row = {
     user_id:         userId,
     guardian_name:   guardian.guardianName,
@@ -381,6 +397,21 @@ export async function saveCloudGuardian(guardian, { includePin = false } = {}) {
     teacher_role:    guardian.teacherRole || null,
     class_name:      guardian.className  || null,
   }
+
+  if (includePin) {
+    const pin = String(guardian.pin || '').replace(/\D/g, '').slice(0, 4)
+    if (pin.length !== 4) throw new Error('A four-digit parent PIN is required.')
+    row.parent_pin = pin
+  }
+
+  return row
+}
+
+export async function saveCloudGuardian(guardian, { includePin = false } = {}) {
+  const userId = await getCloudUserId()
+  if (!userId) throw new Error('An active account session is required to save setup.')
+
+  const row = buildCloudGuardianRow(guardian, userId, { includePin })
 
   const { error } = await supabase
     .from('guardian_profiles')

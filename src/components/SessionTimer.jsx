@@ -15,6 +15,7 @@ export default function SessionTimer({ sessionMinutes = 30, profileName, onTimeU
   const [remaining, setRemaining] = useState(totalSecs)
   const [expired, setExpired] = useState(false)
   const [dismissed, setDismissed] = useState(false)
+  const [overlayHidden, setOverlayHidden] = useState(false)
   const calledRef = useRef(false)
   const startRef = useRef(Date.now())
 
@@ -41,6 +42,12 @@ export default function SessionTimer({ sessionMinutes = 30, profileName, onTimeU
     return () => clearInterval(id)
   }, [totalSecs, onTimeUp])
 
+  useEffect(() => {
+    const handleOverlay = event => setOverlayHidden(event.detail?.hidden === true)
+    window.addEventListener('bloom:fullscreen-overlay', handleOverlay)
+    return () => window.removeEventListener('bloom:fullscreen-overlay', handleOverlay)
+  }, [])
+
   const mins = Math.floor(remaining / 60)
   const secs = remaining % 60
   const pad = (n) => String(n).padStart(2, '0')
@@ -50,12 +57,13 @@ export default function SessionTimer({ sessionMinutes = 30, profileName, onTimeU
   const isDanger  = remaining <= 60  && remaining > 0    // last 1 min
   const pillColor = isDanger ? '#EF4444' : isWarning ? '#F59E0B' : theme?.secondary || '#A78BFA'
 
-  if (dismissed) return null
+  if (dismissed || overlayHidden) return null
 
   return (
     <>
       {/* Timer pill — always visible in top-right */}
       <motion.div
+        data-testid="session-timer"
         className="fixed z-40 flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-lg select-none"
         style={{
           top: 'max(0.75rem, calc(env(safe-area-inset-top, 0px) + 0.5rem))',

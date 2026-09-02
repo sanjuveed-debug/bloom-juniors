@@ -11,6 +11,7 @@ import {
   STUDY_PATH_TARGET,
   getArcadeUnlockStatus,
 } from '../src/utils/arcadeUnlock.js'
+import { buildNumberWorldCompletion } from '../src/utils/numberWorldSession.js'
 
 test('hydrateProgressData migrates legacy world explorer progress', () => {
   const hydrated = hydrateProgressData({
@@ -57,6 +58,43 @@ test('buildSoundPopCompletion keeps accuracy tied to correct answers, not bonus 
     },
   })
   assert.ok(result.sessionData.correct <= result.sessionData.total)
+})
+
+test('buildNumberWorldCompletion separates independent and supported success', () => {
+  const result = buildNumberWorldCompletion({
+    totalRounds: 10,
+    firstTryCorrect: 7,
+    supportedCorrect: 2,
+    struggles: ['3 + 4 = ?'],
+    operation: 'add',
+    questionSignatures: ['math:add:3+4'],
+  })
+
+  assert.deepEqual(result, {
+    stars: 7,
+    sessionData: {
+      total: 10,
+      correct: 7,
+      firstTryCorrect: 7,
+      supportedCorrect: 2,
+      completedCorrect: 9,
+      struggles: ['3 + 4 = ?'],
+      op: 'add',
+      questionSignatures: ['math:add:3+4'],
+    },
+  })
+})
+
+test('buildNumberWorldCompletion cannot count more completed questions than the round total', () => {
+  const result = buildNumberWorldCompletion({
+    totalRounds: 10,
+    firstTryCorrect: 9,
+    supportedCorrect: 5,
+  })
+
+  assert.equal(result.stars, 9)
+  assert.equal(result.sessionData.supportedCorrect, 1)
+  assert.equal(result.sessionData.completedCorrect, 10)
 })
 
 test('getWorldExplorerStars matches the quiz thresholds', () => {
@@ -109,24 +147,27 @@ test('getArcadeUnlockStatus unlocks after enough different study modules today',
   const today = new Date('2026-04-04T06:00:00Z').getTime()
   const laterToday = new Date('2026-04-04T08:30:00Z').getTime()
   const yesterday = new Date('2026-04-03T17:00:00Z').getTime()
+  const history = [{ module: 'math', date: yesterday }]
+  const assigned = getArcadeUnlockStatus({ sessions: history }, now).assignedModules
 
   const locked = getArcadeUnlockStatus({
     sessions: [
-      { module: 'phonics', date: today },
-      { module: 'phonics', date: laterToday },
-      { module: 'math', date: yesterday },
+      ...history,
+      { module: assigned[0].id, date: today },
+      { module: assigned[0].id, date: laterToday },
     ],
   }, now)
 
   assert.equal(locked.unlocked, false)
   assert.equal(locked.completedCount, 1)
   assert.equal(locked.progressPercent, 50)
-  assert.equal(locked.remainingModules[0].id, 'math')
+  assert.equal(locked.remainingModules[0].id, assigned[1].id)
 
   const unlocked = getArcadeUnlockStatus({
     sessions: [
-      { module: 'phonics', date: today },
-      { module: 'story', date: laterToday },
+      ...history,
+      { module: assigned[0].id, date: today },
+      { module: assigned[1].id, date: laterToday },
       { module: 'arcade', date: laterToday },
     ],
   }, now)
@@ -136,6 +177,6 @@ test('getArcadeUnlockStatus unlocks after enough different study modules today',
   assert.equal(unlocked.completedCount, 2)
   assert.deepEqual(
     unlocked.completedModules.map(module => module.id),
-    ['phonics', 'story'],
+    assigned.map(module => module.id),
   )
 })

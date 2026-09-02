@@ -98,6 +98,35 @@ export default function ParentProgressStory({ progress = {}, profileName = 'Your
         <Stat value={story.current.accuracy == null ? '—' : `${story.current.accuracy}%`} label="Accuracy" note={story.current.accuracy == null ? 'Appears after scored play' : 'across scored adventures'} color="#2563EB" />
       </div>
 
+      <section className="mx-auto mt-4 max-w-5xl rounded-[2rem] bg-emerald-950 p-5 text-white shadow-lg sm:p-6" data-testid="parent-weekly-adventure">
+        <div className="flex items-start gap-4">
+          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-amber-300 text-3xl text-emerald-950">
+            {story.weeklyAdventure.complete ? story.weeklyAdventure.artifact.emoji : '🗺️'}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-round text-[10px] font-black uppercase tracking-[0.18em] text-emerald-200">Seven-day Bloom Adventure</p>
+            <div className="mt-1 flex flex-wrap items-baseline justify-between gap-2">
+              <h3 className="font-bubble text-xl">{story.weeklyAdventure.title}</h3>
+              <span className="font-round text-xs font-black text-amber-200">{story.weeklyAdventure.completed}/{story.weeklyAdventure.total} chapters</span>
+            </div>
+            <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-white/15">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${(story.weeklyAdventure.completed / story.weeklyAdventure.total) * 100}%` }}
+                className="h-full rounded-full bg-amber-300"
+              />
+            </div>
+            <p className="mt-3 font-round text-xs leading-5 text-white/75">
+              {story.weeklyAdventure.complete
+                ? `${profileName} completed the story and earned the permanent ${story.weeklyAdventure.artifact.name}.`
+                : story.weeklyAdventure.latest
+                  ? `Latest story result: ${story.weeklyAdventure.latest} Next chapter: ${story.weeklyAdventure.next}.`
+                  : `The first chapter is ready: ${story.weeklyAdventure.next}.`}
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto mt-4 max-w-5xl rounded-[2rem] bg-white/90 p-5 shadow-lg sm:p-6" style={{ border: `1px solid ${primary}20` }}>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>

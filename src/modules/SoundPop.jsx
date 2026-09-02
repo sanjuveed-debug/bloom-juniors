@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useSpeech } from '../hooks/useSpeech'
 import { dailySeedFor, seededShuffle, mulberry32 } from '../utils/seededRandom'
@@ -818,6 +818,116 @@ function makeBlendOptions(target, pool) {
   return shuffle([target, ...others])
 }
 
+function BlendSoundTile({ soundKey, index, phase, isTapped, isNext, reducedMotion, onTap }) {
+  const display = getSoundDisplay(soundKey)
+  const joined = phase === 'blend'
+  const revealed = phase === 'pick' || phase === 'reveal'
+  const animate = reducedMotion
+    ? { y: 0, rotateX: 0, rotateY: 0, scale: 1 }
+    : joined
+    ? { y: 0, rotateX: 0, rotateY: (index - 1) * -4, scale: 1 }
+    : isNext
+      ? { y: 0, rotateX: 0, rotateY: 0, scale: 1 }
+      : isTapped
+        ? { y: -5, rotateX: -8, rotateY: 0, scale: 1 }
+        : { y: 0, rotateX: 0, rotateY: 0, scale: 1 }
+
+  return (
+    <motion.button
+      layout
+      data-testid={`blend-sound-tile-${index}`}
+      data-sound-state={joined ? 'joined' : isTapped ? 'pressed' : isNext ? 'next' : revealed ? 'heard' : 'waiting'}
+      type="button"
+      aria-label={`Sound ${display}`}
+      onClick={onTap}
+      disabled={phase !== 'tap'}
+      animate={animate}
+      whileTap={phase === 'tap' && !reducedMotion ? { y: 5, scale: .94, rotateX: 8 } : {}}
+      transition={reducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 310, damping: 22 }}
+      className="relative min-h-[72px] min-w-[70px] touch-manipulation rounded-[18px] px-2 pb-2 pt-1 font-bubble focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#ffe66d] sm:min-h-[82px] sm:min-w-[82px]"
+      style={{
+        perspective: 600,
+        transformStyle: 'preserve-3d',
+        color: isTapped || joined || revealed ? '#0b6d66' : '#ffffff',
+      }}
+    >
+      {isNext && (
+        <motion.span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 rounded-[20px] border-[3px] border-[#ffe45b]"
+          animate={reducedMotion ? { opacity: .75 } : { scale: [1, 1.12, 1], opacity: [.9, .15, .9] }}
+          transition={reducedMotion ? { duration: 0 } : { duration: 1.15, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      )}
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-1 bottom-0 h-[66px] rounded-[18px]"
+        style={{
+          background: isTapped || joined || revealed ? '#b9eadb' : '#087b75',
+          boxShadow: joined
+            ? '0 0 0 2px rgba(255,255,255,.75), 0 10px 20px rgba(4,70,67,.28)'
+            : '0 8px 0 #075e59, 0 13px 20px rgba(4,70,67,.3)',
+        }}
+      />
+      <span
+        className="relative z-10 flex min-h-[62px] flex-col items-center justify-center rounded-[15px] border-2 px-2"
+        style={{
+          background: isTapped || joined || revealed
+            ? 'linear-gradient(155deg,#ffffff,#dcfff4)'
+            : 'linear-gradient(155deg,rgba(255,255,255,.42),rgba(255,255,255,.16))',
+          borderColor: isNext ? '#ffe45b' : 'rgba(255,255,255,.82)',
+          boxShadow: 'inset 0 2px 0 rgba(255,255,255,.7)',
+        }}
+      >
+        <span style={{ fontSize: display.length > 2 ? 22 : 31 }}>{display}</span>
+        <span className="mt-0.5 text-[10px] leading-none" style={{ opacity: isTapped || joined || revealed ? 1 : .65 }}>
+          {isTapped || joined || revealed ? 'SOUND ON' : 'TAP'}
+        </span>
+      </span>
+    </motion.button>
+  )
+}
+
+function MapWordReveal({ reducedMotion }) {
+  return (
+    <motion.section
+      data-testid="map-3d-reveal"
+      aria-label="The word map comes alive"
+      className="relative mx-4 mt-4 min-h-[285px] overflow-hidden rounded-[28px] border-[3px] border-[#ffd458] bg-[#dff7ff] shadow-[0_18px_40px_rgba(23,83,101,.2)]"
+      initial={reducedMotion ? false : { opacity: 0, y: 28, scale: .88 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ type: 'spring', stiffness: 210, damping: 18 }}
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_75%,#fff8aa_0%,#c9f2ed_42%,#88d8f0_100%)]" />
+      <div className="absolute inset-x-0 bottom-0 h-16 bg-[#75c970]" />
+      <motion.div
+        aria-hidden="true"
+        className="absolute left-[12%] top-[12%] text-2xl"
+        animate={reducedMotion ? {} : { x: [0, 85, 155, 220], y: [55, 4, 48, 8], rotate: [0, 70, 150, 230], scale: [1, 1.2, .9, 1.25] }}
+        transition={{ duration: 2.2, ease: 'easeInOut' }}
+      >
+        ⭐
+      </motion.div>
+      <motion.img
+        src="/sound-pop-map-3d-v1.webp"
+        alt="A colourful open map with a path, bridge, river and star"
+        className="absolute inset-x-0 bottom-8 mx-auto h-[220px] w-[92%] object-contain drop-shadow-2xl"
+        initial={reducedMotion ? false : { y: 100, rotateX: 65, scale: .7, opacity: 0 }}
+        animate={{ y: 0, rotateX: 0, scale: 1, opacity: 1 }}
+        transition={{ delay: reducedMotion ? 0 : .08, type: 'spring', stiffness: 170, damping: 17 }}
+      />
+      <motion.div
+        className="absolute inset-x-0 bottom-3 mx-auto flex w-fit items-center gap-1 rounded-full bg-[#3b174d]/90 px-5 py-2 font-bubble text-xl uppercase text-white shadow-lg"
+        initial={reducedMotion ? false : { y: 25, opacity: 0, scale: .7 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        transition={{ delay: reducedMotion ? 0 : .45, type: 'spring' }}
+      >
+        <span className="text-[#ffe65a]">m</span><span>·</span><span className="text-[#8ff1d2]">a</span><span>·</span><span className="text-[#ff9ac5]">p</span><span className="ml-1">map!</span>
+      </motion.div>
+    </motion.section>
+  )
+}
+
 // ── Avatar-specific themes ─────────────────────────────────────────────────────
 const AVATAR_THEMES = {
   yaagvi: {
@@ -884,6 +994,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
   const theme       = THEMES[avatar] || THEMES.rumi
   const avatarTheme = AVATAR_THEMES[avatar] || AVATAR_THEMES.rumi
   const { speak }   = useSpeech()
+  const reducedMotion = useReducedMotion()
   const usedMapRef  = useRef({})
 
   const sessionsPlayed = progress?.phonics?.sessionsPlayed || 0
@@ -981,7 +1092,9 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
   const startBlend = () => {
     const pool = getBlendPool(sessionsPlayed)
     blendPoolRef.current = pool
-    blendSessionRef.current = shuffle(pool).slice(0, BLEND_ROUNDS)
+    const guidedWord = pool.find(item => item.word === 'map')
+    const remainingWords = shuffle(pool.filter(item => item.word !== guidedWord?.word))
+    blendSessionRef.current = [guidedWord, ...remainingWords].filter(Boolean).slice(0, BLEND_ROUNDS)
     setMode('blend')
     setBlendRound(0)
     setBlendScore(0)
@@ -1069,7 +1182,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
             speak('Tap each sound button in order', { mood: 'instruct', voice: 'gb' })
           }, 450)
         }
-      }, timersRef, { minMs: 1800, maxMs: 6000 })
+      }, timersRef, { minMs: blendWord.word === 'map' ? 2800 : 1800, maxMs: 6000 })
     } else {
       reactYaagvi('wrong', { attempt: 1 })
       speakThenAdvance(speak, 'Not quite. Listen again!', { mood: 'phonics', voice: 'gb', ssmlInner: `Not quite.<break time="300ms"/>${buildBlendSSML(blendWord.sounds, blendWord.word)}` }, () => {
@@ -1297,6 +1410,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
                 <motion.button
                   whileTap={{ scale: 0.85 }}
                   onClick={speakBlendInstruction}
+                  aria-label="Replay instruction"
                   className="bg-white/25 rounded-full px-2.5 py-1 text-white font-round text-xs shrink-0"
                 >
                   🔊
@@ -1305,52 +1419,52 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
             </div>
 
             {/* Sound buttons */}
-            <div
-              className="flex items-center justify-center mt-4 mb-2 transition-all duration-700"
-              style={{ gap: blendPhase === 'tap' ? 12 : 2 }}
+            <motion.div
+              layout
+              data-testid="blend-sound-track"
+              data-blend-phase={blendPhase}
+              data-reduced-motion={reducedMotion ? 'true' : 'false'}
+              className="mt-4 mb-2 flex items-center justify-center"
+              animate={{ gap: blendPhase === 'tap' ? 12 : 1 }}
+              transition={reducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 220, damping: 24 }}
             >
               {blendWord.sounds.map((key, i) => {
                 const isTapped = i < blendTapped
                 const isNext   = i === blendTapped && blendPhase === 'tap'
                 return (
-                  <motion.button
+                  <BlendSoundTile
                     key={`${blendRound}-${i}`}
-                    whileTap={{ scale: 0.85 }}
-                    onClick={() => handleSoundTap(i)}
-                    disabled={blendPhase !== 'tap'}
-                    animate={isNext ? { scale: [1, 1.08, 1] } : { scale: 1 }}
-                    transition={isNext ? { repeat: Infinity, duration: 1.2 } : {}}
-                    className="rounded-2xl flex flex-col items-center justify-center font-bubble shadow-md"
-                    style={{
-                      minWidth: 64, minHeight: 64, padding: '0 10px',
-                      fontSize: getSoundDisplay(key).length > 2 ? 22 : 30,
-                      background: isTapped ? 'white' : 'rgba(255,255,255,0.25)',
-                      color: isTapped ? '#0D9488' : 'white',
-                      border: `3px solid ${isNext ? '#FFD700' : 'rgba(255,255,255,0.5)'}`,
-                      transition: 'background 0.3s, color 0.3s, border-color 0.3s',
-                    }}
-                  >
-                    {getSoundDisplay(key)}
-                    <span className="text-xs leading-none mt-0.5" style={{ opacity: isTapped ? 1 : 0.6 }}>
-                      {isTapped ? '🔊' : '•'}
-                    </span>
-                  </motion.button>
+                    soundKey={key}
+                    index={i}
+                    phase={blendPhase}
+                    isTapped={isTapped}
+                    isNext={isNext}
+                    reducedMotion={reducedMotion}
+                    onTap={() => handleSoundTap(i)}
+                  />
                 )
               })}
-            </div>
+            </motion.div>
 
             {/* Blend button */}
             {blendPhase === 'tap' && allTapped && (
               <motion.button
+                data-testid="blend-sounds-button"
                 initial={{ scale: 0 }}
-                animate={{ scale: [1, 1.06, 1] }}
-                transition={{ repeat: Infinity, duration: 1 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 280, damping: 18 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={handleBlend}
-                className="mt-3 px-8 py-3 rounded-full font-bubble text-xl shadow-lg"
+                className="relative mt-3 rounded-full px-8 py-3 font-bubble text-xl shadow-lg"
                 style={{ background: 'white', color: '#0D9488' }}
               >
-                🧲 Blend it!
+                <motion.span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 rounded-full border-4 border-[#ffe45b]"
+                  animate={reducedMotion ? { opacity: .75 } : { scale: [1, 1.12, 1], opacity: [.9, .15, .9] }}
+                  transition={reducedMotion ? { duration: 0 } : { duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <span className="relative">🧲 Blend it!</span>
               </motion.button>
             )}
             {blendPhase === 'blend' && (
@@ -1362,8 +1476,12 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
             )}
           </motion.div>
 
+          {blendPhase === 'reveal' && blendWord.word === 'map' && (
+            <MapWordReveal reducedMotion={reducedMotion} />
+          )}
+
           {/* Picture options */}
-          {(blendPhase === 'pick' || blendPhase === 'reveal') && (
+          {(blendPhase === 'pick' || (blendPhase === 'reveal' && blendWord.word !== 'map')) && (
             <div className="grid grid-cols-3 gap-3 px-4 mt-5 max-w-sm mx-auto">
               {blendOptions.map(opt => {
                 const isPicked  = blendPicked === opt.word
@@ -1372,6 +1490,8 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
                 return (
                   <motion.button
                     key={`${blendRound}-${opt.word}`}
+                    data-blend-option={opt.word}
+                    aria-label={`Picture ${opt.word}`}
                     initial={{ scale: 0 }}
                     animate={showWin ? { scale: [1, 1.25, 1.1] } : { scale: 1 }}
                     whileTap={{ scale: blendPhase === 'pick' ? 0.9 : 1 }}

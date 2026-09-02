@@ -1,10 +1,13 @@
 import { formatLocalDate } from './date.js'
+import { FOUNDING_PILOT_CAMPAIGN, FOUNDING_PILOT_SOURCE } from './foundingPilot.js'
 
 const INSTALL_ID_KEY = 'eduapp_installation_id_v1'
 const UTM_KEY = 'eduapp_utm_v1'
 const FIRST_SEEN_AT_KEY = 'eduapp_first_seen_at_v1'
 const DAILY_NOTIFY_PREFIX = 'eduapp_usage_notify_v1'
 const GUARDIAN_KEY = 'eduapp_guardian_v1'
+const RETENTION_STATE_PREFIX = 'eduapp_retention_state_v1'
+const RETENTION_ACTIVITY_KEY = 'eduapp_retention_pending_activity_v1'
 
 function getTodayStamp(date = new Date()) {
   return formatLocalDate(date)
@@ -17,6 +20,18 @@ function getProfileKey(profileName) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 40) || 'unknown'
+}
+
+function getRetentionKey(profileId) {
+  return `${RETENTION_STATE_PREFIX}:${String(profileId || 'default').slice(0, 120)}`
+}
+
+function calendarDayDiff(fromDate, toDate) {
+  const parse = value => {
+    const [year, month, day] = String(value || '').split('-').map(Number)
+    return Date.UTC(year || 1970, (month || 1) - 1, day || 1)
+  }
+  return Math.max(0, Math.round((parse(toDate) - parse(fromDate)) / 86400000))
 }
 
 function getDeviceLabel() {
@@ -110,7 +125,9 @@ function captureAndGetUtm() {
 
     if (source || medium || campaign) {
       const utm = { source, medium, campaign, content, term, capturedAt: new Date().toISOString() }
-      localStorage.setItem(UTM_KEY, JSON.stringify(utm))
+      if (source !== 'return_push' && source !== 'push_test' && source !== 'return_reminder') {
+        localStorage.setItem(UTM_KEY, JSON.stringify(utm))
+      }
       return utm
     }
 
@@ -151,9 +168,124 @@ export function trackEvent(name, params = {}) {
   } catch {}
 }
 
-export function trackActivityComplete(moduleId, ageGroup) {
+export function trackEventOnce(key, name, params = {}, scope = 'session') {
+  try {
+    const storage = scope === 'local' ? localStorage : sessionStorage
+    const storageKey = `eduapp_event_once_v1:${String(key || name).slice(0, 160)}`
+    if (storage.getItem(storageKey)) return false
+    storage.setItem(storageKey, new Date().toISOString())
+    trackEvent(name, params)
+    return true
+  } catch {
+    trackEvent(name, params)
+    return true
+  }
+}
+
+export function trackRetentionOpen({ profileId, ageGroup = 'unknown' }, now = new Date()) {
+  try {
+    if (!profileId) return null
+    const today = getTodayStamp(now)
+    const params = new URLSearchParams(globalThis.location?.search || '')
+    const currentSource = params.get('utm_source') || ''
+    const currentCampaign = params.get('utm_campaign') || ''
+    const reminderContent = String(params.get('utm_content') || '').slice(0, 100)
+    const notificationType = currentSource === 'push_test'
+      ? 'test'
+      : currentSource === 'return_push'
+        ? 'daily_reminder'
+        : ''
+    const emailReminderOpen = currentSource === 'return_reminder'
+
+    if (notificationType) {
+      trackEventOnce(
+        `notification-open:${profileId}:${today}:${notificationType}`,
+        'notification_open',
+        { notification_type: notificationType, reminder_content: reminderContent, age_group: ageGroup },
+      )
+    }
+    if (emailReminderOpen) {
+      trackEventOnce(
+        `email-reminder-open:${profileId}:${today}`,
+        'email_reminder_open',
+        { age_group: ageGroup },
+      )
+    }
+
+    const key = getRetentionKey(profileId)
+    const previous = JSON.parse(localStorage.getItem(key) || 'null') || {}
+    const firstActiveDate = previous.firstActiveDate || today
+    const lastActiveDate = previous.lastActiveDate || ''
+    const daysSinceFirst = calendarDayDiff(firstActiveDate, today)
+    const daysSinceLast = lastActiveDate ? calendarDayDiff(lastActiveDate, today) : 0
+    const isNewDay = lastActiveDate !== today
+    const returnSource = notificationType
+      ? 'notification'
+      : emailReminderOpen
+        ? 'email'
+        : currentSource === FOUNDING_PILOT_SOURCE && currentCampaign === FOUNDING_PILOT_CAMPAIGN
+          ? FOUNDING_PILOT_SOURCE
+        : daysSinceLast > 0
+          ? 'organic'
+          : 'same_day'
+
+    if (isNewDay) {
+      trackEvent('daily_active_profile', {
+        age_group: ageGroup,
+        days_since_first: daysSinceFirst,
+        days_since_last: daysSinceLast,
+        return_source: returnSource,
+      })
+      if (daysSinceFirst === 1) {
+        trackEventOnce(`d1:${profileId}`, 'retention_day_1', { age_group: ageGroup, return_source: returnSource }, 'local')
+      }
+      if (daysSinceFirst >= 7) {
+        trackEventOnce(`d7:${profileId}`, 'retention_day_7', {
+          age_group: ageGroup,
+          days_since_first: daysSinceFirst,
+          return_source: returnSource,
+        }, 'local')
+      }
+
+      const activeDates = [...new Set([...(previous.activeDates || []), today])].slice(-35)
+      localStorage.setItem(key, JSON.stringify({
+        firstActiveDate,
+        lastActiveDate: today,
+        activeDates,
+      }))
+    }
+
+    if (notificationType || emailReminderOpen || daysSinceLast > 0) {
+      sessionStorage.setItem(RETENTION_ACTIVITY_KEY, JSON.stringify({
+        profileId,
+        returnSource,
+        notificationType,
+        reminderContent,
+        daysSinceLast,
+      }))
+    }
+
+    return { today, daysSinceFirst, daysSinceLast, returnSource, isNewDay }
+  } catch {
+    return null
+  }
+}
+
+export function trackActivityComplete(moduleId, ageGroup, profileId = '') {
   trackEvent('activity_complete', { module: moduleId, age_group: ageGroup })
   try {
+    const pending = JSON.parse(sessionStorage.getItem(RETENTION_ACTIVITY_KEY) || 'null')
+    if (pending && (!profileId || !pending.profileId || pending.profileId === profileId)) {
+      trackEvent('return_activity', {
+        module: moduleId,
+        age_group: ageGroup,
+        return_source: pending.returnSource || 'organic',
+        notification_type: pending.notificationType || 'none',
+        reminder_content: pending.reminderContent || 'none',
+        days_since_last: Number(pending.daysSinceLast) || 0,
+      })
+      sessionStorage.removeItem(RETENTION_ACTIVITY_KEY)
+    }
     if (!localStorage.getItem(FIRST_ACTIVITY_KEY)) {
       localStorage.setItem(FIRST_ACTIVITY_KEY, new Date().toISOString())
       trackEvent('first_activity', { module: moduleId, age_group: ageGroup })

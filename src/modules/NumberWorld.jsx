@@ -11,6 +11,7 @@ import MatchingActivity from '../components/MatchingActivity'
 import SubitisingFlash from '../components/SubitisingFlash'
 import { buildNumberLineWindow } from '../utils/numberLine'
 import { questionSignature } from '../utils/adaptiveLearning'
+import { buildNumberWorldCompletion } from '../utils/numberWorldSession'
 
 // ── Avatar object sets ────────────────────────────────────────────────────────
 const OBJECT_SETS = {
@@ -230,36 +231,30 @@ function NumberLine({ current, answer, revealAnswer = false }) {
 // ── Addition Visual ───────────────────────────────────────────────────────────
 // Two separate labeled ten frames with a + between them and = ?
 function AddVisual({ n1, n2, emoji1, emoji2, colour }) {
+  const [joined, setJoined] = useState(false)
+  useEffect(() => setJoined(false), [n1, n2])
+
   return (
-    <div className="flex items-center justify-center gap-3 flex-wrap">
-      {/* Group A */}
-      <div className="flex flex-col items-center gap-1.5">
-        <div className="font-bubble text-4xl" style={{ color: colour }}>{n1}</div>
-        <TenFrame count={n1} emoji={emoji1} colour={colour} delay={0} />
+    <div className="flex w-full flex-col items-center gap-3" data-testid="number-combine-model" data-state={joined ? 'joined' : 'separate'}>
+      <div className="flex min-h-36 max-w-full flex-wrap items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 px-2 py-3 [perspective:900px] sm:gap-3" style={{ borderColor: `${colour}35`, background: `linear-gradient(180deg,#fff,${colour}0d)` }}>
+        <motion.div className="flex flex-col items-center gap-1.5" animate={{ x: joined ? 14 : 0, rotateY: joined ? 7 : 0 }} style={{ transformStyle: 'preserve-3d' }}>
+          <div className="font-bubble text-4xl" style={{ color: colour }}>{n1}</div>
+          <TenFrame count={n1} emoji={emoji1} colour={colour} delay={0} />
+        </motion.div>
+
+        <motion.div className="font-bubble text-4xl" style={{ color: '#374151' }} animate={{ scale: joined ? 1.3 : [1, 1.2, 1], rotateZ: joined ? 90 : 0 }} transition={{ duration: 1, repeat: joined ? 0 : Infinity, repeatDelay: 1.5 }}>+</motion.div>
+
+        <motion.div className="flex flex-col items-center gap-1.5" animate={{ x: joined ? -14 : 0, rotateY: joined ? -7 : 0 }} style={{ transformStyle: 'preserve-3d' }}>
+          <div className="font-bubble text-4xl" style={{ color: '#FF9A3C' }}>{n2}</div>
+          <TenFrame count={n2} emoji={emoji2} colour="#FF9A3C" delay={n1 * 0.05 + 0.1} />
+        </motion.div>
+
+        <div className="font-bubble text-4xl" style={{ color: '#374151' }}>=</div>
+        <motion.div className="flex h-16 w-16 items-center justify-center rounded-2xl font-bubble text-3xl" style={{ background: colour + '20', border: `3px dashed ${colour}` }} animate={{ scale: [1, 1.04, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>?</motion.div>
       </div>
-
-      {/* Plus */}
-      <motion.div
-        className="font-bubble text-4xl"
-        style={{ color: '#374151' }}
-        animate={{ scale: [1, 1.2, 1] }}
-        transition={{ duration: 1, repeat: Infinity, repeatDelay: 1.5 }}
-      >+</motion.div>
-
-      {/* Group B */}
-      <div className="flex flex-col items-center gap-1.5">
-        <div className="font-bubble text-4xl" style={{ color: '#FF9A3C' }}>{n2}</div>
-        <TenFrame count={n2} emoji={emoji2} colour="#FF9A3C" delay={n1 * 0.05 + 0.1} />
-      </div>
-
-      {/* Equals */}
-      <div className="font-bubble text-4xl" style={{ color: '#374151' }}>=</div>
-      <motion.div
-        className="w-16 h-16 rounded-2xl flex items-center justify-center font-bubble text-3xl"
-        style={{ background: colour + '20', border: `3px dashed ${colour}` }}
-        animate={{ scale: [1, 1.04, 1] }}
-        transition={{ duration: 1.5, repeat: Infinity }}
-      >?</motion.div>
+      <motion.button type="button" data-testid="number-combine-toggle" whileTap={{ y: 4, scale: .97 }} onClick={() => setJoined(value => !value)} className="min-h-11 rounded-xl px-5 font-round text-sm font-black text-white" style={{ background: colour, boxShadow: `0 6px 0 ${colour}99, 0 10px 18px ${colour}25` }}>
+        {joined ? 'Separate the groups' : 'Join the groups'}
+      </motion.button>
     </div>
   )
 }
@@ -270,12 +265,11 @@ function SubVisual({ n1, n2, emoji, colour }) {
   const [phase, setPhase] = useState(0)  // 0=show all, 1=cross out
 
   useEffect(() => {
-    const t = setTimeout(() => setPhase(1), 700)
-    return () => clearTimeout(t)
+    setPhase(0)
   }, [n1, n2])
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-2" data-testid="number-split-model" data-state={phase ? 'moved' : 'together'}>
       {/* Full group label */}
       <div className="flex items-center gap-3 font-bubble text-3xl">
         <span style={{ color: colour }}>{n1}</span>
@@ -309,7 +303,7 @@ function SubVisual({ n1, n2, emoji, colour }) {
                     border: `2px solid ${filled ? (crossOut ? '#EF4444' : colour) : 'rgba(0,0,0,0.1)'}`,
                   }}
                   initial={{ scale: 0.4, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
+                  animate={{ scale: 1, opacity: phase && crossOut ? .32 : 1, x: phase && crossOut ? 14 : 0, rotateY: phase && crossOut ? 18 : 0 }}
                   transition={{ delay: idx * 0.04, type: 'spring', stiffness: 400 }}
                 >
                   {filled && (
@@ -349,6 +343,16 @@ function SubVisual({ n1, n2, emoji, colour }) {
       >
         ✕ Cross out {n2} — what's left?
       </motion.p>
+      <motion.button
+        type="button"
+        data-testid="number-split-toggle"
+        whileTap={{ y: 4, scale: .97 }}
+        onClick={() => setPhase(value => value ? 0 : 1)}
+        className="min-h-11 rounded-xl bg-rose-500 px-5 font-round text-sm font-black text-white"
+        style={{ boxShadow: '0 6px 0 #be123c, 0 10px 18px rgba(190,18,60,.18)' }}
+      >
+        {phase ? 'Put them back' : `Move ${n2} away`}
+      </motion.button>
     </div>
   )
 }
@@ -566,6 +570,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
   const askedRef   = useRef(new Set())
   const seedStepRef = useRef(0)
   const questionHadWrongRef = useRef(false)
+  const supportedCorrectRef = useRef(0)
 
   useEffect(() => () => {
     timersRef.current.forEach(clearTimeout)
@@ -602,14 +607,19 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
     defer(() => speak(q.q, { mood: 'instruct' }), 500)
   }, [speak, defer, reactYaagvi, opPlayed])
 
-  const completeMath = useCallback((finalScore) => {
+  const completeMath = useCallback((finalScore, supportedCorrect = supportedCorrectRef.current) => {
     if (awardedRef.current) return
     awardedRef.current = true
     reactYaagvi('complete')
-    onAddStars('math', finalScore, {
-      total: totalRounds, correct: finalScore, struggles: wrongAnswers, op: selectedOp,
+    const completion = buildNumberWorldCompletion({
+      firstTryCorrect: finalScore,
+      supportedCorrect,
+      totalRounds,
+      struggles: wrongAnswers,
+      operation: selectedOp,
       questionSignatures: [...askedRef.current].map(prompt => questionSignature('math', `${selectedOp}:${prompt}`)),
     })
+    onAddStars('math', completion.stars, completion.sessionData)
   }, [onAddStars, selectedOp, totalRounds, wrongAnswers, reactYaagvi])
 
   const OP_OBJECTIVES = {
@@ -624,6 +634,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
   const handleOpSelect = useCallback((op) => {
     awardedRef.current = false
     askedRef.current = new Set()
+    supportedCorrectRef.current = 0
     const plays = opPlayed[op] || 0
     const { level, mult } = getOpDifficulty(plays)
     const maxNum = Math.floor(OPS[op].maxNum * mult)
@@ -690,6 +701,10 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
       setAnswered(true)
       const firstTry = !questionHadWrongRef.current
       if (firstTry) setScore(s => s + 1)
+      const supportedCorrect = firstTry
+        ? supportedCorrectRef.current
+        : supportedCorrectRef.current + 1
+      supportedCorrectRef.current = supportedCorrect
       setConsecutiveWrong(0)
       setFeedback({ type: 'correct', msg: `✅ ${question.a}! Brilliant!` })
       confetti({ particleCount: 55, spread: 75, origin: { x: 0.5, y: 0.6 }, colors: ['#FFD700','#22C55E','#4D96FF'] })
@@ -702,7 +717,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
       speakThenAdvance(speak, `Yes! ${question.a} is correct! Well done ${profileName || 'superstar'}!`, { mood: 'celebrate' }, () => {
         if (round >= totalRounds) {
           setRound(totalRounds + 1)
-          completeMath(finalScore)
+          completeMath(finalScore, supportedCorrect)
         } else {
           setRound(r => r + 1)
           newQuestion(selectedOp, currentMaxNum)
@@ -714,20 +729,21 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
       setAnswered(true)
       setConsecutiveWrong(newWrong)
       setWrongAnswers(prev => [...prev, question.q])
-      setFeedback({ type: 'wrong', msg: 'Good try. Use the picture or number line and have another go!' })
+      setFeedback({ type: 'retry', msg: 'Good try. Use the picture or number line and have another go!' })
       reactYaagvi('wrong', { attempt: newWrong })
 
-      speakThenAdvance(speak, 'Good try. Look at the picture or move one step on the number line, then try again.', { mood: 'instruct' }, () => {
+      speak('Good try. Look at the picture or move one step on the number line, then try again.', { mood: 'instruct' })
+      defer(() => {
         setSelected(null)
         setFeedback(null)
         setAnswered(false)
         if (newWrong >= 2) {
           setShowHint(true)
         }
-      }, timersRef, { minMs: 1600, maxMs: 6000 })
+      }, 850)
     }
   }, [selected, answered, question, round, totalRounds, score, wrongAnswers,
-      consecutiveWrong, selectedOp, currentMaxNum, speak, newQuestion, completeMath, profileName, reactYaagvi])
+      consecutiveWrong, selectedOp, currentMaxNum, speak, newQuestion, completeMath, profileName, reactYaagvi, defer])
 
   // ── Op selector screen ──────────────────────────────────────────────────────
   if (!selectedOp) {
@@ -1077,7 +1093,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
             const isChosen  = selected === choice
             const isCorrect = question && choice === question.a
             const showRight = isChosen && isCorrect
-            const showWrong = isChosen && !isCorrect
+            const showRetry = isChosen && !isCorrect && feedback?.type === 'retry'
             const showReveal = feedback?.type === 'correct' && !isChosen && selected !== null && isCorrect
 
             return (
@@ -1088,7 +1104,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
                 initial={{ opacity: 0, y: 18, scale: 0.85 }}
                 animate={{
                   opacity: 1, y: 0,
-                  scale: showRight ? [1, 1.08, 1] : showWrong ? [1, 0.93, 1] : 1,
+                  scale: showRight ? [1, 1.08, 1] : showRetry ? [1, 0.96, 1] : 1,
                 }}
                 transition={{ delay: ci * 0.07, type: 'spring', stiffness: 320, damping: 20 }}
                 whileTap={!selected ? { scale: 0.91 } : {}}
@@ -1096,12 +1112,12 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
                 className="rounded-2xl py-4 px-3 flex flex-col items-center gap-1.5 shadow-md transition-all duration-200 relative overflow-hidden"
                 style={{
                   background: showRight ? '#22C55E'
-                    : showWrong   ? '#EF4444'
+                    : showRetry   ? '#F59E0B'
                     : showReveal  ? '#22C55E'
                     : 'white',
                   border: `3px solid ${
                     showRight || showReveal ? '#16A34A'
-                    : showWrong ? '#DC2626'
+                    : showRetry ? '#D97706'
                     : opColour + '50'
                   }`,
                   opacity: selected && !isChosen && !isCorrect ? 0.45 : 1,
@@ -1111,12 +1127,12 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
               >
                 {/* Correct/wrong icon overlay */}
                 {showRight  && <span className="text-2xl">✅</span>}
-                {showWrong  && <span className="text-2xl">❌</span>}
+                {showRetry  && <span className="font-round text-sm font-bold text-white">Try again</span>}
                 {showReveal && <span className="text-2xl">✅</span>}
 
                 {/* Number only — no dot visual so child must count to match */}
                 <span className="font-bubble text-4xl leading-none"
-                  style={{ color: showRight || showWrong || showReveal ? 'white' : opColour }}>
+                  style={{ color: showRight || showRetry || showReveal ? 'white' : opColour }}>
                   {choice}
                 </span>
               </motion.button>

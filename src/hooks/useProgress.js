@@ -8,6 +8,13 @@ import { normalizeCompanionPowers } from '../utils/companionPowers.js'
 import { normalizeAdventureDirector } from '../utils/adventureDirector.js'
 import { normalizeDreamProject } from '../utils/dreamProject.js'
 import { normalizeChildInterest } from '../utils/childInterest.js'
+import { normalizeWeeklyBloomAdventure } from '../utils/weeklyBloomAdventure.js'
+import { normalizeFoundationProfile } from '../utils/foundationProfile.js'
+import { normalizeScienceInvestigations } from '../utils/scienceInvestigations.js'
+import { normalizeRetentionTelemetry } from '../utils/retentionTelemetry.js'
+import { normalizeRetentionFeedback } from '../utils/retentionFeedback.js'
+import { normalizeHomeToWorld } from '../utils/homeToWorld.js'
+import { normalizeAvatarWorkshop } from '../utils/avatarWorkshop.js'
 
 function getStorageKey(profileId) {
   if (profileId) return `eduapp_progress_${profileId}`
@@ -96,6 +103,13 @@ export const defaultProgress = {
   adventureDirector: normalizeAdventureDirector(),
   dreamProject: normalizeDreamProject(),
   childInterest: normalizeChildInterest(),
+  weeklyBloomAdventure: normalizeWeeklyBloomAdventure(),
+  foundationProfile: normalizeFoundationProfile(),
+  scienceInvestigations: normalizeScienceInvestigations(),
+  retentionTelemetry: normalizeRetentionTelemetry(),
+  retentionFeedback: normalizeRetentionFeedback(),
+  homeToWorld: normalizeHomeToWorld(),
+  avatarWorkshop: normalizeAvatarWorkshop(),
   treasureCollection: { items: [], claims: {}, equipped: {}, history: [], eggHatches: [], sparkleDust: 0, claimStreak: 0, lastClaimDate: '', roomLayout: {}, roomLayoutUpdatedAt: 0, treasureInteractions: {}, secretGames: {} },
 }
 
@@ -132,6 +146,13 @@ export function hydrateProgressData(parsed = {}) {
     adventureDirector: normalizeAdventureDirector(source.adventureDirector),
     dreamProject: normalizeDreamProject(source.dreamProject),
     childInterest: normalizeChildInterest(source.childInterest),
+    weeklyBloomAdventure: normalizeWeeklyBloomAdventure(source.weeklyBloomAdventure, source.weeklyBloomAdventure?.ageGroup),
+    foundationProfile: normalizeFoundationProfile(source.foundationProfile),
+    scienceInvestigations: normalizeScienceInvestigations(source.scienceInvestigations),
+    retentionTelemetry: normalizeRetentionTelemetry(source.retentionTelemetry),
+    retentionFeedback: normalizeRetentionFeedback(source.retentionFeedback),
+    homeToWorld: normalizeHomeToWorld(source.homeToWorld),
+    avatarWorkshop: normalizeAvatarWorkshop(source.avatarWorkshop),
     treasureCollection: {
       ...defaultProgress.treasureCollection,
       ...(source.treasureCollection || {}),

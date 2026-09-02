@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { THEMES } from '../themes'
 import { getAssistant } from '../assistants'
 import { MONSTERS, MonsterCollection } from './MonsterReward'
-import { STUDY_MODULES, getArcadeUnlockStatus, getTodayStudySessions, getTodayAdventureModules } from '../utils/arcadeUnlock'
+import { STUDY_MODULES, getArcadeUnlockStatus, getTodayStudySessions, getTodayAdventureModules, getTodayLearningSessions } from '../utils/arcadeUnlock'
 import { PREMIUM_GATING_ENABLED } from '../config/premiumContent.js'
 import { usePremium } from '../hooks/usePremium'
 import { getTodayWorldEvent, isEventBonusCollected, WORLD_EVENT_BONUS } from '../utils/worldEvent.js'
@@ -27,6 +27,7 @@ import { grantWonderSeed } from '../utils/wonderWorld.js'
 import { claimTreasureReward, equipTreasureReward } from '../utils/treasureRewards.js'
 import HighFiveDelivery from './HighFiveDelivery.jsx'
 import BloomAdventureHome from './BloomAdventureHome.jsx'
+import AvatarWorkshop, { AvatarWorkshopButton } from './AvatarWorkshop.jsx'
 
 // ── Module registry ───────────────────────────────────────────────────────────
 const PREMIUM_IDS = new Set(['worldgk','science','planets','anatomy','sacred','shapes','shop','logic'])
@@ -38,7 +39,7 @@ const MODULES = [
   { id:'tricky',   label:'Star Catch!',     emoji:'⭐', desc:'Tricky Words & Spelling',  bg:'linear-gradient(145deg,#6D28D9,#7C3AED,#A78BFA)', section:'learn'   },
   { id:'story',    label:'Story Room',      emoji:'📖', desc:'Read & Listen',            bg:'linear-gradient(145deg,#047857,#059669,#34D399)', section:'learn'   },
   // Explore
-  { id:'worldgk',  label:'World Explorer',  emoji:'🌍', desc:'Flags, Capitals & History', bg:'linear-gradient(145deg,#0369A1,#0EA5E9,#7DD3FC)', section:'explore', premium:true },
+  { id:'worldgk',  label:'Home to World',  emoji:'🌍', desc:'Maps, Places & Family Stories', bg:'linear-gradient(145deg,#0369A1,#0EA5E9,#7DD3FC)', section:'explore', premium:true },
   { id:'science',  label:'Wonder Lab',      emoji:'🔬', desc:'Science Experiments',      bg:'linear-gradient(145deg,#5B21B6,#7C3AED,#C4B5FD)', section:'explore', premium:true },
   { id:'planets',  label:'Planet World',    emoji:'🪐', desc:'Solar System Adventure',   bg:'linear-gradient(145deg,#0F172A,#1E3A5F,#3B82F6)', section:'explore', premium:true },
   { id:'anatomy',  label:'My Body',         emoji:'🫀', desc:'Human Anatomy',            bg:'linear-gradient(145deg,#9F1239,#E11D48,#FB7185)', section:'explore', premium:true },
@@ -581,7 +582,7 @@ function PlayPassBanner({ theme, status, onNavigate }) {
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
-        {STUDY_MODULES.map((module, i) => {
+        {(status.assignedModules || STUDY_MODULES.slice(0, status.target)).map((module, i) => {
           const done = status.completedModules.some(item => item.id === module.id)
           return (
             <motion.div
@@ -619,7 +620,7 @@ function PlayPassBanner({ theme, status, onNavigate }) {
             : `${status.target - status.completedCount} more to unlock.`}
         </span>
         <span className="font-bubble text-sm" style={{ color: status.unlocked ? '#059669' : theme.primary }}>
-          {status.unlocked ? 'Open Arcade' : `Play ${nextModule?.shortLabel || 'Next Study'}`}
+          {status.unlocked ? 'Open Arcade' : `Play ${nextModule?.shortLabel || nextModule?.label || 'Next Study'}`}
         </span>
       </div>
     </motion.button>
@@ -663,7 +664,7 @@ const FS2_MAP_LOCATIONS = [
   { id: 'story',    name: 'Story Cave',     emoji: '📖', color: '#059669' },
   { id: 'science',  name: 'Wonder Lab',     emoji: '🔬', color: '#5B21B6' },
   { id: 'planets',  name: 'Space Station',  emoji: '🚀', color: '#1E40AF' },
-  { id: 'worldgk',  name: 'World Map',      emoji: '🌍', color: '#0EA5E9' },
+  { id: 'worldgk',  name: 'Place Story',    emoji: '🌍', color: '#0EA5E9' },
   { id: 'anatomy',  name: 'Body Museum',    emoji: '🫀', color: '#E11D48' },
   { id: 'sacred',   name: 'Temple Isle',    emoji: '🕉️', color: '#C2410C' },
   { id: 'shapes',   name: 'Shape Land',     emoji: '🔷', color: '#0D9488' },
@@ -834,7 +835,7 @@ function getTodayIndex(count) {
 }
 
 function buildDailyAdventure(progress, challenges, arcadeStatus, fullAccess = true) {
-  const todayIds = new Set(getTodayStudySessions(progress.sessions || []).map(s => s.module))
+  const todayIds = new Set(getTodayLearningSessions(progress, Date.now(), fullAccess).map(s => s.module))
   const [focusId, secondId] = getTodayAdventureModules(progress, null, fullAccess)
   const focusModule = MODULE_MAP[focusId]
   const secondModule = MODULE_MAP[secondId]
@@ -1124,9 +1125,10 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
   const [showFeedback, setShowFeedback] = useState(() => shouldShowFeedback(progress))
   const [rewardTreasure, setRewardTreasure] = useState(null)
   const [showTreasureShelf, setShowTreasureShelf] = useState(false)
+  const [showAvatarWorkshop, setShowAvatarWorkshop] = useState(false)
   const [showJourneyExplore, setShowJourneyExplore] = useState(false)
   const [exploreTab, setExploreTab] = useState('daily')
-  const arcadeStatus = getArcadeUnlockStatus(progress)
+  const arcadeStatus = getArcadeUnlockStatus(progress, Date.now(), fullAccess)
 
   // Yaagvi greeting: wave on arrival → settle into mood-based state
   const [yaagviState, setYaagviState] = useState('wave')
@@ -1272,29 +1274,32 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
               >
                 {profileName || 'Superstar'}! ✨
               </motion.h1>
-              {profiles && profiles.length > 1 && onQuickSwitch ? (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {profiles.filter(p => p.id !== activeProfileId).map(p => (
-                    <motion.button key={p.id} whileTap={{ scale: 0.88 }}
-                      onClick={() => onQuickSwitch(p.id)}
-                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-round text-xs text-white/80"
-                      style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}>
-                      <span>{p.emoji || '👤'}</span>
-                      <span>{p.name}</span>
-                    </motion.button>
-                  ))}
-                </div>
-              ) : onSwitchProfiles && (
+              {onSwitchProfiles && (
                 <motion.button
                   whileTap={{ scale: 0.88 }}
                   onClick={onSwitchProfiles}
-                  className="mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-round text-xs text-white/70"
+                  className="mt-2 inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 py-1.5 font-round text-xs font-black text-white"
                   style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.22)' }}
+                  aria-label={`Switch from ${profileName || 'current profile'} to another child`}
                 >
-                  ↩ Switch
+                  ⇄ Switch child
                 </motion.button>
               )}
             </div>
+
+            {onLongPress && (
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.92 }}
+                onClick={onLongPress}
+                aria-label="Open Parent Zone"
+                className="mt-1 inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl px-3 font-round text-xs font-black text-white"
+                style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.28)' }}
+              >
+                <span aria-hidden="true">🔒</span>
+                <span>Parents</span>
+              </motion.button>
+            )}
 
           </div>
 
@@ -1324,12 +1329,16 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
                 <span className="font-round text-white/50 text-xs">day streak</span>
               </motion.div>
             )}
+            <AvatarWorkshopButton
+              progress={progress}
+              onClick={() => setShowAvatarWorkshop(true)}
+            />
           </div>
 
         </div>
       </div>
 
-      <BloomAdventureHome ageGroup="early" profileName={profileName} progress={progress} dailyNext={(treasureClaimed && arcadeStatus.unlocked ? MODULE_MAP.arcade : dailyJourneyNext?.module)} dailyDone={dailyJourneyDoneCount} dailyRequired={2} dailyClaimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} libraryOpen={showJourneyExplore} onNavigate={handleGatedNavigate} onClaimTreasure={claimTreasure} onToggleLibrary={() => setShowJourneyExplore(value => !value)} onOpenWorld={() => onNavigate('wonderworld')} onOpenTreasureRoom={() => setShowTreasureShelf(true)}/>
+      <BloomAdventureHome ageGroup="early" profileName={profileName} progress={progress} dailyNext={(treasureClaimed && arcadeStatus.unlocked ? MODULE_MAP.arcade : dailyJourneyNext?.module)} dailySteps={dailyJourneySteps} dailyDone={dailyJourneyDoneCount} dailyRequired={2} dailyClaimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} libraryOpen={showJourneyExplore} onNavigate={handleGatedNavigate} onUpdateProgress={onUpdateProgress} onClaimTreasure={claimTreasure} onToggleLibrary={() => setShowJourneyExplore(value => !value)} onOpenWorld={() => onNavigate('wonderworld')} onOpenWonder={() => onNavigate('wonderwhy', 'wonder-of-day')} onOpenTreasureRoom={() => setShowTreasureShelf(true)}/>
       {showJourneyExplore && (
         <div className="mx-auto mt-4 flex max-w-6xl gap-2 overflow-x-auto px-4 md:px-6 xl:px-8">
           {[
@@ -1559,6 +1568,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
       <AnimatePresence>
         {rewardTreasure && <TreasureChestReward item={rewardTreasure.item} duplicate={rewardTreasure.duplicate} weekly={rewardTreasure.weekly} ageGroup="early" onClose={() => setRewardTreasure(null)}/>}
         {showTreasureShelf && <TreasureShelf collection={treasureCollection} profileName={profileName} ageGroup="early" onEquip={equipTreasure} onCollectionChange={updateTreasureCollection} onClose={() => setShowTreasureShelf(false)}/>}
+        {showAvatarWorkshop && <AvatarWorkshop progress={progress} profileName={profileName} ageGroup="early" onUpdateProgress={onUpdateProgress} onClose={() => setShowAvatarWorkshop(false)}/>}
         {showMonsters && (
           <MonsterCollection totalStars={totalStars} onClose={() => setShowMonsters(false)} />
         )}

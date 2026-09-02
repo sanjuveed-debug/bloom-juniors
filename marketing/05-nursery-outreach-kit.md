@@ -1,126 +1,145 @@
 # Nursery Outreach Kit
 
-Everything you say, in order. Pipeline lives in `04-nursery-pipeline.md`. Printable offer: `pilot-offer.html`.
+Pipeline: `04-nursery-pipeline.md`. Printable offer: `pilot-offer.html`.
 
-## The one idea that sells this
+## The offer
 
-You are NOT selling an app. You are giving the nursery a **parent-partnership programme** —
-something they can hand to every family that makes the nursery look generous and modern.
-KHDA inspections rate nurseries on how well they involve parents in learning at home;
-Bloom Juniors is ready-made evidence. Free for families is the headline, not the catch.
+Bloom Juniors gives a nursery a supported home-learning pilot for its families. The
+app is already free, so the value of the pilot is not temporary access. The value is:
 
-**Never say:** "edtech platform", "download my app", "I'd love your feedback".
-**Always say:** "a free home-learning programme for your families", "15 minutes", a specific day.
+- setup support for the nursery;
+- a ready-made parent invitation and printed note;
+- a 30-day anonymised, aggregate engagement summary; and
+- a 15-minute review in which the nursery helps shape the programme.
 
----
+KHDA's Early Childhood Quality Framework includes partnership with families. Bloom
+can support a nursery's own parent-partnership review, but never describe Bloom as
+KHDA approved or its summary as official inspection evidence.
 
-## The sequence (per nursery — starts Mon 24 Aug 2026)
+**Use:** "a supported home-learning pilot for your families", "15 minutes", and a
+specific meeting day.
 
-| Day | Touch | What |
-|---|---|---|
-| 0 (Mon) | Email #1 | Template A below, personalised first line |
-| 3 (Thu) | WhatsApp | Template B — short, human, references the email |
-| 7 (Mon) | Phone call | Script C — ask for the principal by name |
-| 10 (Thu) | Email #2 | Template D — the "one-line reply" email |
-| 14 (Mon) | Drop-in visit | Bring printed one-pager + tablet with app loaded |
-| 21 | Close or park | No response after 5 touches → mark `DEAD`, revisit in January |
+**Avoid:** "edtech platform", "download my app", "KHDA evidence", and claims that
+Bloom collects no child data or uses no tracking of any kind.
 
-Batch of ~5 nurseries per week so calls and visits stay doable. 14 Tier-1 nurseries ≈ 3 weeks.
+## Initial test
 
----
+Start with three nurseries: Yellow Kite, Rainbow Valley and Alphabet Street. Do not
+send all ten emails at once. Record replies, objections and meetings before adapting
+the message for the next group.
 
-## Template A — Email #1
+## Email
 
-**Subject:** A free phonics programme for {Nursery} families — from a Dubai dad
+**Subject:** A 30-day home-learning pilot for {Nursery} families
 
-Dear {Principal name},
+Dear {Nursery} team,
 
-I'm Sanju, a Dubai parent. I built **Bloom Juniors** ([bloomjuniors.com](https://bloomjuniors.com)) for my own daughter — a completely free, ad-free British EYFS learning app: systematic synthetic phonics, early maths and stories for ages 3–9. No ads, no in-app purchases, no data collected on children.
+I'm Sanju, a Dubai parent. I built **Bloom Juniors**
+([bloomjuniors.com](https://bloomjuniors.com)) for my own daughter: a free, ad-free
+home-learning app with systematic synthetic phonics, early maths and stories.
+It is designed for ages 3-9, with this nursery pilot focused on children aged 3-5.
 
-This term I'm partnering with a small group of independent British-curriculum nurseries in Dubai. The pilot gives {Nursery}:
+Children do not need email accounts. There are no advertisements, in-app purchases
+or data sales. Learning progress is stored securely so families can continue from
+where they stopped and see what their child has practised.
 
-- **Free full access for every family** — a ready-made home-learning programme you can offer parents
-- A **parent onboarding pack** (a WhatsApp message and printed note, done for you)
-- A **monthly engagement summary** — useful evidence of parent partnership for KHDA
-- It stays free for your families permanently — pilot partners are locked in
+I'm inviting three Dubai nurseries to test a **supported 30-day pilot**. We provide:
 
-In return I ask only for honest feedback, and a short testimonial if you find it valuable.
+- a ready-made parent message and printable note;
+- setup support for your team and participating families;
+- an anonymised, aggregate engagement summary after 30 days; and
+- a 15-minute review to discuss what worked and what should improve.
 
-Could I come by for **15 minutes** to show you? I can do **Tuesday or Thursday morning**, or whenever suits you.
+Families keep free access after the pilot. Would you be open to a 15-minute
+demonstration next week? I can visit on Tuesday or Thursday morning.
 
 Warm regards,
-Sanju
-Founder, Bloom Juniors · bloomjuniors.com
-sanju@bloomjuniors.com · {your mobile}
 
-> Personalise line 1 per nursery when possible: mention their area, Curiosity Approach,
-> a recent post of theirs, or a parent you know there. One sentence is enough.
+Sanju  
+Founder, Bloom Juniors  
+sanju@bloomjuniors.com | bloomjuniors.com
 
----
+Personalise the opening sentence with one verified detail about the nursery. Do not
+guess a principal's name.
 
-## Template B — WhatsApp (Day 3)
+## WhatsApp follow-up
 
-> Hi {Name}, Sanju here — the Dubai dad who built Bloom Juniors, a free ad-free British EYFS phonics app, for my daughter. I emailed on Monday about giving {Nursery} families free access this term (no cost, no catch — I'm looking for feedback from great independent nurseries). Could I pop in for 15 minutes this week to show you? 🌻 bloomjuniors.com
+> Hi {Name}, Sanju here. I am a Dubai parent and the founder of Bloom Juniors. I
+> emailed about a supported 30-day home-learning pilot for {Nursery} families. We
+> provide the parent pack, setup help and an anonymised engagement summary. Could I
+> visit for a 15-minute demonstration next week? bloomjuniors.com
 
-Follow-up if read but no reply (Day 5):
+## Phone script
 
-> No pressure at all {Name} — if it's easier I can just leave a one-page summary with reception and you can look when things calm down. Which morning works?
+**Reception:**
 
----
+"Good morning. Could I speak with the person responsible for curriculum or parent
+partnerships? I'm Sanju, a Dubai parent and founder of Bloom Juniors. It is about a
+supported home-learning pilot for the nursery's families."
 
-## Script C — Phone call (Day 7)
+**Decision-maker:**
 
-**Reception/gatekeeper:**
-"Good morning! Could I speak with {Principal name}? It's Sanju — I'm a parent; it's about a free learning programme for the nursery's families." *(You're a parent with a gift, not a salesman. Say "free programme for your families", never "I'm calling from a company".)*
+"Thanks for taking the call. I built Bloom Juniors for my daughter: a free, ad-free
+home-learning app covering phonics, early maths and stories. I am inviting three
+Dubai nurseries to a supported 30-day pilot. We provide the parent message, setup
+support and an anonymised engagement summary, then review the results together.
+Could I show it to you in 15 minutes on Tuesday or Thursday morning?"
 
-**Principal (30 seconds):**
-"Thanks for taking the call — I'll be quick. I'm a Dubai dad; I built a free, completely ad-free British EYFS app for my daughter — phonics, early maths, stories, ages 3–9. I'm offering a small group of independent nurseries a free term pilot: your families get it free forever, you get a parent-engagement programme and a monthly summary you can show KHDA. I'm asking for nothing except feedback. Could I come by for 15 minutes — would Tuesday or Thursday morning work?"
+## Follow-up email
 
-**If "send me an email":** "Of course — I sent one on Monday, I'll resend it right now while we're talking. Can I check the best address? … And if I don't hear back, is it alright if I drop off a one-page summary next week?"
+**Subject:** Re: A 30-day home-learning pilot for {Nursery} families
 
----
+Dear {Nursery} team,
 
-## Template D — Email #2 (Day 10, the one-liner)
+I know the nursery day is busy, so one quick follow-up: would a 15-minute look at the
+Bloom Juniors home-learning pilot be useful next week? If it is not relevant, just
+say so and I will close the loop.
 
-**Subject:** Re: A free phonics programme for {Nursery} families
+Warm regards,  
+Sanju | sanju@bloomjuniors.com
 
-Dear {Name} — I know term-start is hectic, so just one line: would you like {Nursery} families to have free access to a British EYFS phonics app this term, yes or no? If yes, 15 minutes is all I need. If no, I'll stop emailing — no hard feelings at all.
+## Meeting checklist
 
-Sanju · bloomjuniors.com
-
----
-
-## Visit checklist (Day 14 or booked meeting)
-
-- [ ] Tablet with Bloom Juniors loaded, one child profile pre-made, **offline-safe** (load it before you leave)
-- [ ] 2 printed copies of `pilot-offer.html` (print to PDF, A4)
-- [ ] Demo path (5 min max): One Daily Journey dashboard → one phonics game with Yaagvi reacting → treasure opens → Parent Zone progress view
-- [ ] Your daughter story — 60 seconds, first thing you say
-- [ ] The ask: "Can we start with your families this term? I'll send the parent pack today."
-- [ ] If yes: get the WhatsApp/email they use for parent comms, send parent pack same day
+- [ ] App loaded and tested on the tablet before leaving
+- [ ] Two printed copies of `pilot-offer.pdf`
+- [ ] Five-minute demo: daily journey, one phonics activity, reward, Parent Zone
+- [ ] Sixty-second founder story
+- [ ] Clear ask: agree one pilot contact and a target launch date
+- [ ] Confirm how the nursery communicates with parents
+- [ ] Agree that reporting is anonymised and aggregate only
 
 ## Objection handling
 
-**"We already use Tapestry / Kinderly / a learning journal."**
-Those are observation tools for your staff. Bloom is a home-learning programme for parents — it complements the journal, it doesn't compete with it.
+**"We already use Tapestry, Kinderly or a learning journal."**
 
-**"Why is it free? What's the catch?"**
-Be honest: "I built it for my daughter and promised it stays free for families — no ads, no tracking, ever. Down the line the business will be optional premium features for parents and school licences, but pilot nurseries and their families are locked in free. Right now what I need is feedback from great nurseries."
+Those products document nursery observations. Bloom gives families a short guided
+activity at home and can complement the nursery's existing communication.
 
-**"Our parents are overwhelmed already."**
-It's 10 minutes a day, one clear daily journey — designed to replace random YouTube, not add homework. The parent pack is one WhatsApp message; nothing for your staff to manage.
+**"Why is it free?"**
 
-**"What about children's data?"**
-No ads, no tracking, no child accounts, nothing sold — the privacy page is public at bloomjuniors.com/privacy. It's the reason I built it myself instead of using what's out there.
+The core family experience is free and ad-free. The pilot helps us learn whether the
+programme is genuinely useful to nurseries and families. Future revenue may come
+from optional parent extras or school licences; the pilot does not require payment.
 
-**"We'd need head office / the owner to approve."**
-"Completely understand — could you introduce me? I'll do the 15 minutes with them directly." (Then log it and follow the same sequence with that person.)
+**"What data do you collect?"**
 
----
+Children do not need email accounts. Bloom stores child profiles and learning
+progress so the experience works across sessions. It does not sell personal data or
+use advertising trackers. The public privacy notice is at bloomjuniors.com/privacy.
 
-## July prep (before the campaign can fire)
+**"Our parents are already overwhelmed."**
 
-1. **Pilot #0: your daughter's nursery.** Do this now, in person, as a parent. One yes changes every later conversation ("we're already running at a nursery in {area}").
-2. Fill in phone numbers + principal names in `04-nursery-pipeline.md` (websites, Google Maps listings, Edarabia pages — I can enrich this with a scraping pass on request).
-3. Set up `sanju@bloomjuniors.com` (checklist item 1 in `01-setup-checklist.md`) — outreach from a gmail.com address halves credibility.
-4. Print-test `pilot-offer.html`.
+The experience is designed around one short guided journey, not extra homework. The
+nursery shares one prepared message; staff do not need to administer lessons.
+
+**"We need head-office approval."**
+
+Ask for an introduction to the relevant person and offer the same 15-minute demo.
+
+## Before outreach
+
+1. Test the pitch first with your daughter's nursery or another warm contact.
+2. Confirm every recipient address and nursery detail from the official website.
+3. Send from `sanju@bloomjuniors.com`; inbound routing and Gmail send-as are ready.
+4. Print-test `pilot-offer.pdf` and open its QR/link before every visit.
+5. Log every touch and outcome in `04-nursery-pipeline.md`.

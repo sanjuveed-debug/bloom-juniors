@@ -26,8 +26,9 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'bm-apple-touch-icon.png', 'masked-icon.svg', 'offline.html'],
+      includeAssets: ['favicon-bloom-v3.svg', 'bloom-v3-touch.png', 'offline.html'],
       workbox: {
+        importScripts: ['/push-handler.js'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//, /^\/blog\//],
         runtimeCaching: [
@@ -68,9 +69,9 @@ export default defineConfig({
         lang: 'en',
         categories: ['education', 'kids'],
         icons: [
-          { src: 'bj-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: 'bj-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: 'bj-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+          { src: 'bloom-v3-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'bloom-v3-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'bloom-v3-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ],
         screenshots: [
           {
@@ -87,7 +88,7 @@ export default defineConfig({
             short_name: 'Learn',
             description: 'Jump straight into learning',
             url: '/?shortcut=learn',
-            icons: [{ src: 'bj-192.png', sizes: '192x192' }]
+            icons: [{ src: 'bloom-v3-192.png', sizes: '192x192' }]
           }
         ]
       }

@@ -2,6 +2,7 @@ import { getCompanionBond } from './companionBond.js'
 import { getDreamProjectState } from './dreamProject.js'
 import { normaliseTreasureCollection } from './treasureRewards.js'
 import { normalizeWonderWorld } from './wonderWorld.js'
+import { getWeeklyBloomAdventureView } from './weeklyBloomAdventure.js'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -189,6 +190,7 @@ export function buildParentProgressStory(progress = {}, profileName = 'Your chil
   const dream = getDreamProjectState(progress, age)
   const treasures = normaliseTreasureCollection(progress.treasureCollection)
   const world = normalizeWonderWorld(progress.wonderWorld)
+  const weeklyAdventure = getWeeklyBloomAdventureView(progress, age, now)
   const activities = buildActivities(age, skills)
   const name = String(profileName || 'Your child').trim() || 'Your child'
   const headline = current.sessions
@@ -217,5 +219,15 @@ export function buildParentProgressStory(progress = {}, profileName = 'Your chil
     dream,
     treasures: { owned: treasures.items.length, sparkleDust: treasures.sparkleDust },
     world: { discoveries: world.discoveries.length, planted: world.plots.filter(Boolean).length },
+    weeklyAdventure: {
+      title: weeklyAdventure.adventure.title,
+      completed: weeklyAdventure.completed,
+      total: weeklyAdventure.total,
+      complete: weeklyAdventure.complete,
+      status: weeklyAdventure.status,
+      latest: weeklyAdventure.previous?.restored || '',
+      next: weeklyAdventure.chapter?.title || '',
+      artifact: weeklyAdventure.adventure.artifact,
+    },
   }
 }

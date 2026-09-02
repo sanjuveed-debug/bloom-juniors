@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bloom Juniors | Free British Curriculum Learning for Ages 3–9</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', system-ui, sans-serif; color: #1a1a2e; background: #faf8f5; line-height: 1.6; }
+        a { text-decoration: none; color: inherit; }
+
+        /* Navigation */
+        .nav { 
+            position: sticky; top: 0; z-index: 100; 
+            background: rgba(250, 248, 245, 0.95); backdrop-filter: blur(12px);
+            border-bottom: 1px solid #e8e4df; 
+        }
+        .nav-inner { max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 22px; color: #e85a4f; }
+        .nav-links { display: flex; gap: 32px; align-items: center; font-size: 14px; font-weight: 500; color: #5a5a6e; }
+        .nav-links a:hover { color: #e85a4f; transition: color 0.2s; }
+        .nav-cta { background: #e85a4f; color: white; padding: 10px 24px; border-radius: 12px; font-weight: 600; }
+        .nav-cta:hover { background: #d44a3f; }
+
+        /* Hero */
+        .hero { max-width: 1200px; margin: 0 auto; padding: 48px 24px 64px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+        .trust-bar { display: flex; gap: 20px; align-items: center; margin-bottom: 24px; font-size: 12px; font-weight: 600; color: #7a7a8e; text-transform: uppercase; letter-spacing: 0.5px; }
+        .trust-item { display: flex; align-items: center; gap: 6px; }
+        .hero h1 { font-size: 48px; font-weight: 800; line-height: 1.1; color: #1a1a2e; margin-bottom: 20px; letter-spacing: -0.02em; }
+        .hero h1 span { color: #e85a4f; }
+        .hero p { font-size: 18px; line-height: 1.6; color: #5a5a6e; margin-bottom: 32px; max-width: 480px; }
+        .hero-ctas { display: flex; gap: 16px; align-items: center; margin-bottom: 28px; flex-wrap: wrap; }
+        .btn-primary { background: #e85a4f; color: white; padding: 16px 32px; border-radius: 14px; font-weight: 700; font-size: 16px; box-shadow: 0 4px 16px rgba(232,90,79,0.3); display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; border: none; cursor: pointer; }
+        .btn-primary:hover { background: #d44a3f; transform: translateY(-1px); }
+        .btn-secondary { display: inline-flex; align-items: center; gap: 8px; color: #1a1a2e; font-weight: 600; font-size: 15px; }
+        .btn-outline { background: transparent; color: #1a1a2e; padding: 14px 28px; border-radius: 12px; font-weight: 600; font-size: 15px; border: 2px solid #e8e4df; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; cursor: pointer; }
+        .btn-outline:hover { border-color: #e85a4f; color: #e85a4f; }
+        .social-proof { display: flex; align-items: center; gap: 16px; }
+        .avatars { display: flex; margin-left: 4px; }
+        .avatars img { width: 36px; height: 36px; border-radius: 50%; border: 2px solid white; margin-left: -8px; }
+
+        /* Hero Visual */
+        .hero-visual { position: relative; background: linear-gradient(135deg, #fff5f0 0%, #ffe8e0 100%); border-radius: 24px; padding: 40px; display: flex; justify-content: center; align-items: center; min-height: 480px; }
+        .tablet-mockup { background: #1a1a2e; border-radius: 24px; padding: 12px; width: 320px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+        .tablet-screen { background: linear-gradient(180deg, #FF8C61 0%, #FF6B4A 100%); border-radius: 16px; padding: 20px; color: white; position: relative; overflow: hidden; }
+        .tablet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .tablet-header div { font-size: 13px; font-weight: 600; }
+        .tablet-header .stars { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; }
+        .tablet-label { font-size: 11px; opacity: 0.8; margin-bottom: 12px; }
+        .activity-card { background: rgba(255,255,255,0.2); border-radius: 12px; padding: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .activity-card.locked { background: rgba(255,255,255,0.15); border: 2px dashed rgba(255,255,255,0.3); }
+        .activity-icon { width: 36px; height: 36px; background: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .activity-icon.locked-icon { background: rgba(255,255,255,0.2); }
+        .activity-title { font-size: 13px; font-weight: 700; }
+        .activity-sub { font-size: 11px; opacity: 0.8; }
+        .yaagvi-peek { position: absolute; bottom: -8px; right: 16px; width: 56px; height: 56px; background: #FFE4D1; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .floating-badge { position: absolute; bottom: 60px; left: 20px; background: white; border-radius: 16px; padding: 16px 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); max-width: 200px; }
+        .floating-badge .badge-title { font-size: 12px; font-weight: 700; color: #e85a4f; margin-bottom: 4px; }
+        .floating-badge .badge-text { font-size: 11px; color: #5a5a6e; line-height: 1.4; }
+
+        /* How It Works */
+        .section { max-width: 1200px; margin: 0 auto; padding: 64px 24px; }
+        .section-header { text-align: center; margin-bottom: 48px; }
+        .section-label { font-size: 12px; font-weight: 700; color: #e85a4f; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+        .section h2 { font-size: 36px; font-weight: 800; color: #1a1a2e; }
+        .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; position: relative; }
+        .steps::before { content: ''; position: absolute; top: 40px; left: 20%; right: 20%; height: 2px; background: linear-gradient(90deg, #e85a4f 0%, #FFB347 50%, #4CAF50 100%); opacity: 0.3; }
+        .step { background: white; border-radius: 20px; padding: 32px; text-align: center; position: relative; z-index: 1; }
+        .step-icon { width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 28px; }
+        .step-icon-1 { background: #FFF0ED; }
+        .step-icon-2 { background: #FFF8E7; }
+        .step-icon-3 { background: #E8F5E9; }
+        .step-badge { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+        .step-badge-1 { color: #e85a4f; }
+        .step-badge-2 { color: #FFB347; }
+        .step-badge-3 { color: #4CAF50; }
+        .step h3 { font-size: 20px; font-weight: 700; color: #1a1a2e; margin-bottom: 10px; }
+        .step p { font-size: 14px; color: #5a5a6e; line-height: 1.6; }
+
+        /* Interactive Demo */
+        .demo-section { max-width: 1200px; margin: 0 auto; padding: 0 24px 64px; }
+        .demo-inner { background: #1a1a2e; border-radius: 24px; padding: 48px; color: white; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+        .demo-inner h2 { font-size: 32px; font-weight: 800; margin-bottom: 16px; line-height: 1.2; }
+        .demo-inner p { font-size: 16px; color: #a0a0b0; line-height: 1.6; margin-bottom: 24px; }
+        .demo-box { background: white; border-radius: 16px; padding: 24px; color: #1a1a2e; }
+        .demo-box-header { text-align: center; margin-bottom: 20px; }
+        .demo-box-header .demo-title { font-size: 13px; font-weight: 600; color: #e85a4f; margin-bottom: 8px; }
+        .demo-box-header .demo-desc { font-size: 14px; color: #5a5a6e; }
+        .demo-animals { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; font-size: 32px; }
+        .demo-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .demo-option { padding: 16px; border: 2px solid #e8e4df; border-radius: 12px; background: white; font-size: 20px; font-weight: 700; color: #1a1a2e; cursor: pointer; transition: all 0.2s; }
+        .demo-option:hover { border-color: #e85a4f; }
+        .demo-option.correct { border-color: #e85a4f; background: #FFF0ED; color: #e85a4f; }
+        .demo-feedback { margin-top: 16px; padding: 12px; background: #f5f5f7; border-radius: 10px; display: flex; align-items: center; gap: 10px; }
+        .demo-feedback-avatar { width: 32px; height: 32px; background: #FFE4D1; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .demo-feedback-text { font-size: 13px; color: #5a5a6e; }
+
+        /* What Parents Will Notice - HONEST VERSION */
+        .notice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        .notice-card { background: white; border-radius: 20px; padding: 32px; border: 1px solid #f0ebe5; position: relative; overflow: hidden; }
+        .notice-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+        .notice-card:nth-child(1)::before { background: #e85a4f; }
+        .notice-card:nth-child(2)::before { background: #FFB347; }
+        .notice-card:nth-child(3)::before { background: #4CAF50; }
+        .notice-number { font-size: 48px; font-weight: 800; color: #f0ebe5; position: absolute; top: 16px; right: 24px; line-height: 1; }
+        .notice-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 16px; }
+        .notice-icon-1 { background: #FFF0ED; }
+        .notice-icon-2 { background: #FFF8E7; }
+        .notice-icon-3 { background: #E8F5E9; }
+        .notice-card h3 { font-size: 18px; font-weight: 700; color: #1a1a2e; margin-bottom: 10px; }
+        .notice-card p { font-size: 14px; color: #5a5a6e; line-height: 1.7; }
+        .notice-tag { display: inline-block; margin-top: 16px; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .notice-tag-1 { background: #FFF0ED; color: #e85a4f; }
+        .notice-tag-2 { background: #FFF8E7; color: #c98000; }
+        .notice-tag-3 { background: #E8F5E9; color: #2e7d32; }
+
+        /* Founder Story - Prominent */
+        .founder-section { max-width: 1200px; margin: 0 auto; padding: 0 24px 64px; }
+        .founder-inner { background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%); border-radius: 24px; padding: 48px; display: grid; grid-template-columns: 1fr 2fr; gap: 48px; align-items: center; color: white; }
+        .founder-photo { width: 200px; height: 200px; border-radius: 20px; object-fit: cover; border: 4px solid rgba(255,255,255,0.1); }
+        .founder-label { font-size: 12px; font-weight: 700; color: #FFB347; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+        .founder-inner h2 { font-size: 32px; font-weight: 800; margin-bottom: 16px; line-height: 1.2; }
+        .founder-inner p { font-size: 16px; color: #c0c0d0; line-height: 1.7; margin-bottom: 16px; }
+        .founder-name { font-size: 14px; font-weight: 600; color: white; margin-top: 24px; }
+        .founder-title { font-size: 13px; color: #a0a0b0; }
+        .founder-badges { display: flex; gap: 16px; margin-top: 24px; flex-wrap: wrap; }
+        .founder-badge { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(255,255,255,0.08); border-radius: 10px; font-size: 13px; color: #c0c0d0; }
+
+        /* Early Adopter CTA */
+        .early-bird { max-width: 1200px; margin: 0 auto; padding: 0 24px 64px; }
+        .early-bird-inner { background: linear-gradient(135deg, #FFF0ED 0%, #FFE8E0 100%); border-radius: 24px; padding: 48px; text-align: center; border: 2px dashed #e85a4f; }
+        .early-bird-inner h2 { font-size: 28px; font-weight: 800; color: #1a1a2e; margin-bottom: 12px; }
+        .early-bird-inner p { font-size: 16px; color: #5a5a6e; margin-bottom: 24px; max-width: 560px; margin-left: auto; margin-right: auto; }
+        .early-bird-perks { display: flex; justify-content: center; gap: 32px; margin-bottom: 28px; flex-wrap: wrap; }
+        .early-perk { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #1a1a2e; }
+
+        /* Curriculum + Safety */
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+        .card { background: white; border-radius: 20px; padding: 40px; border: 1px solid #f0ebe5; }
+        .card-dark { background: #1a1a2e; color: white; }
+        .card h3 { font-size: 24px; font-weight: 800; margin-bottom: 16px; }
+        .card p { font-size: 14px; color: #5a5a6e; line-height: 1.6; margin-bottom: 24px; }
+        .card-dark p { color: #a0a0b0; }
+        .card-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #faf8f5; border-radius: 10px; margin-bottom: 12px; }
+        .card-item-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .card-item-title { font-size: 14px; font-weight: 700; color: #1a1a2e; }
+        .card-item-sub { font-size: 12px; color: #7a7a8e; }
+        .safety-item { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .safety-icon { width: 36px; height: 36px; background: rgba(76,175,80,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .safety-title { font-size: 14px; font-weight: 700; }
+        .safety-sub { font-size: 12px; color: #a0a0b0; }
+        .card-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 20px; font-weight: 600; font-size: 14px; }
+        .card-link-red { color: #e85a4f; }
+        .card-link-green { color: #4CAF50; }
+
+        /* For Schools */
+        .schools-inner { background: linear-gradient(135deg, #f5f0eb 0%, #ebe4db 100%); border-radius: 24px; padding: 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+        .schools-inner h2 { font-size: 32px; font-weight: 800; color: #1a1a2e; margin-bottom: 16px; line-height: 1.2; }
+        .schools-inner p { font-size: 15px; color: #5a5a6e; line-height: 1.6; margin-bottom: 24px; }
+        .check-item { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #1a1a2e; margin-bottom: 12px; }
+        .dashboard-preview { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
+        .dashboard-preview-title { font-size: 13px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px; }
+        .student-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f5f5f7; border-radius: 8px; margin-bottom: 10px; }
+        .student-row.alert { background: #FFF0ED; border: 1px solid #e85a4f; }
+        .student-info { display: flex; align-items: center; gap: 10px; }
+        .student-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; }
+        .student-name { font-size: 13px; font-weight: 600; }
+        .student-alert { font-size: 10px; background: #e85a4f; color: white; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 6px; }
+        .progress-bar { display: flex; align-items: center; gap: 6px; }
+        .progress-track { width: 80px; height: 6px; background: #e8e4df; border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 3px; }
+        .progress-text { font-size: 11px; font-weight: 600; }
+
+        /* Pricing */
+        .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 800px; margin: 40px auto 0; }
+        .pricing-card { background: white; border-radius: 20px; padding: 40px; position: relative; }
+        .pricing-card.popular { border: 2px solid #e85a4f; }
+        .popular-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #e85a4f; color: white; padding: 4px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+        .pricing-card.dark { background: #1a1a2e; color: white; }
+        .pricing-label { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+        .pricing-label-red { color: #e85a4f; }
+        .pricing-label-gold { color: #FFB347; }
+        .pricing-price { font-size: 42px; font-weight: 800; margin-bottom: 4px; }
+        .pricing-price span { font-size: 16px; font-weight: 500; color: #7a7a8e; }
+        .pricing-card.dark .pricing-price span { color: #a0a0b0; }
+        .pricing-sub { font-size: 14px; color: #7a7a8e; margin-bottom: 24px; }
+        .pricing-card.dark .pricing-sub { color: #a0a0b0; }
+        .pricing-features { display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; }
+        .pricing-feature { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .pricing-btn { display: block; text-align: center; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 15px; }
+        .pricing-btn-red { background: #e85a4f; color: white; }
+        .pricing-btn-white { background: white; color: #1a1a2e; }
+        .pricing-launch { text-align: center; margin-top: 10px; font-size: 12px; color: #a0a0b0; }
+
+        /* Final CTA */
+        .final-cta { max-width: 1200px; margin: 0 auto; padding: 0 24px 64px; text-align: center; }
+        .final-cta-inner { background: linear-gradient(135deg, #FFF0ED 0%, #FFE8E0 100%); border-radius: 24px; padding: 64px 48px; }
+        .final-cta h2 { font-size: 36px; font-weight: 800; color: #1a1a2e; margin-bottom: 16px; }
+        .final-cta p { font-size: 16px; color: #5a5a6e; margin-bottom: 32px; max-width: 480px; margin-left: auto; margin-right: auto; }
+        .final-cta .login-text { margin-top: 16px; font-size: 14px; color: #7a7a8e; }
+        .final-cta .login-text a { color: #e85a4f; font-weight: 600; }
+
+        /* Footer */
+        .footer { border-top: 1px solid #e8e4df; padding: 48px 24px 24px; max-width: 1200px; margin: 0 auto; }
+        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 32px; margin-bottom: 40px; }
+        .footer-brand { font-weight: 700; font-size: 20px; color: #e85a4f; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+        .footer-desc { font-size: 14px; color: #7a7a8e; line-height: 1.6; max-width: 280px; }
+        .footer-col-title { font-size: 12px; font-weight: 700; color: #1a1a2e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+        .footer-links { display: flex; flex-direction: column; gap: 10px; }
+        .footer-links a { font-size: 14px; color: #7a7a8e; }
+        .footer-links a:hover { color: #e85a4f; }
+        .footer-socials { display: flex; gap: 12px; }
+        .footer-social { width: 36px; height: 36px; background: #f5f5f7; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .footer-social:hover { background: #e8e4df; }
+        .footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 24px; border-top: 1px solid #e8e4df; font-size: 13px; color: #7a7a8e; }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .hero, .demo-inner, .two-col, .schools-inner, .pricing-grid, .founder-inner { grid-template-columns: 1fr; }
+            .steps, .notice-grid { grid-template-columns: 1fr; }
+            .steps::before { display: none; }
+            .hero h1 { font-size: 36px; }
+            .nav-links { display: none; }
+            .founder-photo { width: 120px; height: 120px; margin: 0 auto; }
+            .early-bird-perks { flex-direction: column; gap: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-inner">
+            <a href="#" class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <circle cx="16" cy="16" r="14" fill="#e85a4f"/>
+                    <path d="M10 18c0-3 2-6 6-6s6 3 6 6" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                    <circle cx="12" cy="13" r="1.5" fill="white"/>
+                    <circle cx="20" cy="13" r="1.5" fill="white"/>
+                </svg>
+                Bloom Juniors
+            </a>
+            <div class="nav-links">
+                <a href="#how-it-works">How it works</a>
+                <a href="#curriculum">Curriculum</a>
+                <a href="#schools">For Schools</a>
+                <a href="#safety">Safety</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#" style="color: #e85a4f; font-weight: 600;">Log in</a>
+                <a href="#" class="nav-cta">Start free</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div>
+            <div class="trust-bar">
+                <span class="trust-item">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <circle cx="7" cy="7" r="6" stroke="#4CAF50" stroke-width="1.5"/>
+                        <path d="M4 7l2 2 4-4" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    Free forever
+                </span>
+                <span class="trust-item">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M7 1l1.8 3.6L13 5.5l-2.9 2.8L11.2 12 7 10.1 2.8 12l1.1-3.7L1 5.5l4.2-.9L7 1z" fill="#FFB800"/>
+                    </svg>
+                    No ads
+                </span>
+                <span class="trust-item">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <rect x="2" y="5" width="10" height="7" rx="1" stroke="#7a7a8e" stroke-width="1.5"/>
+                        <path d="M5 5V3a2 2 0 014 0v2" stroke="#7a7a8e" stroke-width="1.5"/>
+                    </svg>
+                    No credit card
+                </span>
+            </div>
+
+            <h1>Your child will ask to do their <span>homework</span> — before you've had your coffee.</h1>
+            <p>Free daily learning paths in phonics, maths & reading. No ads. No downloads. Built for the British curriculum. Ages 3–9.</p>
+
+            <div class="hero-ctas">
+                <a href="#" class="btn-primary">
+                    Start your child's free path
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <path d="M3 9h12M10 5l4 4-4 4" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </a>
+                <a href="#" class="btn-secondary">
+                    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                        <circle cx="18" cy="18" r="18" fill="#1a1a2e"/>
+                        <path d="M14 11l10 7-10 7V11z" fill="white"/>
+                    </svg>
+                    Watch 60-sec demo
+                </a>
+            </div>
+
+            <div class="social-proof">
+                <div class="avatars">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah&backgroundColor=c0aede" alt="User">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=James&backgroundColor=b6e3f4" alt="User">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Emma&backgroundColor=ffd5dc" alt="User">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver&backgroundColor=d1f4e0" alt="User">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Aisha&backgroundColor=ffdfbf" alt="User">
+                </div>
+                <div style="font-size: 14px; color: #5a5a6e;">
+                    <span style="font-weight: 700; color: #1a1a2e;">4.8★</span> from 12,000+ UK families
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-visual">
+            <div class="tablet-mockup">
+                <div class="tablet-screen">
+                    <div class="tablet-header">
+                        <div>Hi, Oliver! 👋</div>
+                        <div class="stars">
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <path d="M7 1l1.8 3.6L13 5.5l-2.9 2.8L11.2 12 7 10.1 2.8 12l1.1-3.7L1 5.5l4.2-.9L7 1z" fill="#FFD700"/>
+                            </svg>
+                            47
+                        </div>
+                    </div>
+                    <div class="tablet-label">Today's Play Path</div>
+                    <div class="activity-card">
+                        <div class="activity-icon">🍎</div>
+                        <div>
+                            <div class="activity-title">Phonics: 'sh' sound</div>
+                            <div class="activity-sub">5 min · +5 stars</div>
+                        </div>
+                    </div>
+                    <div class="activity-card locked">
+                        <div class="activity-icon locked-icon">🔢</div>
+                        <div>
+                            <div class="activity-title" style="opacity: 0.7;">Maths: Number bonds</div>
+                            <div class="activity-sub" style="opacity: 0.6;">Locked until phonics done</div>
+                        </div>
+                    </div>
+                    <div class="yaagvi-peek">🧒</div>
+                </div>
+            </div>
+            <div class="floating-badge">
+                <div class="badge-title">🔒 Parent Dashboard</div>
+                <div class="badge-text">Oliver mastered 3 new sounds this week. Streak: 12 days.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="section" id="how-it-works">
+        <div class="section-header">
+            <div class="section-label">How it works</div>
+            <h2>Up and learning in under 2 minutes</h2>
+        </div>
+        <div class="steps">
+            <div class="step">
+                <div class="step-icon step-icon-1">👤</div>
+                <div class="step-badge step-badge-1">Step 1 · 30 seconds</div>
+                <h3>Create a free profile</h3>
+                <p>Pick your child's age group and a fun avatar. No credit card required.</p>
+            </div>
+            <div class="step">
+                <div class="step-icon step-icon-2">🗺️</div>
+                <div class="step-badge step-badge-2">Step 2 · 10 minutes</div>
+                <h3>Follow the daily path</h3>
+                <p>Yaagvi guides 2 activities: phonics + maths. Voice-guided, no reading required.</p>
+            </div>
+            <div class="step">
+                <div class="step-icon step-icon-3">🎮</div>
+                <div class="step-badge step-badge-3">Step 3 · 15 minutes</div>
+                <h3>Earn games as reward</h3>
+                <p>Complete the path → Game Arcade unlocks. Study first, play after.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Demo -->
+    <section class="demo-section">
+        <div class="demo-inner">
+            <div>
+                <div class="section-label" style="color: #FFB347;">Try it now</div>
+                <h2>See exactly what your child sees</h2>
+                <p>No signup, no download. Try a real phonics activity with Yaagvi's voice guidance. Tap the wrong answer — see how she responds.</p>
+                <a href="#" class="btn-primary">
+                    Launch demo activity
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M3 8h10M8 4l4 4-4 4" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </a>
+            </div>
+            <div class="demo-box">
+                <div class="demo-box-header">
+                    <div class="demo-title">🎯 Count & Match</div>
+                    <div class="demo-desc">Count the animals, then tap the matching number</div>
+                </div>
+                <div class="demo-animals">🐘 🐘 🐘</div>
+                <div class="demo-options">
+                    <button class="demo-option">2</button>
+                    <button class="demo-option correct">3</button>
+                    <button class="demo-option">4</button>
+                </div>
+                <div class="demo-feedback">
+                    <div class="demo-feedback-avatar">🧒</div>
+                    <div class="demo-feedback-text">"Three elephants! Well done! 🌟"</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- What Parents Will Notice - HONEST, PREDICTIVE -->
+    <section class="section">
+        <div class="section-header">
+            <div class="section-label">What parents will notice</div>
+            <h2>Three things designed to change your mornings</h2>
+            <p style="font-size: 15px; color: #7a7a8e; margin-top: 12px; max-width: 600px; margin-left: auto; margin-right: auto;">We're a new app. No fake reviews. Here's what we built — and what we expect you'll see.</p>
+        </div>
+        <div class="notice-grid">
+            <div class="notice-card">
+                <div class="notice-number">01</div>
+                <div class="notice-icon notice-icon-1">🔒</div>
+                <h3>The habit builds itself</h3>
+                <p>Children complete 2 study modules first — then the Game Arcade unlocks as their reward. No guilt. No battles. The "study first, play after" rhythm is built into the design, not enforced by you.</p>
+                <span class="notice-tag notice-tag-1">Behavioral Design</span>
+            </div>
+            <div class="notice-card">
+                <div class="notice-number">02</div>
+                <div class="notice-icon notice-icon-2">🗺️</div>
+                <h3>Progress they can see</h3>
+                <p>The Mastery Map lights up every sound, skill and activity as they practise. Children know exactly what they're getting better at — phonics stops feeling like homework and starts feeling like collecting.</p>
+                <span class="notice-tag notice-tag-2">Visible Growth</span>
+            </div>
+            <div class="notice-card">
+                <div class="notice-number">03</div>
+                <div class="notice-icon notice-icon-3">🏅</div>
+                <h3>The parent handoff</h3>
+                <p>After a win, Bloom creates a full-screen badge: "Show this to someone you love!" Instead of you asking what they learned, they explain it themselves. Learning becomes a family conversation.</p>
+                <span class="notice-tag notice-tag-3">Family Moment</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Founder Story - PROMINENT & AUTHENTIC -->
+    <section class="founder-section">
+        <div class="founder-inner">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sanju&backgroundColor=d1f4e0" alt="Sanju, Founder" class="founder-photo">
+            <div>
+                <div class="founder-label">From the founder</div>
+                <h2>"I built this for my own child — because nothing else felt right."</h2>
+                <p>Every learning app I tried either shoved ads in my daughter's face, demanded a subscription before she could even try it, or pretended mindless games were "educational."</p>
+                <p>So I built Bloom Juniors: no ads, no dark patterns, no app store required. Every activity is hand-built around the British curriculum — from RWI phonics Sets 1–3 to times tables 2–12 — and tested daily by the toughest critic I know.</p>
+                <div class="founder-name">— Sanju, founder & dad of one</div>
+                <div class="founder-title">Previously: software engineer · Now: building the app he wishes existed</div>
+                <div class="founder-badges">
+                    <div class="founder-badge">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3 3 7-7" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/></svg>
+                        DfE curriculum aligned
+                    </div>
+                    <div class="founder-badge">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3 3 7-7" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/></svg>
+                        COPPA & GDPR compliant
+                    </div>
+                    <div class="founder-badge">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3 3 7-7" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/></svg>
+                        No VC funding — bootstrapped
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Early Adopter CTA - TURNS HONESTY INTO OPPORTUNITY -->
+    <section class="early-bird">
+        <div class="early-bird-inner">
+            <div style="font-size: 14px; font-weight: 700; color: #e85a4f; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px;">Founding Families</div>
+            <h2>Be among the first 500 families. Help us get it right.</h2>
+            <p>We're new. We don't have thousands of reviews yet. But we do have a product built by a parent, for parents. Join as a founding family and shape what Bloom Juniors becomes.</p>
+            <div class="early-bird-perks">
+                <div class="early-perk">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9l4 4 8-8" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/></svg>
+                    Free Premium for 3 months
+                </div>
+                <div class="early-perk">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9l4 4 8-8" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/></svg>
+                    Direct access to the founder
+                </div>
+                <div class="early-perk">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9l4 4 8-8" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/></svg>
+                    Exclusive "Founder" badge for your child
+                </div>
+            </div>
+            <a href="#" class="btn-primary" style="font-size: 15px;">
+                Join as a founding family
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M8 4l4 4-4 4" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+            </a>
+            <p style="font-size: 13px; color: #7a7a8e; margin-top: 16px;">No credit card. No commitment. Just honest feedback.</p>
+        </div>
+    </section>
+
+    <!-- Curriculum + Safety -->
+    <section class="section" id="curriculum">
+        <div class="two-col">
+            <div class="card" id="safety">
+                <div class="section-label">Curriculum</div>
+                <h3>Built for British progression</h3>
+                <p>Aligned with DfE Letters and Sounds (2021), Read Write Inc. Sets 1–3, and White Rose Maths small steps.</p>
+                <div class="card-item">
+                    <div class="card-item-icon" style="background: #FFF0ED;">🧸</div>
+                    <div>
+                        <div class="card-item-title">Tiny Stars · Ages 3–4</div>
+                        <div class="card-item-sub">Colours, shapes, numbers, first phonics</div>
+                    </div>
+                </div>
+                <div class="card-item">
+                    <div class="card-item-icon" style="background: #FFF8E7;">🌟</div>
+                    <div>
+                        <div class="card-item-title">Little Stars · Ages 4–6</div>
+                        <div class="card-item-sub">Phonics, maths, stories, art & world</div>
+                    </div>
+                </div>
+                <div class="card-item">
+                    <div class="card-item-icon" style="background: #E8F5E9;">🚀</div>
+                    <div>
+                        <div class="card-item-title">Super Kids · Ages 7–9</div>
+                        <div class="card-item-sub">Times tables, fractions, reading, science</div>
+                    </div>
+                </div>
+                <a href="#" class="card-link card-link-red">
+                    Download full curriculum map (PDF)
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M7 1v8M4 6l3 3 3-3M3 11h8" stroke="#e85a4f" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </a>
+            </div>
+            <div class="card card-dark">
+                <div class="section-label" style="color: #4CAF50;">Safety</div>
+                <h3>Safe by design</h3>
+                <p>No ads. No social feeds. No random purchases. No child accounts. Your data stays yours.</p>
+                <div class="safety-item">
+                    <div class="safety-icon">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <path d="M3 9l4 4 8-8" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="safety-title">COPPA & GDPR compliant</div>
+                        <div class="safety-sub">No personal data collection from children</div>
+                    </div>
+                </div>
+                <div class="safety-item">
+                    <div class="safety-icon">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <rect x="3" y="7" width="12" height="8" rx="2" stroke="#4CAF50" stroke-width="2"/>
+                            <path d="M6 7V5a3 3 0 016 0v2" stroke="#4CAF50" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="safety-title">PIN-protected parent area</div>
+                        <div class="safety-sub">Full progress visibility & time limits</div>
+                    </div>
+                </div>
+                <div class="safety-item">
+                    <div class="safety-icon">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <circle cx="9" cy="9" r="7" stroke="#4CAF50" stroke-width="2"/>
+                            <path d="M9 5v4l3 3" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="safety-title">15-minute daily limit</div>
+                        <div class="safety-sub">Healthy screen time, built in</div>
+                    </div>
+                </div>
+                <a href="#" class="card-link card-link-green">
+                    Read our full privacy policy
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M3 7h8M7 3l4 4-4 4" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- For Schools -->
+    <section class="section" id="schools">
+        <div class="schools-inner">
+            <div>
+                <div class="section-label">For Schools</div>
+                <h2>Bring Bloom Juniors into your classroom</h2>
+                <p>EYFS to KS2 aligned. Free for state schools. No child accounts needed. Teacher dashboard with class progress tracking.</p>
+                <div class="check-item">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <path d="M3 9l4 4 8-8" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    EYFS · KS1 · KS2 curriculum aligned
+                </div>
+                <div class="check-item">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <path d="M3 9l4 4 8-8" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    No child accounts or personal data needed
+                </div>
+                <div class="check-item">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <path d="M3 9l4 4 8-8" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Teacher dashboard with class progress
+                </div>
+                <div class="check-item">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <path d="M3 9l4 4 8-8" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Works on any school device — no install
+                </div>
+                <a href="#" class="btn-primary" style="margin-top: 8px; background: #1a1a2e;">
+                    Start a 30-day classroom trial
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M3 8h10M8 4l4 4-4 4" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </a>
+            </div>
+            <div class="dashboard-preview">
+                <div class="dashboard-preview-title">Teacher Dashboard Preview</div>
+                <div class="student-row">
+                    <div class="student-info">
+                        <div class="student-avatar" style="background: #c0aede;">O</div>
+                        <span class="student-name">Oliver</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width: 75%; background: #4CAF50;"></div>
+                        </div>
+                        <span class="progress-text" style="color: #4CAF50;">75%</span>
+                    </div>
+                </div>
+                <div class="student-row">
+                    <div class="student-info">
+                        <div class="student-avatar" style="background: #b6e3f4;">A</div>
+                        <span class="student-name">Aisha</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width: 92%; background: #4CAF50;"></div>
+                        </div>
+                        <span class="progress-text" style="color: #4CAF50;">92%</span>
+                    </div>
+                </div>
+                <div class="student-row alert">
+                    <div class="student-info">
+                        <div class="student-avatar" style="background: #ffd5dc;">L</div>
+                        <span class="student-name">Liam</span>
+                        <span class="student-alert">Needs help</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width: 35%; background: #e85a4f;"></div>
+                        </div>
+                        <span class="progress-text" style="color: #e85a4f;">35%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="section" id="pricing">
+        <div class="section-header">
+            <div class="section-label">Pricing</div>
+            <h2>Simple, transparent pricing</h2>
+            <p style="font-size: 16px; color: #5a5a6e; margin-top: 8px;">Start free. Upgrade when you're ready.</p>
+        </div>
+        <div class="pricing-grid">
+            <div class="pricing-card popular">
+                <div class="popular-badge">Most Popular</div>
+                <div class="pricing-label pricing-label-red">Free Forever</div>
+                <div class="pricing-price">£0</div>
+                <div class="pricing-sub">No credit card required</div>
+                <div class="pricing-features">
+                    <div class="pricing-feature">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <path d="M3 9l4 4 8-8" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        2 learning activities per day
+                    </div>
+                    <div class="pricing-feature">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <path d="M3 9l4 4 8-8" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        3 reward games in the arcade
+                    </div>
+                    <div class="pricing-feature">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <path d="M3 9l4 4 8-8" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Basic progress tracking
+                    </div>
+                    <div class="pricing-feature">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <path d="M3 9l4 4 8-8" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        No ads, ever
+                    </div>
+                </div>
+                <a href="#" class="pricing-btn pricing-btn-red">Start free</a>
+            </div>
+            <div class="pricing-card dark">
+                <div class="pricing-label pricing-label-gold">Premium</div>
+                <div class="pricing-price">£4.99<span>/month</span></div>
+                <div class="pricing-sub">Or £39.99/year (2 months free)</div>
+                <div class="pricing-features">
+                    <div class="pricing-feature">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <path d="M3 9l4 4 8-8" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Unlimited learning activities
+                    </div>
+                    <div class="pricing-feature">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <path d="M3 9l4 4 8-8" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        All 8+ premium modules
+                    </div>
+                    <div class="pricing-feature">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <path d="M3 9l4 4 8-8" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Detailed progress reports
+                    </div>
+                    <div class="pricing-feature">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <path d="M3 9l4 4 8-8" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Offline mode
+                    </div>
+                    <div class="pricing-feature">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <path d="M3 9l4 4 8-8" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Priority support
+                    </div>
+                </div>
+                <a href="#" class="pricing-btn pricing-btn-white">Join waitlist — 50% off</a>
+                <div class="pricing-launch">Launching September 2026</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="final-cta">
+        <div class="final-cta-inner">
+            <h2>Start today — it's free</h2>
+            <p>No credit card. No setup. Your child can be learning in under 2 minutes.</p>
+            <a href="#" class="btn-primary" style="padding: 18px 40px; font-size: 16px;">
+                Start your child's free path
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path d="M3 9h12M10 5l4 4-4 4" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </a>
+            <div class="login-text">
+                Already have an account? <a href="#">Log in</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-grid">
+            <div>
+                <div class="footer-brand">
+                    <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+                        <circle cx="16" cy="16" r="14" fill="#e85a4f"/>
+                        <path d="M10 18c0-3 2-6 6-6s6 3 6 6" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                        <circle cx="12" cy="13" r="1.5" fill="white"/>
+                        <circle cx="20" cy="13" r="1.5" fill="white"/>
+                    </svg>
+                    Bloom Juniors
+                </div>
+                <p class="footer-desc">Free British curriculum learning for ages 3–9. No ads. No downloads. Built by a dad, for parents.</p>
+            </div>
+            <div>
+                <div class="footer-col-title">Product</div>
+                <div class="footer-links">
+                    <a href="#">How it works</a>
+                    <a href="#">Curriculum</a>
+                    <a href="#">For Schools</a>
+                    <a href="#">Pricing</a>
+                </div>
+            </div>
+            <div>
+                <div class="footer-col-title">Company</div>
+                <div class="footer-links">
+                    <a href="#">About us</a>
+                    <a href="#">Blog</a>
+                    <a href="#">Careers</a>
+                    <a href="#">Press</a>
+                </div>
+            </div>
+            <div>
+                <div class="footer-col-title">Support</div>
+                <div class="footer-links">
+                    <a href="#">Help Center</a>
+                    <a href="#">Contact us</a>
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                </div>
+            </div>
+            <div>
+                <div class="footer-col-title">Connect</div>
+                <div class="footer-socials">
+                    <a href="#" class="footer-social">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" stroke="#7a7a8e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </a>
+                    <a href="#" class="footer-social">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" stroke="#7a7a8e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </a>
+                    <a href="#" class="footer-social">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <rect x="2" y="2" width="20" height="20" rx="5" stroke="#7a7a8e" stroke-width="2"/>
+                            <circle cx="12" cy="12" r="5" stroke="#7a7a8e" stroke-width="2"/>
+                            <circle cx="17.5" cy="6.5" r="1.5" fill="#7a7a8e"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div>© 2026 Bloom Juniors. All rights reserved.</div>
+            <div>Made with ❤️ by a dad in the UK</div>
+        </div>
+    </footer>
+
+</body>
+</html>

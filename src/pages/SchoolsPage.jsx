@@ -2,187 +2,148 @@ import React, { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import BloomLogo from '../components/BloomLogo'
 import SchoolEnquiryForm from '../components/SchoolEnquiryForm'
+import { trackEvent, trackEventOnce } from '../utils/analytics.js'
 
-const BG      = 'linear-gradient(160deg, #FFF7ED 0%, #FFEDD5 50%, #FFF7ED 100%)'
-const TEXT    = '#422006'
-const FAINT   = 'rgba(66,32,6,0.45)'
-const FAINT2  = 'rgba(66,32,6,0.35)'
-const PRIMARY = '#C2410C'
-const TEAL    = '#0F766E'
-const CARD    = { background: '#FFFFFF', border: '1px solid rgba(66,32,6,0.10)', boxShadow: '0 4px 20px rgba(66,32,6,0.06)' }
+const INK = '#193251'
+const MUTED = '#66758A'
+const PURPLE = '#6C4CF1'
+const PURPLE_DARK = '#5032CF'
+const PINK = '#FF6FA8'
+const MINT = '#2F9F7F'
+const LINE = 'rgba(25,50,81,0.12)'
 
-// ── UI Mockups (kept dark — they show the teacher dashboard interface) ─────────
-function MockupFrame({ title, children }) {
-  return (
-    <div className="rounded-2xl overflow-hidden shadow-2xl" style={{ border: '1px solid rgba(255,255,255,0.12)' }}>
-      <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: 'rgba(0,0,0,0.5)' }}>
-        <div className="w-3 h-3 rounded-full bg-red-500/70" />
-        <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
-        <div className="w-3 h-3 rounded-full bg-green-500/70" />
-        <span className="font-round text-white/30 text-xs ml-2">{title}</span>
-      </div>
-      <div style={{ background: 'rgba(13,10,35,0.95)' }}>
-        {children}
-      </div>
-    </div>
-  )
+function trackSchoolCta(cta, location) {
+  trackEvent('school_cta_click', { cta, location })
 }
 
-function LessonSetterMockup() {
-  const modules = [
-    { id: 'phonics', emoji: '🎤', label: 'Phonics', selected: true },
-    { id: 'maths',   emoji: '🔢', label: 'Maths',   selected: true },
-    { id: 'stories', emoji: '📖', label: 'Stories',  selected: false },
-    { id: 'shapes',  emoji: '🔷', label: 'Shapes',   selected: false },
-  ]
-  return (
-    <div className="p-4">
-      <p className="font-round text-white/40 text-xs mb-3 uppercase tracking-wider">Today's lesson for Reception — Blue</p>
-      <div className="grid grid-cols-2 gap-2 mb-4">
-        {modules.map(m => (
-          <div key={m.id} className="flex items-center gap-2.5 p-2.5 rounded-xl"
-            style={{ background: m.selected ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.05)', border: `1px solid ${m.selected ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.08)'}` }}>
-            <span className="text-xl">{m.emoji}</span>
-            <span className="font-round text-white text-sm font-bold">{m.label}</span>
-            {m.selected && <span className="ml-auto text-indigo-300 font-black text-sm">✓</span>}
-          </div>
-        ))}
-      </div>
-      <div className="w-full py-2.5 rounded-xl text-center font-bubble text-white text-sm"
-        style={{ background: 'linear-gradient(135deg, #4F46E5, #7C3AED)' }}>
-        Set for all 26 pupils →
-      </div>
-    </div>
-  )
-}
-
-function PupilRosterMockup() {
-  const pupils = [
-    { name: 'Amara',   status: 'done',        modules: ['🎤','🔢'] },
-    { name: 'Ben',     status: 'in-progress', modules: ['🎤'] },
-    { name: 'Chloe',   status: 'done',        modules: ['🎤','🔢'] },
-    { name: 'David',   status: 'not-started', modules: [] },
-    { name: 'Emma',    status: 'in-progress', modules: ['🔢'] },
-    { name: 'Freddie', status: 'not-started', modules: [] },
-  ]
-  const colors = { done: '#22C55E', 'in-progress': '#F59E0B', 'not-started': '#6B7280' }
-  const labels = { done: 'Done ✓', 'in-progress': 'Active', 'not-started': 'Not started' }
-  return (
-    <div className="p-4">
-      <div className="flex gap-3 mb-3">
-        {[{l:'21 done',c:'#22C55E'},{l:'3 active',c:'#F59E0B'},{l:'2 waiting',c:'#6B7280'}].map(s => (
-          <div key={s.l} className="flex-1 text-center py-2 rounded-xl" style={{ background: s.c + '15' }}>
-            <p className="font-bubble text-base" style={{ color: s.c }}>{s.l.split(' ')[0]}</p>
-            <p className="font-round text-white/40 text-xs">{s.l.split(' ')[1]}</p>
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-2 gap-1.5">
-        {pupils.map(p => (
-          <div key={p.name} className="flex items-center gap-2 p-2 rounded-xl"
-            style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid ${colors[p.status]}25` }}>
-            <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm"
-              style={{ background: colors[p.status] + '20' }}>
-              {p.name[0]}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-round text-white text-xs font-bold truncate">{p.name}</p>
-              <p className="font-round text-xs" style={{ color: colors[p.status] }}>{labels[p.status]}</p>
-            </div>
-            <div className="flex gap-0.5">
-              {p.modules.map(e => <span key={e} className="text-xs">{e}</span>)}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function WeeklyReportMockup() {
-  const pupils = [
-    { name: 'Amara',  days: [1,1,1,1,0,0,0], sessions: 8, stars: 24 },
-    { name: 'Ben',    days: [1,1,0,1,1,0,0], sessions: 6, stars: 18 },
-    { name: 'Chloe',  days: [1,0,1,0,1,0,0], sessions: 4, stars: 12 },
-    { name: 'David',  days: [0,0,0,0,0,0,0], sessions: 0, stars: 0 },
-  ]
-  return (
-    <div className="p-4">
-      <div className="rounded-xl p-3 mb-3" style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)' }}>
-        <div className="flex gap-4">
-          <div><p className="font-bubble text-xl text-white">22<span className="font-round text-white/40 text-sm">/26</span></p><p className="font-round text-white/40 text-xs">active</p></div>
-          <div><p className="font-bubble text-xl text-indigo-300">84</p><p className="font-round text-white/40 text-xs">sessions</p></div>
-          <div className="ml-auto"><p className="font-bubble text-xl text-orange-400">1</p><p className="font-round text-orange-400/70 text-xs">not seen</p></div>
-        </div>
-      </div>
-      <div className="flex flex-col gap-1.5">
-        {pupils.map(p => (
-          <div key={p.name} className="flex items-center gap-3 py-1.5">
-            <span className="font-round text-white text-xs w-12 truncate">{p.name}</span>
-            <div className="flex gap-1 flex-1">
-              {p.days.map((active, i) => (
-                <div key={i} className="w-4 h-4 rounded-full"
-                  style={{ background: active ? '#818CF8' : 'rgba(255,255,255,0.08)' }} />
-              ))}
-            </div>
-            <span className="font-round text-yellow-300 text-xs">⭐{p.stars}</span>
-          </div>
-        ))}
-      </div>
-      <div className="mt-3 px-3 py-2 rounded-xl flex items-center gap-2" style={{ background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.3)' }}>
-        <span className="text-sm">⚠️</span>
-        <p className="font-round text-orange-300 text-xs font-bold">David — no activity this week</p>
-      </div>
-    </div>
-  )
-}
-
-// ── Data ──────────────────────────────────────────────────────────────────────
 const CURRICULUM = [
   {
-    emoji: '🧸', stage: 'Nursery', range: 'Ages 3–4 · EYFS', color: '#FB923C',
-    topics: ['Colours & shapes', 'Counting to 10', 'Animal sounds', 'Fruits & body parts'],
+    stage: 'Nursery',
+    ages: 'Ages 3-4',
+    focus: 'Colours, shapes, counting, language and movement',
+    color: PINK,
   },
   {
-    emoji: '🌟', stage: 'Reception & KS1', range: 'Ages 4–6 · EYFS / KS1', color: TEAL,
-    topics: ['RWI phonics Set 1–3', 'Tricky / red words', 'Early maths', 'Story reading & comprehension'],
+    stage: 'Reception & KS1',
+    ages: 'Ages 4-6',
+    focus: 'RWI phonics, tricky words, early maths and stories',
+    color: MINT,
   },
   {
-    emoji: '🚀', stage: 'KS2', range: 'Ages 7–9 · Year 3–5', color: '#DC2626',
-    topics: ['Times tables 2–12', 'Fractions & word problems', 'Y3–6 spelling list', 'Grammar, reading & science'],
+    stage: 'Early KS2',
+    ages: 'Ages 7-9',
+    focus: 'Times tables, fractions, spelling, grammar and science',
+    color: PURPLE,
   },
 ]
 
-const TRUST = [
-  { icon: '🔒', text: 'No child accounts — children never create a login' },
-  { icon: '🚫', text: 'Zero advertising of any kind' },
-  { icon: '💬', text: 'No messaging or social features' },
-  { icon: '🔗', text: 'No external links or third-party content' },
-  { icon: '🛡️', text: 'GDPR compliant — no personal data from children' },
-  { icon: '💻', text: 'Works on school tablets, Chromebooks and PCs' },
-  { icon: '📲', text: 'No app store download — runs in the browser' },
-  { icon: '⏱️', text: 'Session timer — teacher controls screen time' },
+const SAFETY = [
+  'No child email addresses or passwords',
+  'No advertising, messaging or external links',
+  'Class codes only reveal the correct roster',
+  'GDPR-conscious data and school-scoped reporting',
+  'Works in a browser on tablets, Chromebooks and PCs',
+  'Teacher-controlled lesson and session length',
 ]
 
-const CLASS_CODE_STEPS = [
-  { icon: '🏫', title: 'Teacher creates a class', body: 'Each class gets its own unique class code, generated automatically when you set up your classroom.' },
-  { icon: '📱', title: 'Pupils use the class code', body: 'On the class tablet, pupils enter the code and tap their name card — no accounts, no passwords, no emails.' },
-  { icon: '👀', title: 'Only that class roster appears', body: 'The code unlocks one roster only — the right pupils for that class, and nothing else.' },
-  { icon: '📊', title: 'Progress stays scoped', body: 'Stars, sessions and weekly reports are saved against that class and school — never mixed with another.' },
-]
+function ClassroomPreview() {
+  const pupils = [
+    ['Amara', 'Complete', '#2F9F7F'],
+    ['Ben', 'Learning', '#6C4CF1'],
+    ['Chloe', 'Complete', '#2F9F7F'],
+    ['David', 'Not started', '#98A4B4'],
+  ]
 
-const AUDIENCES = [
-  { icon: '🧸', label: 'Nurseries',          detail: 'Gentle EYFS practice for colours, shapes, counting and early language.' },
-  { icon: '🌟', label: 'Reception & KS1',    detail: 'Daily phonics, early maths and story practice with teacher-set focus.' },
-  { icon: '📚', label: 'Tutors & small groups', detail: 'Fast setup for multi-child sessions without a heavy LMS workflow.' },
-]
+  return (
+    <div className="relative mx-auto w-full max-w-[540px]">
+      <div className="overflow-hidden rounded-lg border border-white/15 bg-[#12243D] shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+          <div>
+            <p className="font-round text-[9px] font-extrabold uppercase tracking-widest text-[#72E0B9]">Reception Blue</p>
+            <p className="font-bubble text-base text-white">Today's classroom</p>
+          </div>
+          <span className="rounded-md bg-white/10 px-2 py-1 font-round text-[10px] font-bold text-white/70">26 pupils</span>
+        </div>
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+        <div className="grid gap-3 p-4 sm:grid-cols-[0.82fr_1.18fr]">
+          <div className="rounded-lg bg-white/7 p-3">
+            <p className="font-round text-[9px] font-extrabold uppercase tracking-widest text-white/45">Lesson set</p>
+            <div className="mt-3 space-y-2">
+              {[
+                ['Phonics', 'Set 2 sounds'],
+                ['Maths', 'Number bonds'],
+              ].map(([subject, detail]) => (
+                <div key={subject} className="rounded-md border border-white/10 bg-white/5 p-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-bubble text-xs text-white">{subject}</p>
+                    <span className="text-xs text-[#72E0B9]">OK</span>
+                  </div>
+                  <p className="mt-0.5 font-round text-[10px] text-white/45">{detail}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 rounded-md bg-[#6C4CF1] px-3 py-2 text-center font-bubble text-xs text-white">
+              Edit lesson
+            </div>
+          </div>
+
+          <div>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                ['21', 'Complete'],
+                ['3', 'Learning'],
+                ['2', 'Waiting'],
+              ].map(([value, label]) => (
+                <div key={label} className="rounded-md bg-white/7 p-2 text-center">
+                  <p className="font-bubble text-lg text-white">{value}</p>
+                  <p className="font-round text-[9px] text-white/45">{label}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 space-y-1.5">
+              {pupils.map(([name, status, color]) => (
+                <div key={name} className="flex items-center gap-2 rounded-md bg-white/5 px-2.5 py-2">
+                  <span className="grid h-6 w-6 place-items-center rounded-full font-round text-[10px] font-black text-white" style={{ background: color }}>
+                    {name[0]}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate font-round text-xs font-bold text-white">{name}</span>
+                  <span className="font-round text-[9px] font-bold" style={{ color }}>{status}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="absolute -bottom-5 right-3 rounded-lg border border-[#BFE9DA] bg-white px-4 py-3 shadow-xl sm:-right-5"
+      >
+        <p className="font-round text-[9px] font-extrabold uppercase tracking-widest text-[#2F9F7F]">Live progress</p>
+        <p className="mt-0.5 font-bubble text-sm" style={{ color: INK }}>Every pupil, one view</p>
+      </motion.div>
+    </div>
+  )
+}
+
+function SectionHeading({ eyebrow, title, copy, align = 'left' }) {
+  const centered = align === 'center'
+  return (
+    <div className={centered ? 'mx-auto max-w-2xl text-center' : 'max-w-2xl'}>
+      <p className="font-round text-xs font-extrabold uppercase tracking-widest" style={{ color: MINT }}>{eyebrow}</p>
+      <h2 className="mt-2 font-bubble text-3xl leading-tight sm:text-4xl" style={{ color: INK }}>{title}</h2>
+      {copy && <p className="mt-3 font-round text-sm leading-relaxed sm:text-base" style={{ color: MUTED }}>{copy}</p>}
+    </div>
+  )
+}
+
 export default function SchoolsPage() {
   useEffect(() => {
     const previousTitle = document.title
-    const description = 'Free EYFS/KS1 interactive classroom resources for schools and nurseries. GDPR-compliant, no pupil login required, SEN-friendly voice-guided activities, with a teacher dashboard for live class progress.'
-    document.title = 'Free EYFS/KS1 Interactive Classroom Resources | Bloom Juniors for Schools'
+    const description = 'British curriculum classroom learning for nurseries and primary schools. No pupil login required, with teacher-set lessons and live class progress.'
+    document.title = 'Bloom Juniors for Schools | EYFS, KS1 and Early KS2'
 
     let meta = document.querySelector('meta[name="description"]')
     const previousDescription = meta?.getAttribute('content')
@@ -192,6 +153,7 @@ export default function SchoolsPage() {
       document.head.appendChild(meta)
     }
     meta.setAttribute('content', description)
+    trackEventOnce('schools-page-view', 'school_page_view')
 
     return () => {
       document.title = previousTitle
@@ -202,352 +164,219 @@ export default function SchoolsPage() {
   }, [])
 
   return (
-    <div className="min-h-screen overflow-y-auto" style={{ background: BG }}>
-
-      {/* Nav */}
-      <nav className="sticky top-0 z-50 backdrop-blur-md"
-        style={{ background: 'rgba(255,247,237,0.92)', borderBottom: '1px solid rgba(66,32,6,0.08)' }}>
-        <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
-          <a href="/"><BloomLogo size="md" /></a>
-          <div className="flex items-center gap-3">
-            <a href="/?app=1"
-              className="font-round text-sm rounded-xl px-4 py-2 transition-colors hidden sm:block"
-              style={{ color: FAINT, border: '1px solid rgba(66,32,6,0.14)' }}>
-              Parent login
-            </a>
-            <a href="#enquiry"
-              className="font-round text-sm rounded-xl px-4 py-2 transition-colors hidden sm:block"
-              style={{ color: TEAL, border: `1px solid ${TEAL}44` }}>
-              Contact us
-            </a>
-            <a href="/?teacher=1"
-              className="font-bubble text-sm text-white rounded-xl px-5 py-2.5 shadow-lg"
-              style={{ background: PRIMARY }}>
-              Start free →
-            </a>
-          </div>
-        </div>
-      </nav>
-
-      {/* Hero */}
-      <section className="max-w-4xl mx-auto px-6 pt-16 pb-20 text-center">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 200 }}>
-          <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6 font-round text-xs font-bold uppercase tracking-widest"
-            style={{ background: `${TEAL}14`, border: `1px solid ${TEAL}40`, color: TEAL }}>
-            🏫 For nurseries, primary schools and tutors
-          </div>
-          <h1 className="font-bubble text-5xl md:text-6xl leading-tight mb-6" style={{ color: TEXT }}>
-            Safe classroom practice<br />for EYFS, KS1 and KS2
-          </h1>
-          <p className="font-round text-lg max-w-2xl mx-auto leading-relaxed mb-10 font-bold" style={{ color: FAINT }}>
-            Set today's phonics, maths or reading task in seconds.
-            Pupils start from their own name card.
-            You see live progress across the whole class.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
-            <a href="/?teacher=1"
-              className="font-bubble text-white text-xl px-10 py-4 rounded-2xl shadow-xl"
-              style={{ background: PRIMARY, boxShadow: '0 12px 32px rgba(194,65,12,0.35)' }}>
-              Set up a free classroom →
-            </a>
-            <a href="/curriculum-map" target="_blank"
-              className="font-bubble text-xl px-10 py-4 rounded-2xl border-2 transition-colors"
-              style={{ color: TEXT, borderColor: 'rgba(66,32,6,0.20)' }}>
-              View curriculum map
-            </a>
-          </div>
-          <p className="font-round text-sm" style={{ color: FAINT2 }}>
-            Free for 1 classroom · Up to 30 pupils · No child accounts · No ads
-          </p>
-        </motion.div>
-      </section>
-
-      {/* Trust strip */}
-      <div className="max-w-5xl mx-auto px-6 -mt-8 pb-14">
-        <div className="rounded-3xl px-5 py-4 flex flex-wrap justify-center gap-x-5 gap-y-3"
-          style={{ background: '#FFFFFF', border: '1px solid rgba(66,32,6,0.08)', boxShadow: '0 2px 12px rgba(66,32,6,0.04)' }}>
-          {['✓ British Curriculum', '✓ EYFS · KS1 · KS2', '✓ No child accounts', '✓ No advertising', '✓ GDPR compliant', '✓ No download needed'].map(t => (
-            <span key={t} className="font-round text-xs font-bold rounded-full px-3 py-1"
-              style={{ background: 'rgba(66,32,6,0.05)', color: FAINT }}>
-              {t}
-            </span>
-          ))}
-        </div>
+    <div className="min-h-screen overflow-x-hidden bg-[#F8FBFD]" style={{ color: INK }}>
+      <div className="bg-[#193251] px-4 py-2 text-center font-round text-xs font-extrabold text-white sm:text-sm">
+        Free for one classroom - up to 30 pupils - no card required
       </div>
 
-      {/* Who it is for */}
-      <section className="max-w-5xl mx-auto px-6 py-16">
-        <p className="font-round text-xs font-black uppercase tracking-widest text-center mb-3" style={{ color: FAINT2 }}>Who it is for</p>
-        <h2 className="font-bubble text-4xl text-center mb-4" style={{ color: TEXT }}>A classroom companion, not another admin system</h2>
-        <p className="font-round text-center text-sm mb-10 max-w-2xl mx-auto" style={{ color: FAINT }}>
-          Bloom Juniors sits alongside your existing school tools. It gives children a safe place to practise and gives adults a quick view of engagement.
-        </p>
-        <div className="grid md:grid-cols-3 gap-5">
-          {AUDIENCES.map((audience) => (
-            <div key={audience.label}
-              className="rounded-3xl p-6"
-              style={CARD}>
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-5"
-                style={{ background: `${TEAL}14` }}>
-                {audience.icon}
-              </div>
-              <p className="font-bubble text-xl mb-2" style={{ color: TEXT }}>{audience.label}</p>
-              <p className="font-round text-sm leading-relaxed" style={{ color: FAINT }}>{audience.detail}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* See it in the classroom */}
-      <section className="max-w-5xl mx-auto px-6 py-20">
-        <p className="font-round text-xs font-black uppercase tracking-widest text-center mb-3" style={{ color: FAINT2 }}>See it in the classroom</p>
-        <h2 className="font-bubble text-4xl text-center mb-4" style={{ color: TEXT }}>Built for how classrooms actually work</h2>
-        <p className="font-round text-center text-sm mb-12 max-w-xl mx-auto" style={{ color: FAINT }}>
-          From the teacher's morning setup to the end-of-week report — everything in one place.
-        </p>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            { n: '1', color: PRIMARY,  label: 'Teacher sets the lesson',  mockup: <LessonSetterMockup />,  title: 'Lesson Setter — ClassroomDashboard' },
-            { n: '2', color: '#059669', label: 'See who\'s engaged — live', mockup: <PupilRosterMockup />, title: 'Pupil Roster — ClassroomDashboard' },
-            { n: '3', color: '#D97706', label: 'Weekly progress report',   mockup: <WeeklyReportMockup />, title: 'This Week — ClassroomDashboard' },
-          ].map((item, i) => (
-            <motion.div key={item.n} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-              <p className="font-bubble text-base mb-3 flex items-center gap-2" style={{ color: TEXT }}>
-                <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white" style={{ background: item.color }}>{item.n}</span>
-                {item.label}
-              </p>
-              <MockupFrame title={item.title}>{item.mockup}</MockupFrame>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Teacher quote */}
-      <section className="px-6 pb-20">
-        <div className="max-w-3xl mx-auto text-center rounded-[32px] px-8 py-12"
-          style={{ background: '#FFFFFF', border: '1px solid rgba(66,32,6,0.10)', boxShadow: '0 8px 32px rgba(66,32,6,0.07)' }}>
-          <div className="text-4xl mb-5">💬</div>
-          <blockquote className="font-round text-lg leading-relaxed mb-5 font-bold" style={{ color: TEXT }}>
-            "The emotion check-in is a lovely way to encourage children to reflect on how they are feeling before learning.
-            The simplified experience is appealing, and I can see the thought that has gone into reducing friction for young learners."
-          </blockquote>
-          <p className="font-round text-sm font-black" style={{ color: TEAL }}>Foundation Stage 2 Teacher — currently piloting</p>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="max-w-3xl mx-auto px-6 py-20">
-        <p className="font-round text-xs font-black uppercase tracking-widest text-center mb-3" style={{ color: FAINT2 }}>Getting started</p>
-        <h2 className="font-bubble text-4xl text-center mb-12" style={{ color: TEXT }}>Up and running in 5 minutes</h2>
-        <div className="flex flex-col gap-4 mb-10">
-          {[
-            { n: '1', title: 'Create your classroom account', body: 'Enter your school name, class name and age group. No IT department needed. Takes 2 minutes.' },
-            { n: '2', title: 'Add your pupils', body: 'Add each pupil by first name only. No emails, no child accounts, no data collected from children.' },
-            { n: '3', title: "Set today's lesson", body: 'Pick which activities your class works on today. Takes 10 seconds.' },
-            { n: '4', title: 'Hand out the devices', body: 'Pupils tap their name and start learning. You watch the dashboard fill up in real time.' },
-          ].map((step, i) => (
-            <motion.div key={step.n}
-              initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.08 }}
-              className="flex gap-5 items-start p-5 rounded-2xl"
-              style={CARD}>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center font-bubble text-lg text-white shrink-0"
-                style={{ background: PRIMARY }}>
-                {step.n}
-              </div>
-              <div>
-                <p className="font-bubble text-lg mb-1" style={{ color: TEXT }}>{step.title}</p>
-                <p className="font-round text-sm leading-relaxed" style={{ color: FAINT }}>{step.body}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Mid-page pilot CTA */}
-        <div className="rounded-3xl p-7 text-center"
-          style={{ background: `${PRIMARY}0D`, border: `1px solid ${PRIMARY}35` }}>
-          <p className="font-bubble text-xl mb-2" style={{ color: TEXT }}>Want to pilot this with one class?</p>
-          <p className="font-round text-sm mb-5" style={{ color: FAINT }}>Set up a free classroom today or book a 15-minute walkthrough with us.</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <a href="/?teacher=1"
-              className="font-bubble text-white px-7 py-3 rounded-2xl text-base"
-              style={{ background: PRIMARY }}>
-              Start free classroom →
-            </a>
-            <a href="#enquiry"
-              className="font-bubble px-7 py-3 rounded-2xl text-base border transition-colors"
-              style={{ color: TEXT, borderColor: 'rgba(66,32,6,0.20)' }}>
-              Book a 15-min demo
+      <header className="sticky top-0 z-40 border-b bg-white/95 backdrop-blur-xl" style={{ borderColor: LINE }}>
+        <nav className="mx-auto flex min-h-[72px] max-w-[1216px] items-center justify-between gap-3 px-4 sm:px-8" aria-label="School navigation">
+          <a href="/" aria-label="Bloom Juniors home"><BloomLogo size="md" /></a>
+          <div className="hidden items-center gap-6 font-round text-sm font-extrabold md:flex" style={{ color: MUTED }}>
+            <a href="#how">How it works</a>
+            <a href="#curriculum">Curriculum</a>
+            <a href="#safety">Safeguarding</a>
+            <a href="#pricing">Pricing</a>
+          </div>
+          <div className="flex items-center gap-2">
+            <a href="/?app=1" onClick={() => trackSchoolCta('sign_in', 'navigation')} className="hidden min-h-10 items-center justify-center px-3 font-round text-sm font-extrabold sm:inline-flex" style={{ color: MUTED }}>Sign in</a>
+            <a href="/?teacher=1" onClick={() => trackSchoolCta('start_free', 'navigation')} className="inline-flex min-h-10 items-center justify-center rounded-lg px-4 font-bubble text-sm text-white shadow-md" style={{ background: PURPLE }}>
+              Start free
             </a>
           </div>
-        </div>
-      </section>
+        </nav>
+      </header>
 
-      {/* Curriculum */}
-      <section className="py-20 px-6">
-        <div className="max-w-5xl mx-auto">
-          <p className="font-round text-xs font-black uppercase tracking-widest text-center mb-3" style={{ color: FAINT2 }}>Curriculum</p>
-          <h2 className="font-bubble text-4xl text-center mb-4" style={{ color: TEXT }}>Aligned to the National Curriculum</h2>
-          <p className="font-round text-center text-sm mb-10" style={{ color: FAINT }}>
-            Full curriculum coverage map available to download.{' '}
-            <a href="/curriculum-map" target="_blank" className="underline underline-offset-2 transition-colors" style={{ color: TEAL }}>
-              View curriculum map →
-            </a>
-          </p>
-          <div className="grid md:grid-cols-3 gap-5">
-            {CURRICULUM.map((c, i) => (
-              <motion.div key={c.stage}
-                initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
-                className="rounded-3xl p-6"
-                style={{ background: '#FFFFFF', border: `1.5px solid ${c.color}40`, boxShadow: '0 4px 16px rgba(66,32,6,0.06)' }}>
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
-                    style={{ background: c.color + '18' }}>
-                    {c.emoji}
-                  </div>
-                  <div>
-                    <p className="font-bubble text-base leading-tight" style={{ color: TEXT }}>{c.stage}</p>
-                    <p className="font-round text-xs font-bold mt-0.5" style={{ color: FAINT }}>{c.range}</p>
-                  </div>
-                </div>
-                <ul className="flex flex-col gap-2.5">
-                  {c.topics.map(t => (
-                    <li key={t} className="flex items-start gap-2.5">
-                      <span className="text-sm mt-0.5 font-bold" style={{ color: c.color }}>✓</span>
-                      <span className="font-round text-sm" style={{ color: FAINT }}>{t}</span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
+      <main>
+        <section className="overflow-hidden bg-[#193251] px-5 py-14 text-white sm:px-8 md:py-16">
+          <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[0.95fr_1.05fr]">
+            <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
+              <p className="font-round text-xs font-extrabold uppercase tracking-widest text-[#72E0B9]">Bloom Juniors for Schools</p>
+              <h1 className="mt-3 max-w-xl font-bubble text-4xl leading-[1.05] sm:text-5xl md:text-6xl">
+                One clear learning path for every pupil.
+              </h1>
+              <p className="mt-5 max-w-xl font-round text-base font-semibold leading-relaxed text-white/75 sm:text-lg">
+                Set phonics, maths or reading in seconds. Pupils tap their name and begin. You see the whole class moving forward.
+              </p>
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                <a href="/?teacher=1" onClick={() => trackSchoolCta('start_free', 'hero')} className="inline-flex min-h-12 items-center justify-center rounded-lg px-6 font-bubble text-base text-white shadow-xl" style={{ background: `linear-gradient(135deg, ${PURPLE}, ${PURPLE_DARK})` }}>
+                  Set up a free classroom
+                </a>
+                <a href="#enquiry" onClick={() => trackSchoolCta('book_walkthrough', 'hero')} className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/25 bg-white/10 px-6 font-round text-sm font-extrabold text-white">
+                  Book a walkthrough
+                </a>
+              </div>
+              <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 font-round text-xs font-bold text-white/65">
+                <span>No pupil passwords</span>
+                <span>No advertising</span>
+                <span>No download</span>
+              </div>
+            </motion.div>
+            <ClassroomPreview />
+          </div>
+        </section>
+
+        <section className="border-b bg-white px-5 py-7 sm:px-8" style={{ borderColor: LINE }}>
+          <div className="mx-auto grid max-w-6xl grid-cols-2 gap-5 md:grid-cols-4">
+            {[
+              ['2 min', 'Classroom setup'],
+              ['30', 'Pupils free'],
+              ['3-9', 'Age range'],
+              ['Live', 'Class progress'],
+            ].map(([value, label]) => (
+              <div key={label} className="border-l pl-4" style={{ borderColor: LINE }}>
+                <p className="font-bubble text-2xl" style={{ color: INK }}>{value}</p>
+                <p className="font-round text-xs font-bold" style={{ color: MUTED }}>{label}</p>
+              </div>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Safe for schools */}
-      <section className="max-w-3xl mx-auto px-6 py-20">
-        <p className="font-round text-xs font-black uppercase tracking-widest text-center mb-3" style={{ color: FAINT2 }}>Safeguarding</p>
-        <h2 className="font-bubble text-4xl text-center mb-3" style={{ color: TEXT }}>Designed to be safe in schools</h2>
-        <p className="font-round text-center text-sm mb-10 max-w-xl mx-auto" style={{ color: FAINT }}>
-          No setup needed from your IT team. No personal data collected from children. Built to reduce common safeguarding and classroom-management concerns.
-        </p>
-        <div className="grid sm:grid-cols-2 gap-3">
-          {TRUST.map(point => (
-            <div key={point.text} className="flex items-start gap-3 p-4 rounded-2xl"
-              style={{ background: 'rgba(15,118,110,0.07)', border: '1px solid rgba(15,118,110,0.20)' }}>
-              <span className="text-lg shrink-0">{point.icon}</span>
-              <p className="font-round text-sm font-bold" style={{ color: TEXT }}>{point.text}</p>
+        <section id="how" className="px-5 py-14 sm:px-8 md:py-16">
+          <div className="mx-auto max-w-6xl">
+            <SectionHeading
+              eyebrow="How it works"
+              title="From lesson choice to live progress in three steps."
+              copy="Bloom Juniors fits beside your current school systems. It gives children a focused practice space without adding a heavy LMS workflow."
+            />
+            <div className="mt-9 grid gap-6 md:grid-cols-3">
+              {[
+                ['01', 'Teacher sets the path', 'Choose today\'s phonics, maths or reading activities for the class.'],
+                ['02', 'Pupils tap their name', 'A class code opens only that roster. Children need no email or password.'],
+                ['03', 'Progress appears live', 'See who has started, completed or may need support from one quiet dashboard.'],
+              ].map(([number, title, body], index) => (
+                <article
+                  key={number}
+                  className="border-t-2 pt-5"
+                  style={{ borderColor: index === 0 ? PURPLE : index === 1 ? MINT : PINK }}
+                >
+                  <p className="font-bubble text-sm" style={{ color: MUTED }}>{number}</p>
+                  <h3 className="mt-2 font-bubble text-xl">{title}</h3>
+                  <p className="mt-2 font-round text-sm leading-relaxed" style={{ color: MUTED }}>{body}</p>
+                </article>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
+            <blockquote className="mt-10 border-l-4 py-2 pl-5 font-round text-base font-bold leading-relaxed sm:pl-7 sm:text-lg" style={{ borderColor: MINT, color: INK }}>
+              "The simplified experience is appealing, and I can see the thought that has gone into reducing friction for young learners."
+              <cite className="mt-2 block font-round text-xs not-italic" style={{ color: MUTED }}>Foundation Stage 2 teacher, current pilot</cite>
+            </blockquote>
+          </div>
+        </section>
 
-      {/* Safe by class code */}
-      <section className="max-w-4xl mx-auto px-6 py-20">
-        <p className="font-round text-xs font-black uppercase tracking-widest text-center mb-3" style={{ color: FAINT2 }}>Data &amp; class isolation</p>
-        <h2 className="font-bubble text-4xl text-center mb-3" style={{ color: TEXT }}>Safe by class code</h2>
-        <p className="font-round text-center text-sm mb-10 max-w-2xl mx-auto" style={{ color: FAINT }}>
-          Every class gets its own unique code. That code is the only way in — and it only ever opens that one class.
-        </p>
-        <div className="grid sm:grid-cols-2 gap-4 mb-6">
-          {CLASS_CODE_STEPS.map((step, i) => (
-            <motion.div key={step.title}
-              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08 }}
-              className="flex gap-4 items-start p-5 rounded-2xl"
-              style={CARD}>
-              <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0"
-                style={{ background: `${TEAL}14` }}>
-                {step.icon}
-              </div>
-              <div>
-                <p className="font-bubble text-base mb-1" style={{ color: TEXT }}>{step.title}</p>
-                <p className="font-round text-sm leading-relaxed" style={{ color: FAINT }}>{step.body}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-        <div className="flex items-center gap-3 p-4 rounded-2xl"
-          style={{ background: 'rgba(15,118,110,0.07)', border: '1px solid rgba(15,118,110,0.20)' }}>
-          <span className="text-lg shrink-0">🛡️</span>
-          <p className="font-round text-sm font-bold" style={{ color: TEXT }}>
-            Teachers only ever see their own school's and class's data — never another class or school.
-          </p>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section className="py-20 px-6">
-        <div className="max-w-3xl mx-auto">
-          <p className="font-round text-xs font-black uppercase tracking-widest text-center mb-3" style={{ color: FAINT2 }}>Pricing</p>
-          <h2 className="font-bubble text-4xl text-center mb-12" style={{ color: TEXT }}>Simple and transparent</h2>
-          <div className="grid sm:grid-cols-2 gap-5">
-            {/* Free tier */}
-            <div className="rounded-3xl p-7"
-              style={{ background: '#FFFFFF', border: `2px solid ${PRIMARY}50`, boxShadow: `0 8px 32px ${PRIMARY}18` }}>
-              <p className="font-bubble text-4xl mb-1" style={{ color: TEXT }}>Free</p>
-              <p className="font-round text-sm mb-6" style={{ color: FAINT }}>Forever. No credit card.</p>
-              <ul className="flex flex-col gap-3 mb-8">
-                {['1 classroom', 'Up to 30 pupils', 'All activities', 'Lesson setter', 'Daily class dashboard', 'Weekly progress report'].map(f => (
-                  <li key={f} className="flex items-center gap-3">
-                    <span className="font-black text-sm" style={{ color: PRIMARY }}>✓</span>
-                    <span className="font-round text-sm" style={{ color: TEXT }}>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <a href="/?teacher=1"
-                className="block w-full text-center py-4 rounded-2xl font-bubble text-white text-lg"
-                style={{ background: PRIMARY, boxShadow: '0 8px 24px rgba(194,65,12,0.30)' }}>
-                Start free →
+        <section id="curriculum" className="border-y bg-white px-5 py-14 sm:px-8 md:py-16" style={{ borderColor: LINE }}>
+          <div className="mx-auto max-w-6xl">
+            <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+              <SectionHeading
+                eyebrow="British curriculum"
+                title="Ages 3-9, without changing platforms."
+                copy="Age-specific practice from early EYFS foundations through KS1 and early KS2."
+              />
+              <a href="/curriculum-map" target="_blank" rel="noreferrer" onClick={() => trackSchoolCta('view_curriculum', 'curriculum')} className="inline-flex min-h-11 items-center justify-center rounded-lg border px-5 font-round text-sm font-extrabold" style={{ borderColor: LINE, color: INK }}>
+                View curriculum map
               </a>
             </div>
-
-            {/* School tier */}
-            <div className="rounded-3xl p-7" style={CARD}>
-              <p className="font-bubble text-4xl mb-1" style={{ color: TEXT }}>School</p>
-              <p className="font-round text-sm mb-1" style={{ color: FAINT }}>Annual licence — whole school.</p>
-              <p className="font-round text-sm font-bold mb-6" style={{ color: TEAL }}>Simple annual invoice for schools.</p>
-              <ul className="flex flex-col gap-3 mb-8">
-                {['Multiple classrooms', 'School admin account', 'Aggregate class reports', 'Teacher invite flow', 'Annual invoice — no subscriptions', 'Priority support'].map(f => (
-                  <li key={f} className="flex items-center gap-3">
-                    <span className="font-black text-sm" style={{ color: FAINT }}>✓</span>
-                    <span className="font-round text-sm" style={{ color: FAINT }}>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <a href="#enquiry"
-                className="block w-full text-center py-4 rounded-2xl font-bubble text-lg border transition-colors"
-                style={{ color: TEXT, borderColor: 'rgba(66,32,6,0.20)' }}>
-                Get a quote →
-              </a>
+            <div className="mt-8 grid gap-5 md:grid-cols-3">
+              {CURRICULUM.map(item => (
+                <article key={item.stage} className="border-l-4 py-1 pl-5" style={{ borderColor: item.color }}>
+                  <p className="font-round text-xs font-extrabold uppercase tracking-widest" style={{ color: item.color }}>{item.ages}</p>
+                  <h3 className="mt-2 font-bubble text-xl">{item.stage}</h3>
+                  <p className="mt-2 font-round text-sm leading-relaxed" style={{ color: MUTED }}>{item.focus}</p>
+                </article>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Enquiry */}
-      <section id="enquiry" className="max-w-xl mx-auto px-6 py-20">
-        <p className="font-round text-xs font-black uppercase tracking-widest text-center mb-3" style={{ color: FAINT2 }}>Contact</p>
-        <h2 className="font-bubble text-4xl text-center mb-2" style={{ color: TEXT }}>Talk to us</h2>
-        <p className="font-round text-sm text-center mb-10" style={{ color: FAINT }}>
-          Questions about curriculum, classroom setup or pricing. We reply within 1 working day.
-        </p>
-        <div className="rounded-3xl p-7" style={CARD}>
-          <SchoolEnquiryForm source="schools-page" />
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-8 px-6" style={{ borderTop: '1px solid rgba(66,32,6,0.08)' }}>
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <BloomLogo size="sm" />
-          <div className="flex gap-6">
-            <a href="/curriculum-map" target="_blank" className="font-round text-xs transition-colors" style={{ color: FAINT2 }}>Curriculum Map</a>
-            <a href="/privacy" className="font-round text-xs transition-colors" style={{ color: FAINT2 }}>Privacy Policy</a>
-            <a href="/" className="font-round text-xs transition-colors" style={{ color: FAINT2 }}>Home</a>
+        <section id="safety" className="bg-[#EAF8F3] px-5 py-14 sm:px-8 md:py-16">
+          <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+            <SectionHeading
+              eyebrow="Safeguarding"
+              title="Designed to be safe in schools."
+              copy="Children stay inside a focused, ad-free learning environment. Teachers only see their own school and class data."
+            />
+            <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+              {SAFETY.map(item => (
+                <div key={item} className="flex items-start gap-3 border-b pb-4" style={{ borderColor: 'rgba(47,159,127,0.18)' }}>
+                  <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#2F9F7F] font-round text-[10px] font-black text-white">OK</span>
+                  <p className="font-round text-sm font-bold leading-relaxed" style={{ color: INK }}>{item}</p>
+                </div>
+              ))}
+            </div>
           </div>
-          <p className="font-round text-xs" style={{ color: 'rgba(66,32,6,0.20)' }}>© 2026 Bloom Juniors</p>
+        </section>
+
+        <section id="pricing" className="px-5 py-14 sm:px-8 md:py-16">
+          <div className="mx-auto max-w-6xl">
+            <SectionHeading
+              eyebrow="Simple pricing"
+              title="Start with one classroom. Grow when the school is ready."
+              align="center"
+            />
+            <div className="mx-auto mt-9 grid max-w-4xl gap-5 md:grid-cols-2">
+              <article className="rounded-lg border-2 bg-white p-6 shadow-lg" style={{ borderColor: PURPLE }}>
+                <p className="font-round text-xs font-extrabold uppercase tracking-widest" style={{ color: PURPLE }}>Classroom</p>
+                <h3 className="mt-2 font-bubble text-3xl">Free</h3>
+                <p className="mt-1 font-round text-sm" style={{ color: MUTED }}>Forever, with no credit card.</p>
+                <ul className="mt-5 space-y-2 font-round text-sm font-bold" style={{ color: INK }}>
+                  <li>One classroom and up to 30 pupils</li>
+                  <li>All learning activities</li>
+                  <li>Lesson setter and class dashboard</li>
+                  <li>Weekly progress report</li>
+                </ul>
+                <a href="/?teacher=1" onClick={() => trackSchoolCta('start_free', 'pricing')} className="mt-6 flex min-h-12 items-center justify-center rounded-lg font-bubble text-white" style={{ background: PURPLE }}>
+                  Start free
+                </a>
+              </article>
+
+              <article className="rounded-lg border bg-white p-6" style={{ borderColor: LINE }}>
+                <p className="font-round text-xs font-extrabold uppercase tracking-widest" style={{ color: MINT }}>Whole school</p>
+                <h3 className="mt-2 font-bubble text-3xl">Annual licence</h3>
+                <p className="mt-1 font-round text-sm" style={{ color: MUTED }}>A simple annual invoice.</p>
+                <ul className="mt-5 space-y-2 font-round text-sm font-bold" style={{ color: INK }}>
+                  <li>Multiple classrooms</li>
+                  <li>Teacher invite flow</li>
+                  <li>School administration account</li>
+                  <li>Aggregate class reporting</li>
+                  <li>Priority setup support</li>
+                </ul>
+                <a href="#enquiry" onClick={() => trackSchoolCta('request_pricing', 'pricing')} className="mt-6 flex min-h-12 items-center justify-center rounded-lg border font-bubble" style={{ borderColor: LINE, color: INK }}>
+                  Request school pricing
+                </a>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section id="enquiry" className="border-t bg-white px-5 py-14 sm:px-8 md:py-16" style={{ borderColor: LINE }}>
+          <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.78fr_1.22fr]">
+            <div>
+              <SectionHeading
+                eyebrow="Talk to us"
+                title="Plan a classroom pilot."
+                copy="Tell us about your school, age range or curriculum questions. We reply within one working day."
+              />
+              <p className="mt-5 font-round text-sm font-bold" style={{ color: INK }}>hello@bloomjuniors.com</p>
+            </div>
+            <div className="rounded-lg border bg-[#F8FBFD] p-5 sm:p-6" style={{ borderColor: LINE }}>
+              <SchoolEnquiryForm source="schools-page-redesign" />
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t bg-white px-5 py-7 sm:px-8" style={{ borderColor: LINE }}>
+        <div className="mx-auto flex max-w-6xl flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <BloomLogo size="sm" />
+            <p className="mt-2 font-round text-xs" style={{ color: MUTED }}>British curriculum learning for ages 3-9.</p>
+          </div>
+          <div className="flex flex-wrap gap-x-5 gap-y-2 font-round text-xs font-bold" style={{ color: MUTED }}>
+            <a href="/">Families</a>
+            <a href="/curriculum-map">Curriculum</a>
+            <a href="/privacy">Privacy</a>
+            <a href="mailto:hello@bloomjuniors.com">Contact</a>
+            <span>Copyright 2026 Bloom Juniors</span>
+          </div>
         </div>
       </footer>
     </div>

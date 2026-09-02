@@ -1,6 +1,7 @@
 import { chromium } from '@playwright/test'
 
 const browser = await chromium.launch({ headless: true })
+const baseUrl = process.env.UAT_BASE_URL || 'http://127.0.0.1:5173'
 const results = []
 const check = (label, ok) => {
   results.push({ label, ok })
@@ -12,12 +13,15 @@ for (const viewport of [
   { name: 'mobile', width: 390, height: 844 },
 ]) {
   const soundPage = await browser.newPage({ viewport })
-  await soundPage.goto('http://127.0.0.1:5173/test-animation-modules.html?module=sound', { waitUntil: 'networkidle' })
+  await soundPage.goto(`${baseUrl}/test-animation-modules.html?module=sound`, { waitUntil: 'networkidle' })
   await soundPage.getByRole('button', { name: /Sound Pop Listen and find/i }).click()
   await soundPage.waitForTimeout(650)
   const soundYaagvi = soundPage.getByTestId('interactive-yaagvi')
   check(`${viewport.name} Sound Pop: one Yaagvi companion`, await soundPage.getByTestId('interactive-yaagvi').count() === 1)
   check(`${viewport.name} Sound Pop: listening flow has no overflow`, await soundPage.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth))
+  check(`${viewport.name} shared 3D stage is active`, await soundPage.locator('.game-depth-stage').count() === 1)
+  const depthAnswer = soundPage.locator('[data-sound-answer][data-correct-answer]').first()
+  check(`${viewport.name} answer control has physical depth`, await depthAnswer.evaluate(node => getComputedStyle(node).boxShadow !== 'none'))
   await soundPage.locator('[data-sound-answer][data-correct-answer="false"]').first().click()
   await soundPage.waitForTimeout(650)
   check(`${viewport.name} Sound Pop: mistake triggers thinking pose`, await soundYaagvi.getAttribute('data-yaagvi-state') === 'think')
@@ -25,7 +29,7 @@ for (const viewport of [
   await soundPage.close()
 
   const shapePage = await browser.newPage({ viewport })
-  await shapePage.goto('http://127.0.0.1:5173/test-animation-modules.html?module=shape', { waitUntil: 'networkidle' })
+  await shapePage.goto(`${baseUrl}/test-animation-modules.html?module=shape`, { waitUntil: 'networkidle' })
   await shapePage.getByRole('button', { name: /Build a Tower/i }).click()
   await shapePage.locator('[data-tower-shape="Cube"]').click()
   await shapePage.locator('[data-tower-shape="Cylinder"]').click()
@@ -39,7 +43,7 @@ for (const viewport of [
   await shapePage.close()
 
   const storyPage = await browser.newPage({ viewport })
-  await storyPage.goto('http://127.0.0.1:5173/test-animation-modules.html?module=story', { waitUntil: 'networkidle' })
+  await storyPage.goto(`${baseUrl}/test-animation-modules.html?module=story`, { waitUntil: 'networkidle' })
   check(`${viewport.name} Story Room: no tomorrow lockout copy`, await storyPage.getByText(/unlocks tomorrow|new story unlocks every day/i).count() === 0)
   check(`${viewport.name} Story Room: full library is available`, await storyPage.getByRole('button', { name: /Explore all 8 stories/i }).count() === 1)
   await storyPage.getByRole('button', { name: /Explore all 8 stories/i }).click()
@@ -48,7 +52,8 @@ for (const viewport of [
   await storyPage.close()
 
   const worldPage = await browser.newPage({ viewport })
-  await worldPage.goto('http://127.0.0.1:5173/test-animation-modules.html?module=world', { waitUntil: 'networkidle' })
+  await worldPage.goto(`${baseUrl}/test-animation-modules.html?module=world`, { waitUntil: 'networkidle' })
+  await worldPage.getByRole('button', { name: /Open country library/i }).click()
   await worldPage.getByRole('button', { name: /Capitals/i }).click()
   const worldQuestion = await worldPage.locator('p').filter({ hasText: /capital of/i }).first().textContent()
   await worldPage.locator('[data-companion-answer="wrong"]').first().click()
@@ -59,7 +64,7 @@ for (const viewport of [
   await worldPage.close()
 
   const bodyPage = await browser.newPage({ viewport })
-  await bodyPage.goto('http://127.0.0.1:5173/test-animation-modules.html?module=body', { waitUntil: 'networkidle' })
+  await bodyPage.goto(`${baseUrl}/test-animation-modules.html?module=body`, { waitUntil: 'networkidle' })
   await bodyPage.getByRole('button', { name: /Quiz/i }).click()
   const bodyQuestion = await bodyPage.locator('p').filter({ hasText: /Tap the/i }).first().textContent()
   const answerName = bodyQuestion.match(/Tap the (.+)!/i)?.[1]
@@ -72,12 +77,12 @@ for (const viewport of [
   await bodyParts.nth(wrongIndex).click({ force: true })
   await bodyPage.waitForTimeout(1500)
   check(`${viewport.name} My Body: wrong tap keeps the same clue`, (await bodyPage.locator('p').filter({ hasText: /Tap the/i }).first().textContent()) === bodyQuestion)
-  check(`${viewport.name} My Body: second attempt remains available`, await bodyPage.locator(`[data-body-part][aria-label="${answerName}"]`).isEnabled())
+  check(`${viewport.name} My Body: second attempt remains available`, await bodyPage.locator(`[data-body-part][aria-label="${answerName}"]`).first().isEnabled())
   check(`${viewport.name} My Body: diagram has keyboard labels`, await bodyPage.locator('[data-body-part][tabindex="0"]').count() > 10)
   await bodyPage.close()
 
   const planetPage = await browser.newPage({ viewport })
-  await planetPage.goto('http://127.0.0.1:5173/test-animation-modules.html?module=planet', { waitUntil: 'networkidle' })
+  await planetPage.goto(`${baseUrl}/test-animation-modules.html?module=planet`, { waitUntil: 'networkidle' })
   await planetPage.locator('button').filter({ hasText: /Mercury/i }).click()
   await planetPage.getByRole('button', { name: /Quiz Me/i }).click()
   const planetQuestionNode = planetPage.locator('p.font-bubble.text-white.text-xl')

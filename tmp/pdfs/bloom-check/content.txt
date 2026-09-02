@@ -1,0 +1,298 @@
+--- PAGE 1 ---
+REGISTERED TODAY
+0
+29 saved families
+CHILD PROFILES
+38
+0 created today
+ACTIVE TODAY
+0
+Opened or completed learning
+FIRST MISSION
+34%
+13 profiles activated
+DAY 1 RETURN
+8%
+1/13 eligible
+DAY 3 RETURN
+0%
+0/12 eligible
+DAY 7 RETURN
+0%
+0/12 eligible
+Auth diagnostic: 1 login account(s) created yesterday; 0 did not produce a saved guardian profile. 7 auth account(s)
+are currently unlinked in total.
+Activation funnel
+Real family conversion · 24 test/UAT accounts excluded
+Login accounts created
+36
+100%
+Parent setup saved
+29
+81%
+Created a child profile
+29
+100%
+Completed a first mission
+10
+34%
+Largest current loss: 19 families before “Completed a first mission”.
+
+--- PAGE 2 ---
+Daily activity
+7 local calendar days · Asia/Dubai
+07-31
+08-01
+08-02
+08-03
+08-04
+08-05
+08-06
+Registered families
+Active profiles
+Completed activities
+Founding Families pilot
+Privacy-safe cohort from the /pilot invitation route
+ENROLLED
+PROFILES
+0
+Campaign marker
+recorded
+FIRST MISSION
+—
+0 activated
+DAY 1
+—
+0/0 eligible
+DAY 3
+—
+0/0 eligible
+DAY 7
+—
+0/0 eligible
+Today's journey position
+Where family profiles currently stop
+No learning today
+38
+Stopped after one
+activity
+0
+Reward ready, not
+opened
+0
+Treasure opened
+0
+Learning + Wonder
+complete
+0
+Return reminders
+Delivery settings, opens, and learning after return
+
+--- PAGE 3 ---
+0
+PUSH ENABLED
+1
+EMAIL ENABLED
+1
+SENT TODAY
+0
+REMINDER OPENS
+0
+LEARNING
+RETURNS
+First Mission Return Loop
+Unique profiles in the selected 7-day range; each rate is from the previous step
+STEP 1
+13
+Completed first
+mission
+Activated profiles
+STEP 2
+1
+Enabled a
+return reminder
+8% from previous
+step
+STEP 3
+1
+Received a
+reminder
+100% from previous
+step
+STEP 4
+0
+Opened from
+reminder
+0% from previous
+step
+STEP 5
+0
+Resumed
+learning
+— from previous
+step
+One-time reactivation
+Inactive for 3+ days and explicitly opted into email reminders
+0
+eligible families
+One email per family, using the child profile whose opted-in learning
+was most recently active. Test, school, and already-contacted accounts
+are excluded.
+Review one-time send
+Avatar Workshop funnel
+Unique profiles in the selected 7-day range · repeated taps are deduplicated
+STEP 1
+1
+Earned a Bloom Coin
+1 coins awarded
+STEP 2
+0
+Opened Avatar
+Workshop
+0% from previous step
+STEP 3
+0
+Unlocked an item
+— from previous step
+STEP 4
+0
+Equipped an item
+— from previous step
+Retention by age
+Use eligible counts before interpreting percentages
+
+--- PAGE 4 ---
+
+
+AGE BAND
+PROFILES
+FIRST MISSION
+DAY 1
+DAY 3
+DAY 7
+Ages 3-4
+4
+0% (0)
+— (0)
+— (0)
+— (0)
+Ages 4-6
+19
+42% (8)
+0% (8)
+0% (7)
+0% (7)
+Ages 7-9
+15
+33% (5)
+20% (5)
+0% (5)
+0% (5)
+Learning modules
+Completed sessions, not button taps
+MODULE
+LAST 7D
+ALL COMPLETIONS
+PROFILES
+Sound Pop
+1
+6
+4
+Reading
+0
+15
+4
+Science
+0
+13
+3
+Fractions
+0
+9
+4
+Times Tables
+0
+8
+4
+piggybank
+0
+8
+3
+Number World
+0
+8
+3
+Word Problems
+0
+7
+4
+arcade
+0
+7
+2
+Story Room
+0
+6
+3
+Spelling
+0
+4
+3
+Grammar
+0
+4
+3
+World Faiths
+0
+4
+2
+World Map
+0
+3
+2
+Shapes
+0
+3
+2
+B LO O M  J U N I O R S  ·  P R I VAT E
+Founder Retention
+7d
+30d
+90d
+↻
+Exit
+Sign out
+
+--- PAGE 5 ---
+Parent check-ins
+Aggregated Day 3 and Day 7 answers
+What has made it hardest to return to Bloom Juniors?
+0 answers · 0 dismissed
+Finding time
+0
+Child lost interest
+0
+Too many choices
+0
+A technical problem
+0
+Nothing so far
+0
+What has most encouraged your child to return?
+0 answers · 0 dismissed
+The continuing story
+0
+The learning activities
+0
+Wonder questions
+0
+Treasures and rewards
+0
+They are not returning
+yet
+0
+The local calendar date of a child profile's first completed learning session.
+Exact calendar-day return after the first completed session. Only eligible profiles are included.
+Profiles are included only when their first app entry carries the Founding Families pilot campaign marker.
+Aggregate counts only. Child names, guardian emails, and profile identifiers are never returned.
+Generated 06/08/2026, 9:55:19 AM · Refresh before making a product decision.

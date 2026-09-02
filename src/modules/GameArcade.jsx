@@ -5,7 +5,7 @@ import confetti from 'canvas-confetti'
 import { THEMES } from '../themes'
 import { useSpeech } from '../hooks/useSpeech'
 import { useModuleStart } from '../hooks/useModuleStart'
-import { STUDY_MODULES, getArcadeUnlockStatus } from '../utils/arcadeUnlock'
+import { getArcadeUnlockStatus } from '../utils/arcadeUnlock'
 import { formatLocalDate } from '../utils/date.js'
 import BloomQuizShow from '../components/BloomQuizShow.jsx'
 
@@ -477,7 +477,7 @@ function StudyLockScreen({ theme, status, onBack, onNavigate }) {
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-3">
-              {STUDY_MODULES.map(module => {
+              {status.assignedModules.map(module => {
                 const done = status.completedModules.some(item => item.id === module.id)
                 return (
                   <div

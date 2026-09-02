@@ -42,23 +42,7 @@ const TREASURE_MOTIONS = {
 
 function TreasureArt({ item, size = 'large' }) {
   const large = size === 'large'
-  const [videoReady, setVideoReady] = useState(false)
   const dimensions = large ? 'h-64 w-52' : 'h-20 w-16'
-  if (item?.video) {
-    return (
-      <div className={`relative ${dimensions}`} aria-label={item.name}>
-        {item.image && (
-          <img src={item.image} alt={item.name}
-            className="absolute inset-0 h-full w-full object-contain drop-shadow-2xl" />
-        )}
-        <video autoPlay muted loop playsInline preload="auto" poster={item.image}
-          onCanPlay={() => setVideoReady(true)} onError={() => setVideoReady(false)}
-          className={`absolute inset-0 h-full w-full object-contain drop-shadow-2xl transition-opacity duration-300 ${videoReady ? 'opacity-100' : 'opacity-0'}`}>
-          <source src={item.video} type="video/webm" />
-        </video>
-      </div>
-    )
-  }
   if (item?.image) return <img src={item.image} alt={item.name} className={`${dimensions} object-contain drop-shadow-2xl`} />
   return <span className={large ? 'text-9xl' : 'text-5xl'}>{item?.emoji || '🎁'}</span>
 }
@@ -268,6 +252,10 @@ export function TreasureShelf({ collection = [], equipped, onEquip, onCollection
   const visibleItems = filter === 'all' ? shelfItems : shelfItems.filter(item => item.slot === filter)
   const filters = [['all', 'All'], ['buddy', 'Buddies'], ['outfit', 'Outfits'], ['tool', 'Tools'], ['room', 'Room']]
   const updateCollection = next => onCollectionChange?.(next)
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('bloom:fullscreen-overlay', { detail: { hidden: true } }))
+    return () => window.dispatchEvent(new CustomEvent('bloom:fullscreen-overlay', { detail: { hidden: false } }))
+  }, [])
   const chooseTreasure = item => {
     if (item.slot === 'room' || item.kind === 'souvenir' || item.kind === 'decor' || item.kind === 'crystal') {
       updateCollection(normalised.roomLayout[item.id] ? removeLivingTreasure(normalised, item.id) : placeLivingTreasure(normalised, item))
@@ -277,7 +265,7 @@ export function TreasureShelf({ collection = [], equipped, onEquip, onCollection
   }
 
   return (
-    <motion.div className="fixed inset-0 z-[290] overflow-y-auto bg-[#fff0d6] p-4 sm:p-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+    <motion.div className="fixed inset-0 z-[290] overflow-y-auto bg-[#fff0d6] px-4 pb-safe pt-safe sm:p-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <div className="mx-auto max-w-5xl pb-12">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -298,8 +286,8 @@ export function TreasureShelf({ collection = [], equipped, onEquip, onCollection
 
         <TreasureSecretGame collection={normalised} ageGroup={ageGroup} onCollectionChange={updateCollection} />
 
-        <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
-          {filters.map(([id, label]) => <button key={id} onClick={() => setFilter(id)} className={`shrink-0 rounded-full px-4 py-2 font-round text-xs font-black ${filter === id ? 'bg-[#7a3bad] text-white shadow' : 'bg-white text-[#67364a]'}`}>{label}</button>)}
+        <div className="mt-4 grid grid-cols-5 gap-1.5 pb-2">
+          {filters.map(([id, label]) => <button key={id} onClick={() => setFilter(id)} className={`min-w-0 rounded-full px-1 py-2 font-round text-[10px] font-black sm:text-xs ${filter === id ? 'bg-[#7a3bad] text-white shadow' : 'bg-white text-[#67364a]'}`}>{label}</button>)}
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">

@@ -8,13 +8,13 @@ import { useSpeech } from './hooks/useSpeech'
 import { useSound } from './hooks/useSound'
 import { triggerHaptic } from './hooks/useHaptic'
 import { THEMES, applyTheme } from './themes'
-import { logSessionStart, trackActivityComplete } from './utils/analytics'
-import { cancelStreakReminder } from './utils/notificationUtils'
-import { STUDY_MODULES, getArcadeUnlockStatus, getTodayStudySessions, getTodayAdventureModules } from './utils/arcadeUnlock'
+import { logSessionStart, trackActivityComplete, trackEvent, trackRetentionOpen } from './utils/analytics'
+import { recordActivationTelemetry, recordRetentionOpen } from './utils/retentionTelemetry.js'
+import { STUDY_MODULES, getArcadeUnlockStatus, getTodayStudySessions, getTodayAdventureModules, getTodayLearningSessions } from './utils/arcadeUnlock'
 import { PREMIUM_GATING_ENABLED, PREMIUM_FS2_MODULES } from './config/premiumContent.js'
 import { usePremium } from './hooks/usePremium'
 import PremiumLockModal from './components/PremiumLockModal'
-import InstallNudge from './components/InstallNudge'
+import RetentionSetup from './components/RetentionSetup'
 import { formatLocalDate, formatYesterdayLocalDate } from './utils/date.js'
 import { shouldSendAutoDigest, markDigestSent, buildDigestPayload, sendDigestEmail, sendNudgeEmail } from './utils/weeklyDigest.js'
 import { getClassroomLesson, setClassroomLesson } from './utils/classroomLesson.js'
@@ -24,8 +24,13 @@ import { stopAllSpeech } from './lib/speechController.js'
 import { CLASS_SESSION_KEY, loadCloudClassLesson } from './services/cloudStore.js'
 import { getAssistant } from './assistants'
 import { recordInterestComplete, recordInterestExit, recordInterestStart } from './utils/childInterest.js'
+import { consumeReturnDeepLinkTarget } from './utils/returnDeepLink.js'
+import { awardBloomCoin, canEarnBloomCoin } from './utils/avatarWorkshop.js'
+import { hasCompletedFirstMission } from './utils/returnReminder.js'
+import { getStarterPathCompletion, getStarterPathState } from './utils/starterPath.js'
 
 import LandingPage from './pages/LandingPage'
+import PilotPage from './pages/PilotPage'
 import AgeGroupLanding from './components/AgeGroupLanding'
 import GuardianSetup   from './components/GuardianSetup'
 import GuardianLogin   from './components/GuardianLogin'
@@ -44,6 +49,8 @@ import SyncStatusBanner from './components/SyncStatusBanner'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import PasswordReset from './components/PasswordReset'
 import SchoolsPage from './pages/SchoolsPage'
+
+const FounderDashboard = React.lazy(() => import('./pages/FounderDashboard.jsx'))
 import ClassroomDashboard from './components/ClassroomDashboard'
 import CurriculumMap from './pages/CurriculumMap'
 import ClassLogin from './components/ClassLogin'
@@ -67,6 +74,7 @@ const FunExercise       = React.lazy(() => import('./modules/FunExercise'))
 const PlanetWorld       = React.lazy(() => import('./modules/PlanetWorld'))
 const GameArcade        = React.lazy(() => import('./modules/GameArcade'))
 const SacredStories     = React.lazy(() => import('./modules/SacredStories'))
+const WonderWhy         = React.lazy(() => import('./modules/WonderWhy'))
 
 const GAME_SCREENS = [
   'phonics', 'math', 'tricky', 'story', 'logic', 'shop', 'shapes',
@@ -74,14 +82,13 @@ const GAME_SCREENS = [
 ]
 
 function getDailyGate(progress = {}, classroomLesson = null, premium = true) {
-  const arcadeStatus = getArcadeUnlockStatus(progress)
-  const todayIds = new Set(getTodayStudySessions(progress.sessions || []).map(session => session.module))
+  const arcadeStatus = getArcadeUnlockStatus(progress, Date.now(), premium)
+  const todayIds = new Set(getTodayLearningSessions(progress, Date.now(), premium).map(session => session.module))
   const [focusId, secondId] = getTodayAdventureModules(progress, classroomLesson, premium)
   const rewardId = arcadeStatus.unlocked ? 'arcade' : 'davinci'
   const steps = [focusId, secondId, rewardId]
-  const studyIds = STUDY_MODULES.map(module => module.id)
   const isDone = id => {
-    if (studyIds.includes(id)) return todayIds.has(id)
+    if (id === focusId || id === secondId) return todayIds.has(id)
     if (id === 'arcade') return arcadeStatus.unlocked
     return false
   }
@@ -290,8 +297,9 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, ve
   const { progress, update, addStars, logSession, tickChallenge,
           ensureDailyChallenges, setAvatar, addSticker, setDailyChallenge, resetProgress } = useProgress(profileId)
 
-  const [screen, setScreen] = useState('splash')
-  const [moduleArrival, setModuleArrival] = useState(null)
+  const [returnTarget] = useState(() => consumeReturnDeepLinkTarget(profileAgeGroup || 'early'))
+  const [screen, setScreen] = useState(returnTarget || 'splash')
+  const [moduleArrival, setModuleArrival] = useState(returnTarget || null)
   const [newMonster, setNewMonster] = useState(null)
   const [celebrating, setCelebrating] = useState(false)
   const [adventureBridge, setAdventureBridge] = useState(null)
@@ -317,6 +325,13 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, ve
 
   useEffect(() => { progressRef.current = progress }, [progress])
   useEffect(() => { screenRef.current = screen }, [screen])
+  useEffect(() => {
+    if (!returnTarget) return
+    screenEntryRef.current = Date.now()
+    update(p => ({ ...p, childInterest: recordInterestStart(p.childInterest, returnTarget, { source: 'notification' }) }))
+  // run once for the consumed return target
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (!classroomMode || !guardianId || !schoolId) return
@@ -360,6 +375,20 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, ve
       return { ...p, lastVisit: Date.now(), loginStreak: streak, lastLoginDate: todayStr }
     })
     ensureDailyChallenges()
+    if (!classroomMode) {
+      const retention = trackRetentionOpen({ profileId, ageGroup: profileAgeGroup || 'early' })
+      if (retention?.isNewDay) {
+        update(p => ({
+          ...p,
+          retentionTelemetry: recordRetentionOpen(p.retentionTelemetry, {
+            date: retention.today,
+            source: retention.returnSource,
+            at: Date.now(),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+          }),
+        }))
+      }
+    }
     // Fire-and-forget owner usage ping.
     logSessionStart({ profileName, avatar: progress.avatar })
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -404,7 +433,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, ve
   const moodLoggedToday = moodLog.some(entry => entry.date === todayKey)
 
   const handleSplashDone = useCallback(() => {
-    const skipMood = classroomMode || moodLoggedToday
+    const skipMood = classroomMode || !hasCompletedFirstMission(progress) || moodLoggedToday
     if (!progress.avatar) {
       setAvatar('yaagvi')
       applyTheme('yaagvi')
@@ -412,7 +441,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, ve
       return
     }
     setScreen(skipMood ? 'home' : 'mood')
-  }, [progress.avatar, moodLoggedToday, setAvatar, classroomMode])
+  }, [progress, moodLoggedToday, setAvatar, classroomMode])
 
   const handleMoodComplete = useCallback((mood) => {
     update(p => {
@@ -461,7 +490,7 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, ve
       update(p => ({ ...p, childInterest: recordInterestStart(p.childInterest, to, { source: interestSource }) }))
       let skipArrival = false
       try { skipArrival = sessionStorage.getItem('bloom_living_launch') === to; if (skipArrival) sessionStorage.removeItem('bloom_living_launch') } catch {}
-      setModuleArrival(skipArrival ? null : to)
+      setModuleArrival(skipArrival || ['first-mission', 'starter-path'].includes(interestSource) ? null : to)
     } else {
       setModuleArrival(null)
     }
@@ -471,8 +500,8 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, ve
   const handleAddStars = useCallback((module, rawCount, sessionData = {}) => {
     const count = Math.max(0, Number(rawCount) || 0)
     addStars(module, count)
-    if (count > 0) { triggerHaptic('star'); cancelStreakReminder() }
-    trackActivityComplete(module, 'early')
+    if (count > 0) triggerHaptic('star')
+    trackActivityComplete(module, 'early', profileId)
     // Daily world event bonus (once per day, on the featured module)
     const event = getTodayWorldEvent(hasAllAccessRef.current)
     if (module === event.moduleId && !isEventBonusCollected(profileId)) {
@@ -482,14 +511,42 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, ve
     // Bonus award modules (dailygift, event) don't log game sessions
     const isBonusModule = module === 'dailygift' || module === 'event'
     const { total = 0, correct = 0, struggles = [], stayOnModule = false, suppressCompletionModal = false } = sessionData
+    const coinDate = formatLocalDate()
+    const coinAwarded = !isBonusModule && count > 0 &&
+      canEarnBloomCoin(progressRef.current.avatarWorkshop, module, coinDate)
+    if (coinAwarded) trackEvent('bloom_coin_earned', { module, age_group: 'early' })
     let learningEventId = ''
     if (!isBonusModule) {
+      if (count > 0) {
+        update(p => awardBloomCoin(p, module, coinDate).progress)
+      }
       const duration = screenEntryRef.current
         ? Math.round((Date.now() - screenEntryRef.current) / 1000)
         : 0
       screenEntryRef.current = stayOnModule ? Date.now() : null
       const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0
-      logSession({ module, stars: count, total, correct, accuracy, duration, date: Date.now(), struggles })
+      logSession({
+        module,
+        stars: count,
+        total,
+        correct,
+        accuracy,
+        duration,
+        date: Date.now(),
+        struggles,
+        ...(Number.isFinite(Number(sessionData.firstTryCorrect))
+          ? { firstTryCorrect: Number(sessionData.firstTryCorrect) }
+          : {}),
+        ...(Number.isFinite(Number(sessionData.supportedCorrect))
+          ? { supportedCorrect: Number(sessionData.supportedCorrect) }
+          : {}),
+        ...(Number.isFinite(Number(sessionData.completedCorrect))
+          ? { completedCorrect: Number(sessionData.completedCorrect) }
+          : {}),
+        ...(sessionData.foundationStrands ? { foundationStrands: sessionData.foundationStrands } : {}),
+        ...(sessionData.foundationArcs ? { foundationArcs: sessionData.foundationArcs } : {}),
+        ...(sessionData.foundationLessonId ? { foundationLessonId: sessionData.foundationLessonId } : {}),
+      })
       update(p => recordAdaptiveSession(p, module, { total, correct, struggles, duration, questionSignatures: sessionData.questionSignatures || [] }))
       update(p => {
         const completed = recordInterestComplete(p.childInterest, module, { duration, score: count })
@@ -502,6 +559,22 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, ve
 
     // Use latest progress from ref to avoid stale-closure reads
     const latest = progressRef.current
+    const firstMission = !hasCompletedFirstMission(latest)
+    const starterBefore = getStarterPathState(latest, 'early')
+    const starterAfter = getStarterPathCompletion(latest, 'early', module)
+    if (firstMission && !isBonusModule) {
+      update(p => ({
+        ...p,
+        retentionTelemetry: recordActivationTelemetry(p.retentionTelemetry, {
+          type: 'activation_first_mission_completed',
+          date: formatLocalDate(),
+          module,
+          at: Date.now(),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+        }),
+      }))
+      trackEvent('activation_first_mission_completed', { age_group: 'early', module })
+    }
     const prevTotal = latest.totalStars || 0
     const nextTotal = prevTotal + count
     const justUnlocked = MONSTERS.find(m => prevTotal < m.stars && nextTotal >= m.stars)
@@ -575,7 +648,23 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, ve
     }
     if (!stayOnModule && !isBonusModule) {
       if (!suppressCompletionModal) {
-        window.dispatchEvent(new CustomEvent('bloom:game-complete', { detail: { module, stars: count, total, correct, eventId: learningEventId } }))
+        window.dispatchEvent(new CustomEvent('bloom:game-complete', {
+          detail: {
+            module,
+            stars: count,
+            total,
+            correct,
+            eventId: learningEventId,
+            firstMission,
+            starterPath: starterBefore.active ? {
+              completed: starterAfter.completed,
+              total: starterAfter.total,
+              nextTitle: starterAfter.module?.label || '',
+              complete: !starterAfter.active,
+            } : null,
+            reward: coinAwarded ? '+1 Bloom Coin for your Avatar Workshop!' : 'Your learning journey is saved.',
+          },
+        }))
       }
       return
     }
@@ -590,9 +679,9 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, ve
     if (!stayOnModule) {
       // Adventure bridge — guide child from step 1 to step 2 without returning to the menu
       const [focusId, secondId] = getTodayAdventureModules(latest, classroomLessonRef.current, hasAllAccessRef.current)
-      const doneIds = new Set(getTodayStudySessions(latest.sessions || []).map(s => s.module))
+      const doneIds = new Set(getTodayLearningSessions(latest, Date.now(), hasAllAccessRef.current).map(s => s.module))
       if (module === focusId && !doneIds.has(secondId)) {
-        const nextMod = STUDY_MODULES.find(m => m.id === secondId)
+        const nextMod = getArcadeUnlockStatus(latest, Date.now(), hasAllAccessRef.current).assignedModules.find(m => m.id === secondId)
         if (nextMod) {
           defer(() => {
             setScreen('home')
@@ -768,12 +857,27 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, ve
       <Screen id="science" current={screen} progress={progress} onUpdateProgress={update} onMap={() => navigate('home')}>
         <CuriousScience avatar={progress.avatar}
           profileName={profileName}
+          progress={progress}
+          onUpdateProgress={handleUpdateProgress}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
+      </Screen>
+
+      <Screen id="wonderwhy" current={screen} progress={progress} onUpdateProgress={update} onMap={() => navigate('home')}>
+        <WonderWhy
+          profileName={profileName}
+          progress={progress}
+          onUpdateProgress={handleUpdateProgress}
+          onAddStars={handleAddStars}
+          onBack={() => navigate('home')}
+        />
       </Screen>
 
       <Screen id="worldgk" current={screen} progress={progress} onUpdateProgress={update} onMap={() => navigate('home')}>
         <WorldGK avatar={progress.avatar}
           profileName={profileName}
+          ageGroup={profileAgeGroup || 'early'}
+          progress={progress}
+          onUpdateProgress={handleUpdateProgress}
           onAddStars={handleAddStars} onBack={() => navigate('home')} />
       </Screen>
 
@@ -965,6 +1069,19 @@ function AppWithProfile({ profileId, profileName, profileAgeGroup, parentPin, ve
         )}
       </AnimatePresence>
 
+      <RetentionSetup
+        active={screen === 'home'}
+        profileId={profileId}
+        profileName={profileName}
+        profileAgeGroup={profileAgeGroup}
+        guardianEmail={guardianEmail}
+        parentPin={parentPin}
+        verifyParentPin={verifyParentPin}
+        progress={progress}
+        onUpdateProgress={handleUpdateProgress}
+        classroomMode={classroomMode}
+      />
+
     </div>
   )
 }
@@ -1087,7 +1204,7 @@ export default function App() {
     updateGuardian,
     verifyParentPin,
   } = useGuardian()
-  const { profiles, activeId, activeProfile, createProfile, createProfilesBulk, switchProfile, deleteProfile, updateProfile, resetProfiles } = useProfiles()
+  const { profiles, activeId, activeProfile, createProfile, createProfileAndWait, createProfilesBulk, switchProfile, deleteProfile, updateProfile, resetProfiles } = useProfiles()
   const [ageGroup, setAgeGroup] = useState(null)
   const [showProfiles, setShowProfiles] = useState(false)
   const [classroomAddMode, setClassroomAddMode] = useState(false)
@@ -1097,7 +1214,8 @@ export default function App() {
       window.location.hash.includes('app') ||
       window.location.search.includes('teacher=1') ||
       window.location.pathname === '/teacher-invite' ||
-      window.location.pathname === '/class'
+      window.location.pathname === '/class' ||
+      window.location.pathname === '/founder'
     const hasAccount = Object.keys(localStorage).some(k =>
       k.startsWith('yaagvi_') ||
       k === 'eduapp_guardian_v1' ||
@@ -1245,6 +1363,9 @@ export default function App() {
   if (window.location.pathname === '/curriculum-map') {
     return <CurriculumMap />
   }
+  if (window.location.pathname === '/pilot') {
+    return <PilotPage hasAccount={Boolean(guardian && isLoggedIn)} />
+  }
 
   // Teacher invite link — /teacher-invite?token=xxx
   const teacherInviteToken =
@@ -1315,11 +1436,14 @@ export default function App() {
         early: '🌟',
         junior: '🚀',
       }[payload.childAgeGroup] || '🌟'
-      const id = createProfile(payload.childName, 0, payload.childAgeGroup, starterEmoji)
+      const id = await createProfileAndWait(payload.childName, 0, payload.childAgeGroup, starterEmoji)
       if (id) {
-        updateProfile(id, { emoji: starterEmoji })
         setAgeGroup(payload.childAgeGroup)
         switchProfile(id)
+        trackEvent('onboarding_child_profile_saved', {
+          age_group: payload.childAgeGroup,
+          source: 'guardian_registration',
+        })
       }
     }
     return nextGuardian
@@ -1405,6 +1529,28 @@ export default function App() {
           onRegister={handleStartRegistration}
         />
       </>
+    )
+  }
+
+  if (routePath === '/founder') {
+    if (!isAdmin) {
+      return (
+        <main className="grid min-h-screen place-items-center bg-slate-100 p-5">
+          <section className="w-full max-w-md border border-slate-200 bg-white p-6 text-center shadow-sm">
+            <h1 className="font-bubble text-2xl text-slate-950">Founder access required</h1>
+            <p className="mt-2 font-round text-sm font-bold text-slate-600">This private dashboard is available only to an approved founder account.</p>
+            <a href="/?app=1" className="mt-5 inline-grid min-h-11 place-items-center bg-slate-900 px-4 font-round text-sm font-black text-white">Return to Bloom Juniors</a>
+          </section>
+        </main>
+      )
+    }
+    return (
+      <React.Suspense fallback={<LoadingSpinner />}>
+        <FounderDashboard
+          onBack={() => { window.location.href = '/?app=1' }}
+          onLogout={handleLogout}
+        />
+      </React.Suspense>
     )
   }
 
@@ -1536,7 +1682,6 @@ export default function App() {
           />
         </React.Suspense>
         {classroomPinModal}
-        <InstallNudge profileName={activeProfile?.name} />
       </>
     )
   }
@@ -1566,7 +1711,6 @@ export default function App() {
           />
         </React.Suspense>
         {classroomPinModal}
-        <InstallNudge profileName={activeProfile?.name} />
       </>
     )
   }
@@ -1596,7 +1740,6 @@ export default function App() {
         className={guardian?.className || ''}
       />
       {classroomPinModal}
-      <InstallNudge profileName={activeProfile?.name} />
     </>
   )
 }

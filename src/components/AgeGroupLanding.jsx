@@ -261,6 +261,15 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
           )}
 
           <div className="flex flex-wrap items-center gap-3 self-center justify-center">
+            {adminMode && (
+              <a
+                href="/founder"
+                className="rounded-full px-5 py-2 font-bubble text-sm text-white shadow-lg"
+                style={{ background: '#1E293B' }}
+              >
+                Retention Dashboard
+              </a>
+            )}
             {classroomMode && onUpdateGuardian && (
               <motion.button
                 whileTap={{ scale: 0.95 }}

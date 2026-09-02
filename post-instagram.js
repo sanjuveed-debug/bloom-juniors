@@ -161,11 +161,11 @@ async function sleep(ms) {
     // ── 5. Step through crop → filter → caption ───────────────────────────────
     // "Next" is a div[role=button] in current IG — use role locators
     console.log('→ Advancing through crop step...')
-    await page.getByRole('button', { name: /^next$/i }).first().click({ timeout: 10000 })
-    await sleep(2000)
+    await page.getByRole('button', { name: /^next$/i }).first().click({ timeout: 25000 })
+    await sleep(2500)
 
     console.log('→ Advancing through filter step...')
-    await page.getByRole('button', { name: /^next$/i }).first().click({ timeout: 10000 })
+    await page.getByRole('button', { name: /^next$/i }).first().click({ timeout: 25000 })
     await sleep(2000)
 
     // ── 6. Add caption ────────────────────────────────────────────────────────

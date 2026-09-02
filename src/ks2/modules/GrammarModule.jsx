@@ -64,6 +64,7 @@ export default function GrammarModule({ theme, onDone, onBack, played = 0 }) {
   const [q, setQ] = useState(0)
   const [score, setScore] = useState(0)
   const [feedback, setFeedback] = useState(null)
+  const [wordExplored, setWordExplored] = useState(false)
   const [opts] = useState(() => questions.map(qq => shuffleTypes(qq.type, harder)))
   const typeColors = harder ? HARDER_TYPE_COLORS : TYPE_COLORS
   const curr = questions[q]
@@ -79,7 +80,10 @@ export default function GrammarModule({ theme, onDone, onBack, played = 0 }) {
 
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
 
-  useEffect(() => { reactYaagvi('question') }, [q, reactYaagvi])
+  useEffect(() => {
+    reactYaagvi('question')
+    setWordExplored(false)
+  }, [q, reactYaagvi])
 
   const handle = (type) => {
     if (lockedRef.current || completedRef.current) return
@@ -122,23 +126,35 @@ export default function GrammarModule({ theme, onDone, onBack, played = 0 }) {
 
       <div className="flex-1 flex flex-col items-center justify-center px-5 gap-6">
         <InteractiveYaagvi reaction={yaagviReaction} placement="strip" className="max-w-sm" />
-        <p className="font-round text-white/50 text-sm text-center">What type of word is highlighted?</p>
+        <p className="font-round text-white/60 text-sm text-center">Move the glowing word, then choose the job it does.</p>
 
         {/* Sentence with highlighted target word */}
-        <div className="w-full max-w-sm p-5 rounded-3xl" style={{ background: theme.card, border: `1px solid ${theme.primary}40` }}>
-          <p className="font-round text-white text-lg leading-relaxed text-center flex flex-wrap justify-center gap-x-2 gap-y-1">
+        <div data-testid="grammar-word-lab" className="w-full max-w-sm rounded-3xl p-4 [perspective:900px]" style={{ background: theme.card, border: `1px solid ${theme.primary}40`, boxShadow: 'inset 0 -10px 24px rgba(0,0,0,.18), 0 16px 30px rgba(0,0,0,.16)' }}>
+          <p className="font-round text-white text-lg leading-relaxed text-center flex flex-wrap justify-center gap-2">
             {curr.sentence.map((word, i) => (
               i === curr.target
                 ? <motion.span key={i}
-                    animate={feedback ? { scale: 1 } : { scale: [1, 1.12, 1] }}
-                    transition={feedback ? { duration: .2 } : { duration: 1, repeat: Infinity }}
-                    className="font-bubble px-2 py-0.5 rounded-lg text-white"
-                    style={{ background: feedback?.correct ? typeColors[curr.type].bg : theme.primary, fontSize: '1.15rem' }}>
+                    data-testid="grammar-target-block"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Move the highlighted word ${word}`}
+                    drag={!feedback}
+                    dragSnapToOrigin
+                    dragElastic={.28}
+                    onClick={() => setWordExplored(true)}
+                    onDragStart={() => setWordExplored(true)}
+                    initial={{ opacity: 0, y: 8, rotateX: 12 }}
+                    animate={feedback ? { opacity: 1, scale: 1, y: feedback.correct ? -7 : 0, rotateX: 0 } : wordExplored ? { opacity: 1, y: -5, rotateX: -7, scale: 1.06 } : { opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+                    transition={{ duration: .28, type: 'spring', stiffness: 340, damping: 24 }}
+                    whileDrag={{ scale: 1.14, rotateZ: 3, zIndex: 20 }}
+                    className="cursor-grab rounded-lg px-2.5 py-1 font-bubble text-white active:cursor-grabbing"
+                    style={{ background: feedback?.correct ? typeColors[curr.type].bg : theme.primary, fontSize: '1.15rem', boxShadow: `0 6px 0 ${feedback?.correct ? typeColors[curr.type].bg : theme.primary}99, 0 10px 18px rgba(0,0,0,.22)`, transformStyle: 'preserve-3d' }}>
                     {word}
                   </motion.span>
-                : <span key={i} className="text-white/80">{word}</span>
+                : <motion.span key={i} className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-white/80" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * .035 }}>{word}</motion.span>
             ))}
           </p>
+          <p className="mt-3 text-center font-round text-[11px] font-black text-white/45">{wordExplored ? 'Now match the word to its job below.' : 'Drag or tap the glowing tile.'}</p>
         </div>
 
         {/* Reference legend */}

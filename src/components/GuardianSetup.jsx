@@ -103,7 +103,9 @@ export default function GuardianSetup({ onComplete, authError, onLogin, onTeache
     }
 
     try {
-      await fetch('/api/guardian-register', {
+      await onComplete(payload)
+
+      fetch('/api/guardian-register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -122,7 +124,6 @@ export default function GuardianSetup({ onComplete, authError, onLogin, onTeache
         keepalive: true,
       }).catch(() => {})
 
-      await onComplete(payload)
       setDone(true)
     } catch (error) {
       setErrors((prev) => ({
@@ -139,15 +140,15 @@ export default function GuardianSetup({ onComplete, authError, onLogin, onTeache
       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }}
         className="text-center max-w-sm">
         <div className="text-7xl mb-5">✅</div>
-        <h2 className="font-bubble text-3xl mb-3" style={{ color: TEXT }}>You're registered!</h2>
+        <h2 className="font-bubble text-3xl mb-3" style={{ color: TEXT }}>You're ready!</h2>
         <p className="font-round text-sm mb-8" style={{ color: TEXT_MUTED }}>
-          Please log in with your email and PIN to continue.
+          Opening {form.childName.trim() || 'your child'}'s first learning adventure.
         </p>
         <motion.button whileTap={{ scale: 0.95 }}
-          onClick={onLogin}
+          onClick={() => window.location.assign('/?app=1')}
           className="w-full py-4 rounded-2xl font-bubble text-white text-xl"
           style={{ background: PRIMARY, boxShadow: '0 8px 22px rgba(194,65,12,0.3)' }}>
-          Go to Login →
+          Start first adventure
         </motion.button>
       </motion.div>
     </div>

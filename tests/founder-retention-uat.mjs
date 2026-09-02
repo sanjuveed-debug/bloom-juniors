@@ -1,0 +1,57 @@
+import { chromium } from '@playwright/test'
+import assert from 'node:assert/strict'
+
+const baseUrl = process.env.UAT_BASE_URL || 'http://127.0.0.1:5173'
+const browser = await chromium.launch({ headless: true })
+try {
+  const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+  await desktop.goto(`${baseUrl}/test-founder-dashboard.html`, { waitUntil: 'networkidle' })
+  const dashboard = desktop.getByTestId('founder-retention-dashboard')
+  await dashboard.waitFor()
+  assert.match(await dashboard.textContent(), /Day 1 return/)
+  assert.match(await dashboard.textContent(), /Activation funnel/)
+  assert.match(await dashboard.textContent(), /First-session activation/)
+  assert.match(await dashboard.textContent(), /First dashboard shown/)
+  assert.match(await dashboard.textContent(), /Seven-step starter path/)
+  assert.match(await dashboard.textContent(), /Acquisition quality/)
+  assert.match(await dashboard.textContent(), /Pre-tracking \/ unknown/)
+  assert.match(await dashboard.textContent(), /Visitor timezones/)
+  assert.match(await dashboard.textContent(), /Login accounts created/)
+  assert.match(await dashboard.textContent(), /Parent setup saved/)
+  assert.match(await dashboard.textContent(), /Created a child profile/)
+  assert.match(await dashboard.textContent(), /Completed a first mission/)
+  assert.match(await dashboard.textContent(), /test\/UAT accounts excluded/)
+  assert.match(await dashboard.textContent(), /Today's journey position/)
+  assert.match(await dashboard.textContent(), /Return reminders/)
+  assert.match(await dashboard.textContent(), /First Mission Return Loop/)
+  assert.match(await dashboard.textContent(), /Enabled a return reminder/)
+  assert.match(await dashboard.textContent(), /One-time reactivation/)
+  assert.match(await dashboard.textContent(), /Avatar Workshop funnel/)
+  assert.match(await dashboard.textContent(), /Founding Families pilot/)
+  assert.match(await dashboard.textContent(), /Retention by age/)
+  assert.match(await dashboard.textContent(), /Parent check-ins/)
+  assert.equal((await dashboard.textContent()).includes('profile-'), false, 'raw profile ids must not render')
+  await dashboard.getByRole('button', { name: 'Review one-time send' }).click()
+  await desktop.getByTestId('reactivation-confirmation').getByRole('button', { name: 'Send now' }).click()
+  assert.equal(await desktop.getByTestId('event').textContent(), 'reactivation-sent')
+  assert.match(await desktop.getByTestId('reactivation-result').textContent(), /2 sent/)
+  await desktop.screenshot({ path: 'tests/founder-retention-desktop.png', fullPage: true })
+
+  const prompt = desktop.getByTestId('retention-feedback-d3')
+  await prompt.scrollIntoViewIfNeeded()
+  await prompt.getByRole('button', { name: 'Finding time' }).click()
+  assert.equal(await desktop.getByTestId('event').textContent(), 'feedback-saved')
+  assert.equal(await desktop.getByTestId('retention-feedback-d3').count(), 0)
+
+  const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })
+  await mobile.goto(`${baseUrl}/test-founder-dashboard.html`, { waitUntil: 'networkidle' })
+  await mobile.getByTestId('founder-retention-dashboard').waitFor()
+  const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+  assert.ok(overflow <= 1, `mobile founder dashboard overflows by ${overflow}px`)
+  assert.equal(await mobile.getByRole('heading', { name: 'Founder Retention' }).count(), 1)
+  await mobile.screenshot({ path: 'tests/founder-retention-mobile.png', fullPage: true })
+
+  console.log('Founder Retention Dashboard desktop, mobile, privacy, and feedback UAT passed.')
+} finally {
+  await browser.close()
+}

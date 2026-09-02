@@ -12,6 +12,7 @@ let passed = 0
 let total = 0
 const check = (label, ok) => { total += 1; if (ok) passed += 1; console.log(`${ok ? 'PASS' : 'FAIL'} - ${label}`) }
 
+try {
 for (const [age, gameName, sequenceLength] of cases) {
   const items = PROJECT_ADVENTURES[age].map((adventure, index) => ({
     ...adventure.souvenir,
@@ -20,6 +21,15 @@ for (const [age, gameName, sequenceLength] of cases) {
     source: 'project-adventure',
     earnedAt: index + 1,
   }))
+  items.push({
+    id: 'explorer-dolly',
+    name: 'Explorer Yaagvi Dolly',
+    kind: 'dolly',
+    slot: 'buddy',
+    rarity: 'special',
+    image: '/yaagvi-3d-wave.png',
+    video: '/yaagvi-3d-wave.webm',
+  })
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } })
   await page.addInitScript(({ items }) => {
     localStorage.setItem('wonder-world-uat-progress', JSON.stringify({
@@ -29,9 +39,14 @@ for (const [age, gameName, sequenceLength] of cases) {
     }))
   }, { items })
   await page.goto(`http://127.0.0.1:5173/test-wonder-world.html?age=${age}`, { waitUntil: 'networkidle' })
+  check(`${age}: session timer is visible outside full-screen rooms`, await page.getByTestId('session-timer').count() === 1)
+  check(`${age}: learning guide is visible outside full-screen rooms`, await page.locator('[aria-label$=" learning guide"]').count() === 1)
+  await page.getByRole('button', { name: /treasures/i }).first().click()
   await page.getByRole('button', { name: /decorate my world/i }).click()
 
   check(`${age}: living Treasure Room opens`, await page.getByTestId('living-treasure-room').count() === 1)
+  check(`${age}: session timer is hidden inside the Treasure Room`, await page.getByTestId('session-timer').count() === 0)
+  check(`${age}: learning guide is hidden inside the Treasure Room`, await page.locator('[aria-label$=" learning guide"]').count() === 0)
   check(`${age}: six-piece collection unlocks ${gameName}`, await page.getByText(gameName, { exact: true }).count() === 1 && await page.getByText('SECRET GAME UNLOCKED', { exact: true }).count() === 1)
 
   const first = items[0]
@@ -73,10 +88,24 @@ for (const [age, gameName, sequenceLength] of cases) {
   }, age)
   check(`${age}: secret-game win and first reward persist`, savedGame)
   check(`${age}: mobile Treasure Room has no horizontal overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth))
+  check(`${age}: all five Treasure Room filters fit the mobile width`, await page.evaluate(() => {
+    const labels = ['All', 'Buddies', 'Outfits', 'Tools', 'Room']
+    return labels.every(label => {
+      const button = [...document.querySelectorAll('button')].find(node => node.textContent.trim() === label)
+      if (!button) return false
+      const rect = button.getBoundingClientRect()
+      return rect.left >= 0 && rect.right <= document.documentElement.clientWidth
+    })
+  }))
+  if (age === 'early') {
+    const dollyCard = page.getByRole('button', { name: /Explorer Yaagvi Dolly/i }).last()
+    check('early: Safari-safe dolly card uses one static image without a video overlay', await dollyCard.locator('img').count() === 1 && await dollyCard.locator('video').count() === 0)
+  }
   if (age === 'early') await page.screenshot({ path: 'tests/living-treasure-room-mobile.png', fullPage: true })
   await page.close()
 }
-
-await browser.close()
+} finally {
+  await browser.close()
+}
 console.log(`\n${passed}/${total} Living Treasure checks passed.`)
 if (passed !== total) process.exit(1)

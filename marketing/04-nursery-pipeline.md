@@ -22,20 +22,20 @@ Source: Edarabia UK-EYFS directory, July 2026. Fees = published annual fees (pro
 
 | # | Nursery | Area | Annual fees | Reviews | Website / source | Phone | Principal | Status | Last touch | Next action |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | Yellow Kite Nursery | Safa 2 | AED 30,000 | 329 | yellowkitenursery.com | TBD | TBD | NEW | — | Email 24 Aug |
-| 2 | Kids Spot Nursery | Al Wasl, Jumeirah | AED 32,125 | 125 | edarabia.com | TBD | TBD | NEW | — | Email 24 Aug |
-| 3 | The Forest Oasis Nursery | Umm Suqeim | — | 102 | edarabia.com | TBD | TBD | NEW | — | Email 24 Aug |
-| 4 | The Little Dreamers Nursery | Jumeirah 3 | AED 13,808 | 95 | edarabia.com | TBD | TBD | NEW | — | Email 24 Aug |
-| 5 | Rainbow Valley Nursery | JLT (Arch Tower) | AED 33,050 | 77 | edarabia.com | TBD | TBD | NEW | — | Email 24 Aug |
-| 6 | Alphabet Street Nursery | Al Manara | AED 9,185 | 41 | edarabia.com | TBD | TBD | NEW | — | Email 24 Aug |
-| 7 | Willow Children's Nursery | Umm Suqeim 2 | AED 36,100 | 35 | edarabia.com | TBD | TBD | NEW | — | Email 24 Aug |
-| 8 | Jebel Ali Village ECC | JBR (Al Bahar T1) | AED 33,750 | 32 | edarabia.com | TBD | TBD | NEW | — | Email 24 Aug |
-| 9 | Super Kids Nursery | Mirdif | AED 25,500 | 31 | superkidsnursery.com | TBD | TBD | NEW | — | Email 24 Aug |
-| 10 | Little Champions Nursery | Jumeirah 1 | AED 35,950 | 29 | edarabia.com | TBD | TBD | NEW | — | Email 24 Aug |
-| 11 | The House of Learning ECC | Marina/JBR area | AED 39,000 | 7 | edarabia.com | TBD | TBD | NEW | — | Email 24 Aug |
-| 12 | Numu Nursery | Town Square (Nshama) | AED 33,379 | 6 | numunursery.com | TBD | TBD | NEW | — | Email 24 Aug |
-| 13 | Bluebird Nursery | Nad Al Hammar | — | — | bluebirdnursery.ae | TBD | TBD | NEW | — | Email 24 Aug |
-| 14 | Cambridgeshire Nursery | Dubai | — | — | cambridgeshirenursery.com | TBD | TBD | NEW | — | Email 24 Aug |
+| 1 | Yellow Kite Nursery | Safa 2 | AED 30,000 | 329 | yellowkitenursery.com | +971 4 395 5518 / +971 58 593 2884 | Ms. Lisa Sherrington-Boyd (sources conflict — confirm) | CONTACTED | 11 Aug 2026 | Wait 7 days; follow up 18 Aug if no reply |
+| 2 | Kids Spot Nursery | Al Wasl, Jumeirah | AED 32,125 | 125 | edarabia.com | +971 4 344 8541 / +971 56 176 1103 | Nohad Walid Doughan (Manager) | NEW | — | Email 24 Aug |
+| 3 | The Forest Oasis Nursery | Umm Suqeim | — | 102 | forestoasisnursery.com | +971 56 547 4016 (WhatsApp) | TBD — not published, ask on call | NEW | — | Email 24 Aug |
+| 4 | The Little Dreamers Nursery | Jumeirah 3 | AED 13,808 | 95 | dreamersnursery.com | +971 4 343 0050 / +971 50 566 7982 | TBD | NEW | — | Email 24 Aug |
+| 5 | Rainbow Valley Nursery | JLT (Arch Tower) | AED 33,050 | 77 | rainbowvalleynursery.com | +971 4 423 2540 / +971 52 599 1917 | Ms. Natasha Shaikh | CONTACTED | 11 Aug 2026 | Wait 7 days; follow up 18 Aug if no reply |
+| 6 | Alphabet Street Nursery | Al Manara | AED 9,185 | 41 | alphabetstreetnursery.com | +971 4 348 5991 / +971 50 937 3696 | Shafa (Principal) | CONTACTED | 11 Aug 2026 | Wait 7 days; follow up 18 Aug if no reply |
+| 7 | Willow Children's Nursery | Umm Suqeim 2 | AED 36,100 | 35 | willowchildrensnursery.com | +971 4 321 4433 / +971 50 770 9575 | Karen Turner (Principal) | NEW | — | Email 24 Aug |
+| 8 | Jebel Ali Village ECC | JBR (Al Bahar T1) | AED 33,750 | 32 | javn.ae | +971 4 424 3791 | TBD | NEW | — | Email 24 Aug |
+| 9 | Super Kids Nursery | Mirdif | AED 25,500 | 31 | superkidsnursery.com | +971 4 288 1949 | Ms. Maryum Nawaz (Principal); Salima Shroff Vastani (Manager) | NEW | — | Email 24 Aug |
+| 10 | Little Champions Nursery | Jumeirah 1 | AED 35,950 | 29 | littlechampionsnursery.com | +971 4 344 6420 / +971 50 639 6420 | Mayssa Jaber (Principal) | NEW | — | Email 24 Aug |
+| 11 | The House of Learning ECC | Marina/JBR area | AED 39,000 | 7 | thehouseoflearning.me | +971 4 553 0796 / +971 58 569 8980 | TBD — not published, ask on call | NEW | — | Email 24 Aug |
+| 12 | Numu Nursery | Town Square (Nshama) | AED 33,379 | 6 | numunursery.com | +971 52 246 2949 | Mrs. Rawan Al Saman (Principal) | NEW | — | Email 24 Aug |
+| 13 | Bluebird Nursery | Nad Al Hammar | — | — | bluebirdnursery.ae | +971 4 287 0807 | Ms. Fatma Khalid Al-Guthmy (Principal) | NEW | — | Email 24 Aug |
+| 14 | Cambridgeshire Nursery | Dubai | — | — | cambridgeshirenursery.com | +971 4 351 8173 / +971 55 326 3300 | TBD — not published, ask on call | NEW | — | Email 24 Aug |
 
 ## Tier 2 — small chains (2–4 branches; pitch after first Tier-1 yeses)
 

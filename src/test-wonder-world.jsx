@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import WonderWorld from './components/WonderWorld.jsx'
+import SessionTimer from './components/SessionTimer.jsx'
+import JarvisOrb from './components/JarvisOrb.jsx'
 import './index.css'
 
 const initialProgress = {
@@ -36,7 +38,11 @@ function WonderWorldHarness() {
     localStorage.setItem('wonder-world-uat-progress', JSON.stringify(next))
     return next
   })
-  return <WonderWorld ageGroup={ageGroup} progress={progress} profileName="Yaagvi" onBack={()=>{}} onUpdateProgress={updateProgress}/>
+  return <>
+    <WonderWorld ageGroup={ageGroup} progress={progress} profileName="Yaagvi" onBack={()=>{}} onUpdateProgress={updateProgress}/>
+    <SessionTimer sessionMinutes={30} profileName="Yaagvi" theme={{ secondary: '#7a3bad' }} />
+    <JarvisOrb avatar="rumi" profileName="Yaagvi" progress={progress} ageGroup={ageGroup} />
+  </>
 }
 
 createRoot(document.getElementById('root')).render(<WonderWorldHarness/>)

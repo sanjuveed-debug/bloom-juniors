@@ -181,7 +181,7 @@ export default function AdventureModuleFrame({ moduleId, ageGroup='early', progr
     </header>
     <main ref={mainRef} className={`relative overflow-hidden ${treasureEffect}`} onPointerDownCapture={respondToTap}>
       <div className="game-ambient pointer-events-none absolute inset-0 z-0" aria-hidden />
-      <div key={runKey} className="relative z-[1]">{children}</div>
+      <div key={runKey} className="game-depth-stage relative z-[1]">{children}</div>
       <AnimatePresence>{tap&&<motion.div key={tap.id} className="pointer-events-none fixed z-[240] grid h-16 w-16 place-items-center rounded-full border-4 border-white/80 text-2xl shadow-xl" style={{left:tap.x-32,top:tap.y-32,background:'rgba(255,196,73,.35)'}} initial={{scale:.2,opacity:1}} animate={{scale:1.45,opacity:0}} exit={{opacity:0}} transition={{duration:.6}}>✨</motion.div>}</AnimatePresence>
       <AnimatePresence>{answerFeedback&&<motion.div key={answerFeedback.id} data-testid="game-answer-feedback" className={`pointer-events-none fixed left-1/2 top-[76px] z-[245] flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border-2 px-4 py-2 font-bubble text-sm shadow-xl ${answerFeedback.correct?'border-[#7ee2a8] bg-[#e9fff0] text-[#14643a]':'border-[#f1c86a] bg-[#fff7dd] text-[#744317]'}`} initial={{y:-18,scale:.75,opacity:0}} animate={{y:0,scale:1,opacity:1}} exit={{y:-10,scale:.9,opacity:0}}>{answerFeedback.correct?'⭐':'🧭'} {answerFeedback.message}</motion.div>}</AnimatePresence>
     </main>

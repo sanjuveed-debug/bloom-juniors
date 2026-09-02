@@ -8,7 +8,8 @@ import {
   ensureCloudClass, loadCloudGuardian, saveCloudGuardian,
   updateCloudParentPin, verifyCloudParentPin,
 } from '../services/cloudStore.js'
-import { trackEvent } from '../utils/analytics.js'
+import { getStoredUtm, trackEvent } from '../utils/analytics.js'
+import { buildFirstTouchAttribution } from '../utils/acquisition.js'
 
 const APP_ORIGIN =
   import.meta.env.VITE_APP_ORIGIN ||
@@ -93,16 +94,26 @@ export function useGuardian() {
 
   const registerGuardian = useCallback(async (data) => {
     setAuthError('')
-    const next = normalizeGuardianData(data)
+    const acquisition = buildFirstTouchAttribution({
+      pageUrl: data.pageUrl || globalThis.location?.href,
+      referrer: globalThis.document?.referrer,
+      timezone: data.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      language: data.language || globalThis.navigator?.language,
+      storedUtm: getStoredUtm(),
+      capturedAt: data.registeredAt,
+    })
+    const next = normalizeGuardianData({ ...data, acquisition })
+    let registeredSession = null
 
     if (isSupabaseConfigured && data.accountPassword) {
-      const { error } = await supabase.auth.signUp({
+      const { data: authData, error } = await supabase.auth.signUp({
         email: next.email,
         password: data.accountPassword,
         options: {
           data: {
             guardian_name: next.guardianName,
             relationship: next.relationship,
+            acquisition,
           },
         },
       })
@@ -112,19 +123,33 @@ export function useGuardian() {
         throw error
       }
 
-      await saveCloudGuardian(next, { includePin: true })
+      if (!authData?.session?.access_token || !authData?.user?.id) {
+        const message = 'Your login was created, but setup needs email confirmation before it can finish.'
+        setAuthError(message)
+        throw new Error(message)
+      }
+
+      try {
+        await saveCloudGuardian(next, { includePin: true })
+      } catch {
+        const message = 'Your login was created, but parent setup could not be saved. Use Already registered to sign in and finish setup.'
+        setAuthError(message)
+        throw new Error(message)
+      }
+
+      registeredSession = {
+        loggedInAt: Date.now(),
+        expiresAt: authData.session.expires_at * 1000,
+      }
+      try { localStorage.setItem('eduapp_session_v1', JSON.stringify(registeredSession)) } catch {}
+    } else {
+      registeredSession = createSession()
     }
 
     saveGuardian(next)
     setGuardian(next)
+    setSession(registeredSession)
     trackEvent('sign_up', { method: 'guardian' })
-    // Fire-and-forget welcome email
-    fetch('/api/welcome-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: next.email, name: next.guardianName }),
-      keepalive: true,
-    }).catch(() => {})
     return next
   }, [])
 
@@ -141,10 +166,18 @@ export function useGuardian() {
     }
 
     // 1. Create Supabase auth account
+    const acquisition = buildFirstTouchAttribution({
+      pageUrl: data.pageUrl || globalThis.location?.href,
+      referrer: globalThis.document?.referrer,
+      timezone: data.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      language: data.language || globalThis.navigator?.language,
+      storedUtm: getStoredUtm(),
+      capturedAt: data.registeredAt,
+    })
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.email.trim().toLowerCase(),
       password: data.accountPassword,
-      options: { data: { guardian_name: data.guardianName, relationship: 'Teacher / Carer' } },
+      options: { data: { guardian_name: data.guardianName, relationship: 'Teacher / Carer', acquisition } },
     })
     if (authError) {
       setAuthError(authError.message)
@@ -203,6 +236,7 @@ export function useGuardian() {
       schoolName,
       teacherRole,
       className: data.className || '',
+      acquisition,
     })
 
     try {
@@ -254,6 +288,11 @@ export function useGuardian() {
 
     saveGuardian(next)
     setGuardian(next)
+    trackEvent('sign_up', {
+      method: 'teacher',
+      teacher_role: teacherRole,
+      age_group: data.classAgeGroup || 'early',
+    })
     return next
   }, [])
 
@@ -312,13 +351,34 @@ export function useGuardian() {
       } catch (error) {
         setAuthError('Cloud sync is unavailable. Local login can still work on this device.')
       }
+      const cleanPin = String(pin || '').replace(/\D/g, '').slice(0, 4)
       if (!cloudGuardian) {
         if (verifyGuardianLogin(localGuardian, email, pin)) {
           await saveCloudGuardian(localGuardian, { includePin: true })
           cloudGuardian = localGuardian
+        } else {
+          const metadata = data.user?.user_metadata || {}
+          const guardianName = String(metadata.guardian_name || '').trim()
+          if (guardianName && cleanPin.length === 4) {
+            const recovered = normalizeGuardianData({
+              guardianName,
+              relationship: metadata.relationship || 'Guardian',
+              email: data.user?.email || requestedEmail,
+              pin: cleanPin,
+              consentAccepted: true,
+              registeredAt: data.user?.created_at || new Date().toISOString(),
+            })
+            try {
+              await saveCloudGuardian(recovered, { includePin: true })
+              cloudGuardian = recovered
+            } catch {
+              await supabase.auth.signOut()
+              setAuthError('Your login is valid, but parent setup could not be repaired. Please try again.')
+              return false
+            }
+          }
         }
       }
-      const cleanPin = String(pin || '').replace(/\D/g, '').slice(0, 4)
       let pinValid = false
       try { pinValid = await verifyCloudParentPin(cleanPin) } catch {}
       if (!cloudGuardian || !pinValid) {

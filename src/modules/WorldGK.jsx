@@ -4,6 +4,7 @@ import confetti from 'canvas-confetti'
 import { useSpeech } from '../hooks/useSpeech'
 import { THEMES } from '../themes'
 import { getWorldExplorerStars } from '../utils/moduleScoring'
+import HomeToWorld from './HomeToWorld.jsx'
 
 // ── Country data (ISO 3166-1 alpha-2 codes for flagcdn.com) ──────────────────
 const COUNTRIES = [
@@ -382,10 +383,19 @@ function makeHistoryQuestion(pool) {
   }
 }
 
-export default function WorldGK({ avatar, onAddStars, onBack, profileName }) {
+export default function WorldGK({
+  avatar,
+  onAddStars,
+  onBack,
+  profileName,
+  ageGroup = 'early',
+  progress = {},
+  onUpdateProgress,
+}) {
   const theme = THEMES[avatar] || THEMES.rumi
   const { speak } = useSpeech()
 
+  const [experience, setExperience] = useState('journey')
   const [contentMode, setContentMode] = useState('countries')
   const [region,   setRegion]   = useState('All')
   const [inQuiz,   setInQuiz]   = useState(false)
@@ -478,6 +488,21 @@ export default function WorldGK({ avatar, onAddStars, onBack, profileName }) {
   }, [chosen, question, qNum, score, missedCurrent, quizMode, getCountryPool, visibleHistoryEvents, profileName, onAddStars, speak])
 
   // ── Done ─────────────────────────────────────────────────────────────────
+  if (experience === 'journey') {
+    return (
+      <HomeToWorld
+        ageGroup={ageGroup}
+        profileName={profileName}
+        progress={progress}
+        moduleId="worldgk"
+        onUpdateProgress={onUpdateProgress}
+        onAddStars={onAddStars}
+        onBack={onBack}
+        onOpenExplorer={() => setExperience('library')}
+      />
+    )
+  }
+
   if (inQuiz && done) {
     const stars = getWorldExplorerStars(score)
     return (
@@ -609,10 +634,10 @@ export default function WorldGK({ avatar, onAddStars, onBack, profileName }) {
       style={{ background: `linear-gradient(160deg, ${theme.bg}, ${theme.card})` }}>
 
       <div className="flex items-center justify-between px-4 pt-safe pb-3">
-        <motion.button whileTap={{ scale: 0.9 }} onClick={onBack}
+        <motion.button whileTap={{ scale: 0.9 }} onClick={() => setExperience('journey')}
           className="w-10 h-10 rounded-full flex items-center justify-center shadow"
           style={{ background: theme.card, color: theme.text }}>←</motion.button>
-        <p className="font-bubble text-xl" style={{ color: theme.primary }}>🌍 World Explorer</p>
+        <p className="font-bubble text-xl" style={{ color: theme.primary }}>🌍 Country Library</p>
         <div className="w-10" />
       </div>
 

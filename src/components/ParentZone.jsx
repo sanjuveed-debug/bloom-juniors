@@ -10,6 +10,31 @@ import { getParentInterestInsight } from '../utils/childInterest.js'
 import { getCompanionBond } from '../utils/companionBond.js'
 import { getDreamProjectState } from '../utils/dreamProject.js'
 import { normaliseTreasureCollection } from '../utils/treasureRewards.js'
+import {
+  getBrowserTimezone,
+  normalizeReturnReminder,
+} from '../utils/returnReminder.js'
+import { trackEvent } from '../utils/analytics.js'
+import {
+  canPromptInstall,
+  isIOS,
+  isStandalone,
+  onInstallAvailable,
+  promptInstall,
+} from '../utils/installPrompt.js'
+import {
+  canEnablePush,
+  sendTestPush,
+  subscribeToPush,
+  unsubscribeFromPush,
+} from '../utils/webPush.js'
+import FoundationProfile from './FoundationProfile.jsx'
+import FoundationProgress from './FoundationProgress.jsx'
+import FoundationSeasonSummary from './FoundationSeasonSummary.jsx'
+import ScienceInvestigationSummary from './ScienceInvestigationSummary.jsx'
+import HomeToWorldSummary from './HomeToWorldSummary.jsx'
+import DailyJourneyParentSummary from './DailyJourneyParentSummary.jsx'
+import RetentionFeedbackPrompt from './RetentionFeedbackPrompt.jsx'
 
 const PREMIUM_PRICE_LABEL = 'AED 19/month'
 
@@ -193,17 +218,37 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
   const [reportStatus, setReportStatus] = useState('idle')
   const [profileDraft, setProfileDraft] = useState({ name: profileName || '', ageGroup: profileAgeGroup || 'early' })
   const [editSaved, setEditSaved] = useState(false)
-  const [digestOptIn, setDigestOptInState] = useState(() => {
-    // Auto-enable if registered email exists and not explicitly opted out
-    if (guardianEmail && localStorage.getItem(`bj_digest_optin_${profileId}`) === null) {
-      setDigestOptIn(profileId, true)
-      return true
-    }
-    return isDigestOptedIn(profileId)
-  })
+  const [digestOptIn, setDigestOptInState] = useState(() => isDigestOptedIn(profileId))
+  const [returnReminder, setReturnReminder] = useState(() =>
+    normalizeReturnReminder(progress.returnReminder),
+  )
+  const [installState, setInstallState] = useState(() => ({
+    standalone: isStandalone(),
+    ios: isIOS(),
+    canPrompt: canPromptInstall(),
+  }))
+  const [installBusy, setInstallBusy] = useState(false)
+  const [pushBusy, setPushBusy] = useState(false)
+  const [testPushBusy, setTestPushBusy] = useState(false)
+  const [pushMessage, setPushMessage] = useState('')
   const pinTimerRef = useRef(null)
+  const notificationPermission = typeof Notification === 'undefined' ? 'unsupported' : Notification.permission
+  const pushIsActive = returnReminder.pushEnabled && notificationPermission === 'granted'
 
   useEffect(() => () => clearTimeout(pinTimerRef.current), [])
+  useEffect(() => {
+    const refresh = () => setInstallState({
+      standalone: isStandalone(),
+      ios: isIOS(),
+      canPrompt: canPromptInstall(),
+    })
+    const off = onInstallAvailable(refresh)
+    window.addEventListener('appinstalled', refresh)
+    return () => {
+      off()
+      window.removeEventListener('appinstalled', refresh)
+    }
+  }, [])
   const expectedPin = String(parentPin || '')
   const pinConfigured = Boolean(expectedPin || verifyParentPin)
   const isLockedOut = lockedUntil > Date.now()
@@ -314,6 +359,109 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
     }
   }, [reportEmail, reportStatus, progress, profileName, profileId])
 
+  const updateReturnReminder = useCallback((patch) => {
+    const next = normalizeReturnReminder({
+      ...returnReminder,
+      ...patch,
+      timezone: getBrowserTimezone(),
+      updatedAt: Date.now(),
+    })
+    setReturnReminder(next)
+    onUpdateProgress?.({ returnReminder: next })
+    trackEvent('return_reminder_change', {
+      enabled: next.enabled,
+      reminder_time: next.time,
+      age_group: profileAgeGroup || 'early',
+    })
+  }, [onUpdateProgress, profileAgeGroup, returnReminder])
+
+  const handleInstallApp = useCallback(async () => {
+    if (installState.ios || installBusy) return
+    setInstallBusy(true)
+    trackEvent('pwa_install_prompt', { location: 'parent_zone' })
+    const accepted = await promptInstall()
+    setInstallState(current => ({ ...current, standalone: accepted || isStandalone(), canPrompt: canPromptInstall() }))
+    setInstallBusy(false)
+    trackEvent('pwa_install_result', { location: 'parent_zone', accepted })
+  }, [installBusy, installState.ios])
+
+  const handlePushToggle = useCallback(async () => {
+    if (pushBusy) return
+    setPushBusy(true)
+    setPushMessage('')
+    try {
+      if (pushIsActive) {
+        await unsubscribeFromPush()
+        updateReturnReminder({ pushEnabled: false, pushSubscription: null })
+        setPushMessage('App notifications are off.')
+        trackEvent('push_notification_change', { enabled: false, age_group: profileAgeGroup || 'early' })
+      } else {
+        const result = await subscribeToPush()
+        if (!result.ok) {
+          setPushMessage(result.reason === 'install_required'
+            ? 'Add Bloom Juniors to the Home Screen first.'
+            : result.reason === 'denied'
+              ? 'Notifications are blocked in this device settings.'
+              : 'App notifications are not supported on this device.')
+        } else {
+          updateReturnReminder({
+            pushEnabled: true,
+            pushSubscription: result.subscription,
+          })
+          setPushMessage('App notifications are on.')
+          trackEvent('push_notification_change', { enabled: true, age_group: profileAgeGroup || 'early' })
+        }
+      }
+    } catch {
+      setPushMessage('Could not update app notifications. Please try again.')
+    } finally {
+      setPushBusy(false)
+    }
+  }, [profileAgeGroup, pushBusy, pushIsActive, updateReturnReminder])
+
+  const handleTestPush = useCallback(async () => {
+    if (testPushBusy || !profileId) return
+    setTestPushBusy(true)
+    try {
+      if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+        setPushMessage('Allow notifications when your phone asks...')
+        const subscription = await subscribeToPush()
+        if (!subscription.ok) {
+          setPushMessage(subscription.reason === 'install_required'
+            ? 'On iPhone, add Bloom Juniors to the Home Screen and open the installed app first.'
+            : subscription.reason === 'denied'
+              ? 'Notifications are blocked. Allow Bloom Juniors in your phone settings.'
+              : 'This browser cannot enable app notifications.')
+          return
+        }
+        updateReturnReminder({
+          pushEnabled: true,
+          pushSubscription: subscription.subscription,
+        })
+        setPushMessage('Permission allowed. Saving this phone...')
+        await new Promise(resolve => setTimeout(resolve, 3000))
+      }
+
+      setPushMessage('Testing this phone, then the remote reminder service...')
+      const result = await sendTestPush(profileId)
+      setPushMessage(result.ok
+        ? `Device test displayed and remote push accepted${result.providerStatus ? ` (${result.providerStatus})` : ''}. Check Notification Centre.`
+        : result.deviceDisplayed
+          ? `Device test displayed, but remote push failed: ${String(result.reason || 'unknown error')}`
+          : result.reason === 'Notification subscription is not synced yet'
+            ? 'Permission is on. Wait 10 seconds for settings to sync, then try again.'
+            : String(result.reason || 'Could not display the device test notification.'))
+      trackEvent('push_notification_test', {
+        success: result.ok,
+        age_group: profileAgeGroup || 'early',
+      })
+    } catch {
+      setPushMessage('Could not complete the notification test. Please try again.')
+    } finally {
+      setTestPushBusy(false)
+    }
+  }, [profileAgeGroup, profileId, testPushBusy, updateReturnReminder])
+
   const getModuleScore = (id) => {
     const mod = progress[id]
     if (!mod) return { score: 0, percent: 0 }
@@ -390,6 +538,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
 
   const TABS = [
         { id: 'story',     label: 'Weekly Story' },
+        { id: 'foundation', label: 'Foundation' },
         { id: 'analytics', label: 'Stats' },
         { id: 'map',       label: 'Progress' },
         { id: 'quiz',      label: 'Challenge' },
@@ -432,6 +581,61 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
       </div>
 
       {/* Premium upgrade (parents only — schools have their own licence) */}
+      {!classroomMode && (
+        <section
+          className="mx-4 mb-3 flex items-center gap-3 rounded-2xl border bg-white/90 p-3 shadow"
+          style={{ borderColor: `${theme.primary}30` }}
+          data-testid="parent-reminder-shortcut"
+        >
+          <div
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-xl"
+            style={{ background: `${theme.primary}16` }}
+            aria-hidden="true"
+          >
+            🔔
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-bubble text-base leading-tight" style={{ color: theme.text }}>
+              {pushIsActive ? 'Tomorrow reminder is ready' : 'Bring them back tomorrow'}
+            </p>
+            <p className="mt-0.5 font-round text-xs font-bold opacity-65" style={{ color: theme.text }}>
+              {pushIsActive
+                ? `App notification at ${returnReminder.time} when ${profileName || 'your child'} has not visited.`
+                : installState.ios && !installState.standalone
+                  ? 'Add Bloom Juniors to your Home Screen first, then enable reminders.'
+                  : 'Enable one gentle app notification on days they have not visited.'}
+            </p>
+          </div>
+          {pushIsActive ? (
+            <button
+              type="button"
+              onClick={() => setTab('analytics')}
+              className="min-h-10 shrink-0 rounded-xl border px-3 font-round text-xs font-black"
+              style={{ borderColor: `${theme.primary}45`, color: theme.primary }}
+            >
+              Manage
+            </button>
+          ) : installState.ios && !installState.standalone ? (
+            <span
+              className="shrink-0 rounded-lg px-2 py-1 font-round text-[10px] font-black"
+              style={{ background: `${theme.primary}12`, color: theme.primary }}
+            >
+              Home Screen
+            </span>
+          ) : (
+            <button
+              type="button"
+              disabled={pushBusy || !canEnablePush()}
+              onClick={handlePushToggle}
+              className="min-h-10 shrink-0 rounded-xl px-3 font-round text-xs font-black text-white disabled:opacity-45"
+              style={{ background: theme.primary }}
+            >
+              {pushBusy ? 'Enabling...' : 'Enable'}
+            </button>
+          )}
+        </section>
+      )}
+
       <section className="mx-4 mb-3 rounded-3xl border-2 border-white/60 bg-white/80 p-4 shadow-lg" data-testid="parent-interest-insight">
         <div className="flex items-start gap-3">
           <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-pink-500 text-2xl text-white shadow">💛</div>
@@ -471,10 +675,48 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
         {/* ── WEEKLY PARENT STORY ── */}
         {tab === 'story' && (
           <motion.div key="story" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <RetentionFeedbackPrompt
+              progress={progress}
+              onUpdateProgress={onUpdateProgress}
+            />
+            <DailyJourneyParentSummary
+              progress={progress}
+              profileName={profileName || 'Your child'}
+              ageGroup={profileAgeGroup || 'early'}
+            />
             <ParentProgressStory
               progress={progress}
               profileName={profileName || 'Your child'}
               ageGroup={profileAgeGroup || 'early'}
+              theme={theme}
+              onUpdateProgress={onUpdateProgress}
+            />
+          </motion.div>
+        )}
+
+        {tab === 'foundation' && (
+          <motion.div key="foundation" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <FoundationSeasonSummary
+              progress={progress}
+              profileName={profileName || 'Your child'}
+              onUpdateProgress={onUpdateProgress}
+            />
+            <ScienceInvestigationSummary
+              progress={progress}
+              profileName={profileName || 'Your child'}
+            />
+            <HomeToWorldSummary
+              progress={progress}
+              profileName={profileName || 'Your child'}
+              ageGroup={profileAgeGroup || 'early'}
+            />
+            <FoundationProgress
+              progress={progress}
+              profileName={profileName || 'Your child'}
+            />
+            <FoundationProfile
+              progress={progress}
+              profileName={profileName || 'your child'}
               theme={theme}
               onUpdateProgress={onUpdateProgress}
             />
@@ -695,6 +937,11 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
                           <p className="font-round opacity-60 leading-none" style={{ fontSize: 10, color: theme.text }}>
                             {fmtDate(s.date)} · {fmtTime(s.date)} · {fmtDuration(s.duration)}
                           </p>
+                          {s.module === 'math' && Number(s.supportedCorrect) > 0 && (
+                            <p className="font-round mt-1 leading-none" style={{ fontSize: 10, color: theme.text }}>
+                              {Number(s.firstTryCorrect) || 0} independently | {Number(s.supportedCorrect)} after support
+                            </p>
+                          )}
                         </div>
                         <div className="flex flex-col items-end gap-0.5">
                           <span className="font-bubble text-sm" style={{ color: '#F59E0B' }}>⭐{s.stars || 0}</span>
@@ -740,12 +987,152 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
               </div>
             )}
 
+            {/* Install and app notifications */}
+            <div className="p-4 rounded-3xl shadow" style={{ background: theme.card }}>
+              <div className="flex items-start gap-3">
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-2xl"
+                  style={{ background: `${theme.primary}18` }}>
+                  {installState.standalone ? '✓' : '↗'}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-bubble text-lg" style={{ color: theme.text }}>
+                    {installState.standalone ? 'Bloom Juniors is installed' : 'Add Bloom Juniors to Home Screen'}
+                  </p>
+                  <p className="mt-1 font-round text-sm opacity-70" style={{ color: theme.text }}>
+                    {installState.standalone
+                      ? `Open it like an app and let us remind you when ${profileName || 'your child'} has a chapter ready.`
+                      : installState.ios
+                        ? 'Tap Share in the browser, choose Add to Home Screen, then open Bloom Juniors from its new icon.'
+                        : 'Install the app for one-tap access and learning notifications.'}
+                  </p>
+                </div>
+              </div>
+
+              {!installState.standalone && !installState.ios && (
+                installState.canPrompt ? (
+                  <button
+                    type="button"
+                    disabled={installBusy}
+                    onClick={handleInstallApp}
+                    className="mt-4 min-h-11 w-full rounded-xl px-4 font-bubble text-white disabled:opacity-45"
+                    style={{ background: theme.primary }}
+                  >
+                    {installBusy ? 'Opening install...' : 'Install Bloom Juniors'}
+                  </button>
+                ) : (
+                  <p className="mt-4 rounded-xl px-3 py-2.5 font-round text-xs font-bold"
+                    style={{ background: `${theme.primary}12`, color: theme.text }}>
+                    Open your browser menu and choose Install app or Add to Home Screen.
+                  </p>
+                )
+              )}
+
+              {(installState.standalone || !installState.ios) && (
+                <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl px-3 py-3"
+                  style={{ background: theme.bg, border: `1.5px solid ${theme.primary}30` }}>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-round text-sm font-bold" style={{ color: theme.text }}>App notifications</p>
+                    <p className="font-round text-xs opacity-55" style={{ color: theme.text }}>
+                      Uses the same reminder time below
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={pushIsActive}
+                    aria-label="App learning notifications"
+                    disabled={pushBusy || !canEnablePush()}
+                    onClick={handlePushToggle}
+                    className="relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-40"
+                    style={{ background: pushIsActive ? '#16a34a' : '#d1d5db' }}
+                  >
+                    <span className="absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow transition-transform"
+                      style={{ transform: pushIsActive ? 'translateX(20px)' : 'translateX(0)' }} />
+                  </button>
+                </div>
+              )}
+              {pushMessage && (
+                <p className="mt-2 font-round text-xs font-bold" style={{ color: theme.text }}>{pushMessage}</p>
+              )}
+              {pushIsActive && (
+                <button
+                  type="button"
+                  disabled={testPushBusy}
+                  onClick={handleTestPush}
+                  className="mt-3 min-h-10 w-full rounded-xl border px-4 font-round text-xs font-black disabled:opacity-45"
+                  style={{ borderColor: `${theme.primary}45`, color: theme.primary }}
+                >
+                  {testPushBusy ? 'Sending test...' : 'Send test notification now'}
+                </button>
+              )}
+            </div>
+
+            {/* Daily return reminder */}
+            <div className="p-4 rounded-3xl shadow" style={{ background: theme.card }}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="font-bubble text-lg" style={{ color: theme.text }}>Daily adventure reminder</p>
+                  <p className="mt-1 font-round text-sm opacity-70" style={{ color: theme.text }}>
+                    Email me when {profileName || 'my child'} has not visited that day.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={returnReminder.enabled}
+                  aria-label="Daily adventure email reminder"
+                  disabled={!guardianEmail}
+                  onClick={() => updateReturnReminder({ enabled: !returnReminder.enabled })}
+                  className="relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                  style={{ background: returnReminder.enabled ? '#16a34a' : '#d1d5db' }}
+                >
+                  <span
+                    className="absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow transition-transform"
+                    style={{ transform: returnReminder.enabled ? 'translateX(20px)' : 'translateX(0)' }}
+                  />
+                </button>
+              </div>
+
+              {guardianEmail ? (
+                <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5"
+                  style={{ background: theme.bg, border: `1.5px solid ${theme.primary}30` }}>
+                  <div className="min-w-0">
+                    <p className="truncate font-round text-xs font-bold" style={{ color: theme.text }}>{guardianEmail}</p>
+                    <p className="font-round text-xs opacity-55" style={{ color: theme.text }}>
+                      Only sent if there has been no visit that day
+                    </p>
+                  </div>
+                  <label className="shrink-0">
+                    <span className="sr-only">Reminder time</span>
+                    <input
+                      type="time"
+                      value={returnReminder.time}
+                      disabled={!returnReminder.enabled}
+                      onChange={event => updateReturnReminder({ time: event.target.value })}
+                      className="min-h-10 rounded-xl border px-2 font-round text-sm font-bold disabled:opacity-45"
+                      style={{ background: theme.card, borderColor: `${theme.primary}40`, color: theme.text }}
+                    />
+                  </label>
+                </div>
+              ) : (
+                <p className="mt-3 rounded-2xl bg-amber-50 px-3 py-2 font-round text-xs font-bold text-amber-800">
+                  Add a guardian email to enable reminders.
+                </p>
+              )}
+
+              {returnReminder.enabled && (
+                <p className="mt-3 font-round text-xs font-bold text-green-700">
+                  Reminder on at {returnReminder.time}. Turn it off here at any time.
+                </p>
+              )}
+            </div>
+
             {/* ── EMAIL PROGRESS REPORT ── */}
             <div className="p-4 rounded-3xl shadow" style={{ background: theme.card }}>
               <div className="flex items-center justify-between mb-1">
                 <p className="font-bubble text-lg" style={{ color: theme.text }}>📧 Email Progress Report</p>
                 <div className="flex items-center gap-2">
-                  <span className="font-round text-xs opacity-60" style={{ color: theme.text }}>Weekly auto</span>
+                  <span className="font-round text-xs opacity-60" style={{ color: theme.text }}>Weekly report</span>
                   <button
                     onClick={() => {
                       const next = !digestOptIn
@@ -762,7 +1149,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
               </div>
               <p className="font-round text-sm opacity-70 mb-3" style={{ color: theme.text }}>
                 {digestOptIn
-                  ? `Auto-sending every week to ${reportEmail || 'your email'}.`
+                  ? `Enabled for ${reportEmail || 'your email'}; it sends after an app visit when seven days have passed.`
                   : `Send a weekly summary of ${profileName || "your child"}'s learning to any email.`}
               </p>
               {reportStatus === 'done' ? (

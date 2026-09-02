@@ -123,25 +123,66 @@ export function useProfiles() {
 
   const creatingRef = useRef(false)
 
-  const createProfile = useCallback((name, colorIdx = 0, ageGroup = 'early', emoji = null, maxPerGroup = 2) => {
+  const reserveProfile = useCallback((name, colorIdx, ageGroup, emoji, maxPerGroup) => {
     if (creatingRef.current) return null
     const groupCount = profiles.filter(profile => (profile.ageGroup || 'early') === ageGroup).length
     if (groupCount >= maxPerGroup) return null
 
     creatingRef.current = true
-    const id = crypto.randomUUID()
-    const newProfile = { id, name: name.trim(), colorIdx, ageGroup, emoji, createdAt: Date.now() }
+    const newProfile = {
+      id: crypto.randomUUID(),
+      name: name.trim(),
+      colorIdx,
+      ageGroup,
+      emoji,
+      createdAt: Date.now(),
+    }
     setProfiles(prev => {
       const next = [...prev, newProfile]
       saveProfiles(next)
       return next
     })
-    if (isSupabaseConfigured) saveCloudProfile(newProfile).catch(() => reportSyncError())
-    // Release after the current microtask so a double-tap in the same render
-    // cycle is blocked but a genuine second creation later is allowed
-    window.setTimeout(() => { creatingRef.current = false }, 0)
-    return id
+    return newProfile
   }, [profiles])
+
+  const releaseProfileReservation = () => {
+    window.setTimeout(() => { creatingRef.current = false }, 0)
+  }
+
+  const createProfile = useCallback((name, colorIdx = 0, ageGroup = 'early', emoji = null, maxPerGroup = 2) => {
+    const newProfile = reserveProfile(name, colorIdx, ageGroup, emoji, maxPerGroup)
+    if (!newProfile) return null
+    if (isSupabaseConfigured) saveCloudProfile(newProfile).catch(() => reportSyncError())
+    releaseProfileReservation()
+    return newProfile.id
+  }, [reserveProfile])
+
+  const createProfileAndWait = useCallback(async (name, colorIdx = 0, ageGroup = 'early', emoji = null, maxPerGroup = 2) => {
+    const newProfile = reserveProfile(name, colorIdx, ageGroup, emoji, maxPerGroup)
+    if (!newProfile) return null
+    try {
+      if (isSupabaseConfigured) {
+        let lastError = null
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          try {
+            await saveCloudProfile(newProfile)
+            lastError = null
+            break
+          } catch (error) {
+            lastError = error
+            if (attempt < 2) await new Promise(resolve => window.setTimeout(resolve, 350 * (attempt + 1)))
+          }
+        }
+        if (lastError) {
+          reportSyncError()
+          throw lastError
+        }
+      }
+      return newProfile.id
+    } finally {
+      releaseProfileReservation()
+    }
+  }, [reserveProfile])
 
   const createProfilesBulk = useCallback((entries = [], ageGroup = 'early', maxPerGroup = 30) => {
     const currentGroup = profiles.filter(profile => (profile.ageGroup || 'early') === ageGroup)
@@ -232,6 +273,7 @@ export function useProfiles() {
     activeId,
     activeProfile: profiles.find(p => p.id === activeId) || null,
     createProfile,
+    createProfileAndWait,
     createProfilesBulk,
     switchProfile,
     deleteProfile,
