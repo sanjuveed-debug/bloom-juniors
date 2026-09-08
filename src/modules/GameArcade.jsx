@@ -9,6 +9,8 @@ import { getArcadeUnlockStatus } from '../utils/arcadeUnlock'
 import { formatLocalDate } from '../utils/date.js'
 import BloomQuizShow from '../components/BloomQuizShow.jsx'
 
+// Memory (unplayed-board credit) and Slice (zero-input rewards) are withdrawn
+// from child selection pending redesign. Keep their saved levels intact.
 const ARCADE_GAMES = [
   {
     id: 'quiz',
@@ -19,28 +21,12 @@ const ARCADE_GAMES = [
     reward: 'Up to 5 stars',
   },
   {
-    id: 'memory',
-    emoji: '🧠',
-    title: 'Magic Memory',
-    desc: 'Flip cards, build streaks, and clear 3 themed worlds.',
-    accent: '#FB7185',
-    reward: 'Up to 5 stars',
-  },
-  {
     id: 'balloon',
     emoji: '🎈',
     title: 'Balloon Burst',
     desc: 'Pop the right balloons before the wave floats away.',
     accent: '#38BDF8',
     reward: 'Up to 5 stars',
-  },
-  {
-    id: 'slice',
-    emoji: '🍉',
-    title: 'Fruit Slice Frenzy',
-    desc: 'Swipe through flying fruit, dodge bombs, and build juicy combos.',
-    accent: '#F59E0B',
-    reward: 'Up to 6 stars',
   },
   {
     id: 'builder',

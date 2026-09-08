@@ -9,6 +9,7 @@
 .env*.local
 
 node_modules/
+.laptop-migration/
 dist/
 test-results/
 tmp-video-check/

@@ -26,9 +26,11 @@ export function getExerciseCompletionReward({
   sessionMode,
   exerciseIndex,
   totalExercises,
+  completedExercises = [],
 }) {
+  const completed = new Set(completedExercises.filter(index => Number.isInteger(index) && index >= 0 && index < totalExercises))
   const completedWorkout =
-    sessionMode === 'full' && exerciseIndex + 1 >= totalExercises
+    sessionMode === 'full' && totalExercises > 0 && completed.size === totalExercises && exerciseIndex + 1 >= totalExercises
 
   if (completedWorkout) {
     return {

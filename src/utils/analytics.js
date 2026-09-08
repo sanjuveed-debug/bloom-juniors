@@ -236,11 +236,8 @@ export function trackRetentionOpen({ profileId, ageGroup = 'unknown' }, now = ne
         days_since_last: daysSinceLast,
         return_source: returnSource,
       })
-      if (daysSinceFirst === 1) {
-        trackEventOnce(`d1:${profileId}`, 'retention_day_1', { age_group: ageGroup, return_source: returnSource }, 'local')
-      }
-      if (daysSinceFirst >= 7) {
-        trackEventOnce(`d7:${profileId}`, 'retention_day_7', {
+      if ([1, 3, 7, 14, 30].includes(daysSinceFirst)) {
+        trackEventOnce(`exact-d${daysSinceFirst}:${profileId}`, `retention_day_${daysSinceFirst}`, {
           age_group: ageGroup,
           days_since_first: daysSinceFirst,
           return_source: returnSource,

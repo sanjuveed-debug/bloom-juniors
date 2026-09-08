@@ -228,6 +228,7 @@ export default function SpellingModule({ theme, onDone, onBack, played = 0 }) {
     lockedRef.current = true
     const correct = val.toLowerCase() === words[q].word
     const ns = score + (correct && !missedRef.current ? 1 : 0)
+    setScore(ns)
     if (!correct) missedRef.current = true
     if (correct) confetti({ particleCount: 50, spread: 70, origin: { x: 0.5, y: 0.4 } })
     reactYaagvi(correct ? 'correct' : 'wrong', correct ? { streak: ns % 3 === 0 ? 3 : 1 } : { attempt: 1 })

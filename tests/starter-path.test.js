@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
+  getGuidedStarterMission,
   countStarterPathCompletions,
   getStarterPathCompletion,
   getStarterPathState,
@@ -42,4 +43,18 @@ test('the seventh completion hands off to the normal journey', () => {
   assert.equal(after.completed, STARTER_PATH_LENGTH)
   assert.equal(after.active, false)
   assert.equal(after.module, null)
+})
+
+
+test('guided starters require explicit source and matching step; regular play stays unchanged', () => {
+  assert.deepEqual(getGuidedStarterMission({}, 'phonics', 'first-mission'), { mode: 'pop', rounds: 5, step: 1 })
+  assert.equal(getGuidedStarterMission({}, 'phonics', 'choice'), null)
+  assert.equal(getGuidedStarterMission({}, 'math', 'starter-path'), null)
+  assert.equal(getGuidedStarterMission(progressWith(['phonics']), 'math', 'starter-path').mode, 'count')
+  assert.equal(getGuidedStarterMission(progressWith(['phonics', 'math', 'phonics', 'shapes']), 'math', 'starter-path').mode, 'onemore')
+  assert.equal(getGuidedStarterMission(progressWith(Array(7).fill('phonics')), 'phonics', 'starter-path'), null)
+  for (const age of ['toddler', 'early', 'junior']) {
+    assert.ok(getStarterPathState({}, age).learning)
+    assert.ok(getStarterPathState({}, age).parentPrompt.endsWith('?'))
+  }
 })

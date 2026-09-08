@@ -1,3 +1,4 @@
+import { selectSoundDistractors } from '../utils/soundDistractors.js'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import confetti from 'canvas-confetti'
@@ -7,6 +8,7 @@ import { THEMES } from '../themes'
 import SkillHint, { getHint } from '../components/SkillHint'
 import { buildSoundPopCompletion } from '../utils/moduleScoring'
 import { speakThenAdvance } from '../utils/speechAdvance'
+import { useLearningCompanion } from '../components/LearningCompanionContext'
 import InteractiveYaagvi, { useYaagviReactions } from '../components/InteractiveYaagvi'
 import AdventureCompleteBanner from '../components/AdventureCompleteBanner'
 import { questionSignature } from '../utils/adaptiveLearning'
@@ -957,11 +959,11 @@ const AVATAR_THEMES = {
   },
 }
 
+const BUMI_THEME = { ...AVATAR_THEMES.yaagvi, intro: 'Sound Pop with Bumi.' }
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5) }
 
 function makeQuestion(targetKey, usedMap, activeSoundKeys) {
   const bank = SOUND_BANK[targetKey]
-  const similar = bank.similar || []
 
   // Build pool excluding already-used words for this sound this session
   const used = usedMap[targetKey] || new Set()
@@ -976,29 +978,23 @@ function makeQuestion(targetKey, usedMap, activeSoundKeys) {
   const wordRng = mulberry32(dailySeedFor(`soundpop-word-${targetKey}`) + used.size * 97)
   const targetWord = pool[Math.floor(wordRng() * pool.length)]
 
-  // Distractors from OTHER active sounds — exclude similar-phoneme sounds to avoid
-  // unfair near-misses (e.g. don't use an 'ea' word as distractor for 'ee')
-  const keys = activeSoundKeys || SOUND_KEYS
-  const otherKeys = keys.filter(k => k !== targetKey && !similar.includes(k))
-  const distractors = shuffle(otherKeys)
-    .slice(0, 3)
-    .map(k => {
-      const dPool = SOUND_BANK[k].words
-      return dPool[Math.floor(Math.random() * dPool.length)]
-    })
+  const distractors = selectSoundDistractors(SOUND_BANK, targetKey, targetWord, activeSoundKeys || SOUND_KEYS)
 
   return { targetKey, targetWord, choices: shuffle([targetWord, ...distractors]) }
 }
 
-export default function SoundPop({ avatar, progress, onAddStars, onBack, profileName }) {
+export default function SoundPop({ avatar, progress, onAddStars, onBack, profileName, starterMission }) {
+  const companion = useLearningCompanion()
+  const [guidedMission] = useState(() => starterMission || null)
+  const guidedStarted = useRef(false)
   const theme       = THEMES[avatar] || THEMES.rumi
-  const avatarTheme = AVATAR_THEMES[avatar] || AVATAR_THEMES.rumi
+  const avatarTheme = companion === 'bumi' ? BUMI_THEME : AVATAR_THEMES[avatar] || AVATAR_THEMES.rumi
   const { speak }   = useSpeech()
   const reducedMotion = useReducedMotion()
   const usedMapRef  = useRef({})
 
   const sessionsPlayed = progress?.phonics?.sessionsPlayed || 0
-  const activeSoundKeys = useRef(getActiveSoundKeys(sessionsPlayed)).current
+  const activeSoundKeys = useRef(guidedMission ? ['m', 'a', 's', 't', 'i', 'n', 'p'] : getActiveSoundKeys(sessionsPlayed)).current
   const soundSetLevel = getSoundSetLevel(sessionsPlayed)
 
   // Daily-seeded rotation through active sounds so the sequence of sounds
@@ -1019,7 +1015,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
   const [wrongSounds,      setWrongSounds]      = useState([])
   const [consecutiveWrong, setConsecutiveWrong] = useState(0)
   const [showHint,         setShowHint]         = useState(false)
-  const totalRounds = 10
+  const totalRounds = guidedMission ? 5 : 10
   const timersRef = useRef(new Set())
   const questionSignaturesRef = useRef(new Set())
   const { reaction: yaagviReaction, react: reactYaagvi } = useYaagviReactions({
@@ -1270,6 +1266,12 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
     speak(buildSoundInstruction(question.targetKey), { mood: 'phonics', voice: 'gb', ssmlInner: buildSoundInstructionSSML(question.targetKey) })
   }
 
+  useEffect(() => {
+    if (!guidedMission || guidedStarted.current) return
+    guidedStarted.current = true
+    startPop()
+  }, [guidedMission])
+
   const playPhonemeOnly = () => {
     if (!question) return
     speak(getSoundDisplay(question.targetKey), { voice: 'gb', ssmlInner: buildPhonemeOnlySSML(question.targetKey) })
@@ -1328,7 +1330,7 @@ export default function SoundPop({ avatar, progress, onAddStars, onBack, profile
             className="mb-4 rounded-full border-2 px-5 py-2 font-bubble text-sm shadow-sm"
             style={{ background: theme.card, borderColor: `${theme.primary}55`, color: theme.text }}
           >
-            🔊 Hear Yaagvi
+            🔊 Hear {companion === 'bumi' ? 'Bumi' : 'Yaagvi'}
           </motion.button>
           <div className="w-full max-w-sm space-y-4">
             <motion.button

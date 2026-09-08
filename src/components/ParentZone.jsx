@@ -1,3 +1,8 @@
+import ParentLearningSnapshot from './ParentLearningSnapshot.jsx'
+import MarketParentSummary from './MarketParentSummary.jsx'
+import CollectionParentSummary from './CollectionParentSummary.jsx'
+import AppUpdateNotice from './AppUpdateNotice.jsx'
+import PicnicParentSummary from './PicnicParentSummary.jsx'
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { THEMES } from '../themes'
@@ -556,6 +561,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
         <div className="text-2xl">👨‍👩‍👧</div>
       </div>
 
+      {!classroomMode && <ParentLearningSnapshot progress={progress} ageGroup={profileAgeGroup || 'early'} profileName={profileName} onBack={onBack} />}
       {/* Summary banner */}
       <div className="mx-4 p-4 rounded-3xl shadow-lg mb-3"
         style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}>
@@ -669,6 +675,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
         ))}
       </div>
 
+      <AppUpdateNotice />
       {/* Tab content */}
       <AnimatePresence mode="wait">
 
@@ -679,6 +686,10 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
               progress={progress}
               onUpdateProgress={onUpdateProgress}
             />
+            <PicnicParentSummary progress={progress} /><CollectionParentSummary progress={progress} /><MarketParentSummary progress={progress} />
+            <details className="mx-4 mb-5 rounded-2xl border border-green-200 bg-white p-4 text-green-950">
+              <summary className="cursor-pointer font-bold min-h-11">More weekly insights</summary>
+              <p className="text-sm my-3">These broader suggestions use older activity and weekly records. Your saved picnic adventure is summarised above.</p>
             <DailyJourneyParentSummary
               progress={progress}
               profileName={profileName || 'Your child'}
@@ -691,6 +702,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
               theme={theme}
               onUpdateProgress={onUpdateProgress}
             />
+            </details>
           </motion.div>
         )}
 

@@ -246,13 +246,16 @@ export default function FunExercise({ avatar, onAddStars, onBack, profileName })
   const [earnedWorkoutReward, setEarnedWorkoutReward] = useState(false)
   const [completedCurrentExercise, setCompletedCurrentExercise] = useState(false)
   const intervalRef = useRef(null)
+  const completedExercisesRef = useRef(new Set())
   const ex = EXERCISES[exIdx]
-  const { track } = useVisibilityTimers()
+  const { track, clearAll } = useVisibilityTimers()
 
   const stopTimer = useCallback(() => clearInterval(intervalRef.current), [])
 
   const startExercise = (idx, nextSessionMode = sessionMode) => {
     stopTimer()
+    clearAll()
+    if (idx === 0 || nextSessionMode === 'single') completedExercisesRef.current.clear()
     const e = EXERCISES[idx]
     setSessionMode(nextSessionMode)
     setEarnedWorkoutReward(false)
@@ -264,12 +267,14 @@ export default function FunExercise({ avatar, onAddStars, onBack, profileName })
     speak(`Exercise ${idx + 1}: ${e.name}! ${e.instruction} Let's count to ${e.reps}!`, { mood: 'celebrate' })
     let count = 0
     intervalRef.current = setInterval(() => {
+      if (document.hidden) return
       count++
       setCounter(count)
       if (count >= e.reps) {
         clearInterval(intervalRef.current)
         setRunning(false)
         setCompletedCurrentExercise(true)
+        completedExercisesRef.current.add(idx)
         speak(`${count}! Fantastic! You did it!`, { mood: 'celebrate' })
         confetti({ particleCount: 80, spread: 100, origin: { x: 0.5, y: 0.3 } })
         track(() => {
@@ -277,6 +282,7 @@ export default function FunExercise({ avatar, onAddStars, onBack, profileName })
             sessionMode: nextSessionMode,
             exerciseIndex: idx,
             totalExercises: EXERCISES.length,
+            completedExercises: [...completedExercisesRef.current],
           })
           const isFullWorkout = nextSessionMode === 'full' && idx + 1 >= EXERCISES.length
 
@@ -289,6 +295,8 @@ export default function FunExercise({ avatar, onAddStars, onBack, profileName })
             setScreen('done')
             speak(`Great job, ${profileName || 'superstar'}! You finished ${e.name}!`, { mood: 'celebrate' })
             if (reward) onAddStars('exercise', reward.stars, reward.sessionData)
+          } else if (isFullWorkout) {
+            setScreen('done')
           } else {
             setScreen('rest')
           }
@@ -342,7 +350,7 @@ export default function FunExercise({ avatar, onAddStars, onBack, profileName })
           Next: {next.emoji} <strong>{next.name}</strong>
         </p>
         <motion.button whileTap={{ scale: 0.9 }}
-          onClick={() => { speak(`Ready! ${EXERCISES[exIdx + 1].name}!`, { mood: 'instruct' }); track(() => startExercise(exIdx + 1, 'full'), 800) }}
+          onClick={() => { speak(`Ready! ${EXERCISES[exIdx + 1].name}!`, { mood: 'instruct' }); startExercise(exIdx + 1, 'full') }}
           className="bubble-btn px-8 py-4 text-xl"
           style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}>
           I'm Ready! 💪
@@ -446,9 +454,9 @@ export default function FunExercise({ avatar, onAddStars, onBack, profileName })
         </div>
 
         {/* Skip */}
-        <motion.button whileTap={{ scale: 0.9 }}
+        <motion.button disabled={!running} whileTap={{ scale: 0.9 }}
           onClick={() => {
-            stopTimer(); setRunning(false)
+            stopTimer(); clearAll(); setRunning(false)
             speak('Great effort! Moving on!', { mood: 'celebrate' })
             if (sessionMode === 'single') {
               setScreen('done')

@@ -198,8 +198,8 @@ export function getWeeklyBloomAdventureView(progress = {}, ageGroup = 'early', n
   const status = complete ? 'complete' : waiting ? 'waiting' : state.active ? 'active' : needsChoice ? 'choice' : 'available'
   const memory = previous
     ? state.lastCompletedDate === today
-      ? `Today you ${previous.restored.charAt(0).toLowerCase()}${previous.restored.slice(1)}`
-      : `Last time, you ${previous.restored.charAt(0).toLowerCase()}${previous.restored.slice(1)}`
+      ? `Today: ${previous.restored}`
+      : `Last time: ${previous.restored}`
     : adventure.intro
 
   return {

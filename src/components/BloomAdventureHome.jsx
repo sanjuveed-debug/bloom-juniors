@@ -207,7 +207,7 @@ export default function BloomAdventureHome({
       step_type: 'weekly',
       module: state.active?.moduleId || chapter.module.id,
     })
-    onNavigate?.(state.active?.moduleId || chapter.module.id, 'daily-journey')
+    onNavigate?.(state.active?.moduleId || chapter.module.id, 'weekly-chapter')
   }
 
   const runPrimary = () => {
@@ -249,11 +249,6 @@ export default function BloomAdventureHome({
         type: 'activation_primary_tap',
         at: now,
       })
-      telemetry = recordActivationTelemetry(telemetry, {
-        ...shared,
-        type: 'activation_activity_started',
-        at: now + 1,
-      })
     } else {
       telemetry = recordJourneyTelemetry(telemetry, {
         type: 'starter_path_action',
@@ -267,7 +262,6 @@ export default function BloomAdventureHome({
     onUpdateProgress?.({ retentionTelemetry: telemetry })
     if (firstMission) {
       trackEvent('activation_primary_tap', { age_group: age, module: moduleId })
-      trackEvent('activation_activity_started', { age_group: age, module: moduleId })
     }
     trackEvent('starter_path_primary_tap', { age_group: age, module: moduleId, step: starterPath.step })
     onNavigate?.(moduleId, firstMission ? 'first-mission' : 'starter-path')
@@ -295,7 +289,7 @@ export default function BloomAdventureHome({
             <div className="min-w-0">
               <p className="font-round text-[10px] font-black uppercase tracking-[.18em] text-amber-200">{firstMission ? 'Your first Bloom adventure' : 'Your Bloom starter path'}</p>
               <h2 className="mt-2 font-bubble text-3xl leading-tight sm:text-4xl">{profileName}, {firstMission ? 'let\'s begin' : 'your next step is ready'}</h2>
-              <p className="mt-2 max-w-xl font-round text-sm font-bold leading-6 text-white/75">One short activity. Continue from where you stopped, with no penalty for a missed day.</p>
+              <p className="mt-2 max-w-xl font-round text-sm font-bold leading-6 text-white/75">One short activity. Your completed steps stay saved, even when you take a day off.</p>
               <div className="mt-4 flex gap-1.5" data-testid="starter-path-progress" aria-label={`${starterPath.completed} of ${starterPath.total} starter steps complete`}>
                 {starterPath.steps.map(item => (
                   <span
@@ -307,8 +301,8 @@ export default function BloomAdventureHome({
                 ))}
               </div>
             </div>
-            <div className="hidden h-44 justify-center md:flex">
-              <YaagviCharacter state="point" size="100%" imageClassName="drop-shadow-2xl" />
+            <div className="flex h-28 justify-center md:h-44">
+              <YaagviCharacter state={speaking ? 'wave' : 'point'} speaking={speaking} size="100%" imageClassName="drop-shadow-2xl" />
             </div>
           </div>
           <div className="grid gap-4 p-5 sm:p-7 md:grid-cols-[1fr_auto] md:items-center">
@@ -318,7 +312,7 @@ export default function BloomAdventureHome({
                 <p className="font-round text-[10px] font-black uppercase tracking-[.16em]" style={{ color: palette.warm }}>Starter step {starterPath.step} of {starterPath.total}</p>
                 <h3 className="mt-1 font-bubble text-2xl leading-tight" style={{ color: palette.ink }}>{firstTitle}</h3>
                 <p className="mt-1 font-round text-sm font-bold opacity-70" style={{ color: palette.ink }}>
-                  {firstMission ? 'Finish one activity to earn the first Bloom Coin.' : 'Finish this activity to move one step forward.'}
+                  {starterPath.learning}
                 </p>
               </div>
             </div>
@@ -326,7 +320,7 @@ export default function BloomAdventureHome({
               <button
                 type="button"
                 onClick={() => speak(firstNarration)}
-                aria-label={speaking ? 'Yaagvi is speaking' : 'Hear the first step'}
+                aria-label={speaking ? 'Bumi is speaking' : 'Hear the first step'}
                 className="grid h-14 w-14 shrink-0 place-items-center rounded-lg border-2 bg-white text-xl"
                 style={{ borderColor: `${palette.accent}55`, color: palette.accent }}
               >
@@ -379,9 +373,9 @@ export default function BloomAdventureHome({
             </div>
           </div>
 
-          <div className="hidden items-end justify-center lg:flex">
-            <div className="relative h-44 w-40">
-              <YaagviCharacter state={journey.complete ? 'celebrate' : 'point'} size="100%" className="absolute inset-0" imageClassName="drop-shadow-2xl" />
+          <div className="flex items-end justify-center">
+            <div className="relative h-28 w-28 lg:h-44 lg:w-40">
+              <YaagviCharacter state={journey.complete ? 'celebrate' : 'point'} speaking={speaking} size="100%" className="absolute inset-0" imageClassName="drop-shadow-2xl" />
             </div>
           </div>
         </div>
@@ -402,7 +396,7 @@ export default function BloomAdventureHome({
             <button
               type="button"
               onClick={() => speak(narration)}
-              aria-label={speaking ? 'Yaagvi is speaking' : 'Hear the next step'}
+              aria-label={speaking ? 'Bumi is speaking' : 'Hear the next step'}
               className="grid h-14 w-14 shrink-0 place-items-center rounded-lg border-2 bg-white text-xl"
               style={{ borderColor: `${palette.accent}55`, color: palette.accent }}
             >

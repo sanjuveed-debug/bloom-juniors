@@ -1,3 +1,5 @@
+import YaagviCharacter from './YaagviCharacter'
+import MeetBumi from './MeetBumi'
 import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
@@ -110,7 +112,7 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
             className="rounded-2xl px-4 py-2.5 font-bubble text-xs shadow-lg"
             style={{ background: 'linear-gradient(135deg, #FBBF24, #F97316)', color: '#422006' }}
           >
-            Meet Yaagvi
+            Meet Bumi
           </button>
 
           {onUpdateGuardian && (
@@ -151,21 +153,14 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
               transition={{ delay: 0.2, type: 'spring', stiffness: 260, damping: 22 }}
             >
               <p className="font-bubble text-lg leading-tight md:text-xl" style={{ color: '#422006' }}>
-                Hi, I am Yaagvi, your mascot!
+                Hi, I am Bumi, your learning companion!
               </p>
               <p className="font-round mt-1 text-xs font-bold leading-5 md:text-sm" style={{ color: 'rgba(66,32,6,0.62)' }}>
               I am your learning buddy. Pick your world and I will guide your mission today.
               </p>
               <span className="absolute -bottom-2 left-12 h-5 w-5 rotate-45 border-b border-r border-white bg-white" />
             </motion.div>
-            <motion.img
-              src="/yaagvi-mascot.webp"
-              alt="Yaagvi learning guide"
-              className="h-[220px] w-auto object-contain object-left drop-shadow-2xl md:h-[330px]"
-              draggable={false}
-              animate={{ y: [0, -8, 0], rotate: [0, -1.5, 1.5, 0] }}
-              transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
-            />
+            <div className="mx-auto h-[220px] md:h-[330px] aspect-square"><YaagviCharacter state="wave" size="100%"/></div>
           </motion.div>
 
           <motion.div
@@ -390,7 +385,7 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
           >
             <div className="flex items-center justify-between bg-gradient-to-r from-[#FF7A18] to-[#FF2D88] px-5 py-4">
               <div>
-                <p className="font-bubble text-2xl leading-none text-white">Meet Yaagvi</p>
+                <p className="font-bubble text-2xl leading-none text-white">Meet Bumi</p>
                 <p className="mt-1 font-round text-xs font-bold text-white/80">Your learning mascot</p>
               </div>
               <button
@@ -402,19 +397,13 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
               </button>
             </div>
 
-            <div className="bg-black">
-              <video
-                src="/tours/yaagvi-avatar-intro.mp4"
-                controls
-                autoPlay
-                playsInline
-                className="max-h-[68vh] w-full bg-black object-contain"
-              />
+            <div className="max-h-[60vh] overflow-y-auto px-5">
+              <MeetBumi />
             </div>
 
             <div className="px-5 py-4">
               <p className="font-round text-sm font-bold leading-6 text-slate-600">
-                Watch the intro, then choose an age world to start today&apos;s mission.
+                Say hello to Bumi, then choose an age world to start today&apos;s mission.
               </p>
             </div>
           </motion.div>

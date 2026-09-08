@@ -83,7 +83,7 @@ export default function HighFiveDelivery({ progress = {}, profileName = 'Explore
             {opened ? (
               <YaagviCharacter state="celebrate" size="100%" className="relative" imageClassName="drop-shadow-2xl" />
             ) : (
-              <img src="/yaagvi-3d-wave.png" alt="Yaagvi delivering a high-five" className="relative h-full w-full object-contain drop-shadow-2xl" />
+              <YaagviCharacter state="wave" size="100%" style={{ height: '100%' }} className="relative" />
             )}
           </div>
 

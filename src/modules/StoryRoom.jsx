@@ -1,3 +1,4 @@
+import YaagviCharacter from '../components/YaagviCharacter'
 ﻿import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSpeech } from '../hooks/useSpeech'
@@ -778,7 +779,7 @@ export default function StoryRoom({ avatar, progress, onAddStars, onBack, profil
           >
             <div className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-white/20" />
             <div className="relative flex items-center gap-4">
-              <img src="/yaagvi-3d-wave.png" alt="Yaagvi brings a story made for this explorer" className="h-20 w-20 object-contain drop-shadow-xl" />
+              <YaagviCharacter state="wave" size={80} imageClassName="drop-shadow-xl" />
               <div className="min-w-0 flex-1 text-white">
                 <p className="font-round text-[10px] font-black uppercase tracking-[.18em] text-white/80">Made from your learning journey</p>
                 <span role="heading" aria-level="3" className="mt-1 block font-bubble text-xl">{personalisedStory.title}</span>

@@ -1,3 +1,8 @@
+import { normalizeFloatDiscovery } from '../utils/floatDiscovery.js'
+import { normalizeMarket } from '../utils/marketMission.js'
+import { mergeCollections } from '../utils/collectionAdventure.js'
+import { createProgressSyncQueue } from '../utils/progressSyncQueue.js'
+import { normalizePicnicProgress } from '../utils/picnicProgress.js'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { isSupabaseConfigured } from '../lib/supabase.js'
 import { loadCloudProgress, mergeProgress, saveCloudProgress } from '../services/cloudStore.js'
@@ -26,10 +31,12 @@ function loadOutbox(profileId) {
   try { return JSON.parse(localStorage.getItem(getOutboxKey(profileId)) || 'null') } catch { return null }
 }
 function saveOutbox(profileId, data) {
-  try { localStorage.setItem(getOutboxKey(profileId), JSON.stringify(data)) } catch {}
+  try { localStorage.setItem(getOutboxKey(profileId), JSON.stringify(data)) } catch { reportSyncError('This device could not retain the pending backup. Keep this tab open until your connection returns.') }
 }
-function clearOutbox(profileId) {
-  try { localStorage.removeItem(getOutboxKey(profileId)) } catch {}
+function clearOutbox(profileId, acknowledged) {
+  const stored = loadOutbox(profileId)
+  if (stored && JSON.stringify(stored) !== JSON.stringify(acknowledged)) return false
+  try { localStorage.removeItem(getOutboxKey(profileId)); return true } catch { return false }
 }
 
 // ── Daily challenge pool ─────────────────────────────────────────────────────
@@ -145,6 +152,10 @@ export function hydrateProgressData(parsed = {}) {
     companionPowers: normalizeCompanionPowers(source.companionPowers),
     adventureDirector: normalizeAdventureDirector(source.adventureDirector),
     dreamProject: normalizeDreamProject(source.dreamProject),
+    floatDiscovery: normalizeFloatDiscovery(source.floatDiscovery),
+    picnic: normalizePicnicProgress(source.picnic),
+    collectionAdventures: mergeCollections(source.collectionAdventures),
+    marketMission: normalizeMarket(source.marketMission),
     childInterest: normalizeChildInterest(source.childInterest),
     weeklyBloomAdventure: normalizeWeeklyBloomAdventure(source.weeklyBloomAdventure, source.weeklyBloomAdventure?.ageGroup),
     foundationProfile: normalizeFoundationProfile(source.foundationProfile),
@@ -185,7 +196,7 @@ function loadStoredForProfile(profileId) {
 }
 
 function saveForProfile(profileId, data) {
-  try { localStorage.setItem(getStorageKey(profileId), JSON.stringify(data)) } catch {}
+  try { localStorage.setItem(getStorageKey(profileId), JSON.stringify(data)) } catch { reportSyncError('This device could not save progress. Keep this tab open while we try the cloud backup.') }
 }
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
@@ -193,57 +204,41 @@ export function useProgress(profileId) {
   const initialLocalRef = useRef(undefined)
   if (initialLocalRef.current === undefined) initialLocalRef.current = loadStoredForProfile(profileId)
   const [progress, setProgress] = useState(() => initialLocalRef.current || hydrateProgressData())
-  const syncTimerRef      = useRef(null)
-  const pendingSyncRef    = useRef(null)   // latest data waiting to be flushed
+  const syncQueueRef = useRef(null)
   const hydratedRef       = useRef(!isSupabaseConfigured || !profileId)
   const queuedUpdatesRef  = useRef([])
 
-  // Cancel any pending cloud sync on unmount so it doesn't fire into the void
-  useEffect(() => () => clearTimeout(syncTimerRef.current), [])
+  const getSyncQueue = useCallback(() => {
+    if (!syncQueueRef.current) syncQueueRef.current = createProgressSyncQueue({
+      save: data => saveCloudProgress(profileId, data),
+      persist: data => saveOutbox(profileId, data),
+      clear: data => clearOutbox(profileId, data),
+      onSuccess: reportSyncSuccess,
+      onError: reportSyncError,
+    })
+    return syncQueueRef.current
+  }, [profileId])
 
-  // Flush pending sync immediately on pagehide / beforeunload so progress
-  // isn't lost when the user closes the tab before the 2s debounce fires.
-  // Local storage is always current; this closes the cloud-lag window.
   useEffect(() => {
     if (!isSupabaseConfigured || !profileId) return
-    const flush = () => {
-      if (!hydratedRef.current || !pendingSyncRef.current) return
-      clearTimeout(syncTimerRef.current)
-      syncTimerRef.current = null
-      const data = pendingSyncRef.current
-      pendingSyncRef.current = null
-      saveCloudProgress(profileId, data).catch(() => {})
-    }
+    const queue = getSyncQueue()
+    const flush = () => { if (hydratedRef.current) void queue.flush() }
     window.addEventListener('pagehide', flush)
     window.addEventListener('beforeunload', flush)
+    window.addEventListener('online', flush)
     return () => {
       window.removeEventListener('pagehide', flush)
       window.removeEventListener('beforeunload', flush)
+      window.removeEventListener('online', flush)
+      void queue.dispose()
+      if (syncQueueRef.current === queue) syncQueueRef.current = null
     }
-  }, [profileId])
+  }, [profileId, getSyncQueue])
 
-  // Debounced cloud sync: waits 2s after last update, retries 3× before persisting to outbox
-  const scheduleSync = useCallback((data) => {
+  const scheduleSync = useCallback(data => {
     if (!isSupabaseConfigured || !profileId || !hydratedRef.current) return
-    pendingSyncRef.current = data
-    clearTimeout(syncTimerRef.current)
-    syncTimerRef.current = setTimeout(async () => {
-      pendingSyncRef.current = null
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          await saveCloudProgress(profileId, data)
-          reportSyncSuccess()
-          clearOutbox(profileId)
-          return
-        } catch {
-          if (attempt < 2) await new Promise(r => setTimeout(r, 1500))
-        }
-      }
-      // All retries exhausted — persist to local outbox so it is not lost permanently
-      saveOutbox(profileId, data)
-      reportSyncError()
-    }, 2000)
-  }, [profileId])
+    getSyncQueue().schedule(data)
+  }, [profileId, getSyncQueue])
 
   useEffect(() => {
     if (!isSupabaseConfigured || !profileId) return
@@ -286,7 +281,7 @@ export function useProgress(profileId) {
       hydratedRef.current = true
       setProgress(reconciled)
 
-      if (cloudReadSucceeded && (storedLocal || outbox || queued.length || !cloudProgress)) {
+      if (storedLocal || outbox || queued.length || (cloudReadSucceeded && !cloudProgress)) {
         scheduleSync(reconciled)
       }
     }

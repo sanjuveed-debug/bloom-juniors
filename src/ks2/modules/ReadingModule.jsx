@@ -75,6 +75,7 @@ export default function ReadingModule({ theme, onDone, onBack, progress = {}, pr
     lockedRef.current = true
     const correct = ans === passage.questions[q].ans
     const ns = score + (correct && !missedRef.current ? 1 : 0)
+    setScore(ns)
     if (!correct) missedRef.current = true
     if (correct) confetti({ particleCount: 40, spread: 60, origin: { x: 0.5, y: 0.4 } })
     reactYaagvi(correct ? 'correct' : 'wrong', correct ? { streak: ns % 3 === 0 ? 3 : 1 } : { attempt: 1 })

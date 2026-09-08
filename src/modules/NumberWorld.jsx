@@ -526,7 +526,9 @@ function OpCard({ opKey, op, emoji1, emoji2, onSelect, index, diffLevel }) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function NumberWorld({ avatar, progress, profileName, onAddStars, onBack }) {
+export default function NumberWorld({ avatar, progress, profileName, onAddStars, onBack, starterMission }) {
+  const [guidedMission] = useState(() => starterMission || null)
+  const guidedStarted = useRef(false)
   const theme   = THEMES[avatar] || THEMES.rumi
   const objects = OBJECT_SETS[avatar] || OBJECT_SETS.rumi
   const { speak } = useSpeech()
@@ -543,7 +545,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
   const [consecutiveWrong, setConsecutiveWrong]  = useState(0)
   const [showHint,         setShowHint]          = useState(false)
   const [answered,         setAnswered]          = useState(false)
-  const totalRounds = 10
+  const totalRounds = guidedMission ? 5 : 10
 
   const { reaction: yaagviReaction, react: reactYaagvi } = useYaagviReactions({
     activityKey: `${selectedOp || 'menu'}-${round}-${question?.q || ''}`,
@@ -661,6 +663,12 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
     speak(`${MATCH_CONFIG.label}! ${MATCH_CONFIG.desc}`, { mood: 'instruct' })
     reactYaagvi('start')
   }, [opPlayed, speak, reactYaagvi])
+
+  useEffect(() => {
+    if (!guidedMission || guidedStarted.current) return
+    guidedStarted.current = true
+    handleOpSelect(guidedMission.mode === 'onemore' ? 'onemore' : 'count')
+  }, [guidedMission, handleOpSelect])
 
   const handleFlashSelect = useCallback(() => {
     flashAwardedRef.current = false
@@ -814,7 +822,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
       <div className="min-h-screen flex flex-col overflow-hidden"
         style={{ background: `linear-gradient(160deg, ${theme.bg} 0%, white 60%, ${theme.bg} 100%)` }}>
         <div className="flex items-center justify-between px-4 pb-2 pt-safe shrink-0">
-          <motion.button whileTap={{ scale: 0.9 }} onClick={() => setSelectedOp(null)}
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => guidedMission ? onBack() : setSelectedOp(null)}
             className="w-11 h-11 rounded-full flex items-center justify-center shadow"
             style={{ background: theme.card, color: theme.text }}>←</motion.button>
           <div className="flex items-center gap-1.5">
@@ -875,7 +883,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
         style={{ background: `linear-gradient(160deg, ${theme.bg} 0%, white 60%, ${theme.bg} 100%)` }}>
 
         <div className="flex items-center justify-between px-4 pb-2 pt-safe shrink-0">
-          <motion.button whileTap={{ scale: 0.9 }} onClick={() => setSelectedOp(null)}
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => guidedMission ? onBack() : setSelectedOp(null)}
             className="w-11 h-11 rounded-full flex items-center justify-center shadow"
             style={{ background: theme.card, color: theme.text }}>←</motion.button>
 
@@ -990,7 +998,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
 
       {/* ── Top bar ── */}
       <div className="flex items-center justify-between px-4 pb-2 pt-safe shrink-0">
-        <motion.button whileTap={{ scale: 0.9 }} onClick={() => setSelectedOp(null)}
+        <motion.button whileTap={{ scale: 0.9 }} onClick={() => guidedMission ? onBack() : setSelectedOp(null)}
           className="w-11 h-11 rounded-full flex items-center justify-center shadow"
           style={{ background: theme.card, color: theme.text }}>←</motion.button>
 
@@ -999,6 +1007,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
             <span className="text-xl">{op.icon}</span>
             <p className="font-bubble text-base" style={{ color: opColour }}>{op.label}</p>
           </div>
+          <p className="font-round text-xs font-bold" style={{ color: theme.text }} aria-live="polite">Round {round}/{totalRounds}</p>
           {/* Round progress dots */}
           <div className="flex gap-1 justify-center mt-0.5">
             {Array.from({ length: totalRounds }).map((_, i) => (

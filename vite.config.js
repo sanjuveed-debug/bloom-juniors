@@ -1,18 +1,18 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { resolveDevApiTarget } from './scripts/dev-api-target.mjs'
+
+const devApiTarget = resolveDevApiTarget(process.env.BLOOM_DEV_API_TARGET || '')
 
 export default defineConfig({
   server: {
-    proxy: {
-      // Pages Functions (/api/parent-pin, /api/tts, …) don't run under `vite dev`;
-      // forward them to production so local dev can log in and speak.
-      '/api': { target: 'https://bloomjuniors.com', changeOrigin: true },
-    },
+    proxy: devApiTarget ? { '/api': { target: devApiTarget, changeOrigin: true } } : {},
   },
   build: {
     chunkSizeWarningLimit: 800,
     rollupOptions: {
+      input: { main: 'index.html', meetYaagvi: 'meet-yaagvi.html', meetYaagviDirect: 'blog/meet-yaagvi/index.html' },
       output: {
         manualChunks(id) {
           if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) return 'react-vendor'
@@ -23,9 +23,20 @@ export default defineConfig({
     },
   },
   plugins: [
+    {
+      name: 'bloom-local-api-only',
+      configureServer(server) {
+        if (devApiTarget) return
+        server.middlewares.use('/api', (_request, response) => {
+          response.statusCode = 503
+          response.setHeader('Content-Type', 'application/json')
+          response.end(JSON.stringify({ error: 'Local API backend is not configured.' }))
+        })
+      },
+    },
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon-bloom-v3.svg', 'bloom-v3-touch.png', 'offline.html'],
       workbox: {
         importScripts: ['/push-handler.js'],

@@ -1,0 +1,11 @@
+.adventure-finish-choices{width:100%;max-width:600px;margin:22px auto 0;padding:20px;border:1px solid #bdd4bd;border-radius:24px;background:#fffdf5;color:#244938;animation:finish-arrive .25s ease-out;text-align:center}
+.adventure-finish-choices h3{font-size:20px;line-height:1.35;font-weight:800;margin:0}
+.adventure-finish-choices p{font-size:14px;line-height:1.5;margin:10px 0 16px}
+.adventure-finish-buttons{display:grid;gap:12px}
+.adventure-finish-choices button{min-height:48px;border-radius:16px;padding:13px 18px;font:inherit;font-weight:800;cursor:pointer;width:100%}
+.adventure-finish-next{background:#285a41;color:white;border:2px solid #285a41}
+.adventure-finish-stop{background:#f0f5e9;color:#244938;border:2px solid #63876d}
+.adventure-finish-choices .adventure-finish-replay{width:auto;background:transparent;border:0;text-decoration:underline;font-size:14px;margin-top:10px}
+.adventure-finish-choices button:focus-visible,.adventure-finish-choices h3:focus-visible{outline:3px solid #b86b14;outline-offset:4px}
+@keyframes finish-arrive{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.adventure-finish-choices{animation:none}}

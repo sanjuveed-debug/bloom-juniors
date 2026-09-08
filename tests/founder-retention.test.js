@@ -325,9 +325,9 @@ test('founder report isolates the aggregate Founding Families pilot cohort', () 
   assert.equal(report.foundingPilot.profiles, 2)
   assert.equal(report.foundingPilot.activated, 1)
   assert.equal(report.foundingPilot.activationRate, 50)
-  assert.deepEqual(report.foundingPilot.d1, { day: 1, eligible: 1, retained: 1, rate: 100 })
-  assert.deepEqual(report.foundingPilot.d3, { day: 3, eligible: 1, retained: 1, rate: 100 })
-  assert.deepEqual(report.foundingPilot.d7, { day: 7, eligible: 1, retained: 1, rate: 100 })
+  assert.deepEqual(report.foundingPilot.d1, { day: 1, eligible: 2, retained: 1, rate: 50 })
+  assert.deepEqual(report.foundingPilot.d3, { day: 3, eligible: 2, retained: 1, rate: 50 })
+  assert.deepEqual(report.foundingPilot.d7, { day: 7, eligible: 2, retained: 1, rate: 50 })
   assert.equal(JSON.stringify(report).includes('pilot-a'), false)
 })
 
@@ -488,4 +488,22 @@ test('founder API returns aggregate retention data without names', async () => {
   } finally {
     globalThis.fetch = originalFetch
   }
+})
+
+
+test('open-only profiles are eligible and exact D14/D30 preserve activation semantics', () => {
+  const report = buildFounderRetentionReport({
+    profiles: [{ id: 'a', user_id: 'u', age_group: 'early', created_at: '2026-07-01T12:00:00Z' }],
+    progressRows: [{ profile_id: 'a', user_id: 'u', progress: {
+      sessions: [],
+      retentionTelemetry: { events: [1, 15, 31].map(day => ({
+        id: `open-${day}`, type: 'open', date: `2026-07-${String(day).padStart(2, '0')}`,
+        at: Date.UTC(2026, 6, day, 12),
+      })) },
+    } }],
+  }, { now: new Date('2026-08-01T12:00:00Z'), timezone: 'UTC' })
+  assert.deepEqual(report.summary.d14, { day: 14, eligible: 1, retained: 1, rate: 100 })
+  assert.deepEqual(report.summary.d30, { day: 30, eligible: 1, retained: 1, rate: 100 })
+  assert.equal(report.summary.firstMission, 0)
+  assert.equal(report.summary.sameDayActivation, 0)
 })

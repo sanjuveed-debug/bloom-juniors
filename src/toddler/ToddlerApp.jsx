@@ -1,3 +1,6 @@
+import { applyCollectionAction } from '../utils/collectionAdventure.js'
+import TinyPicnic, { TinyHome } from './TinyPicnic.jsx'
+import YaagviCharacter from '../components/YaagviCharacter'
 import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
@@ -1183,7 +1186,7 @@ export function ToddlerDashboard({ profileName, progress, onNavigate, onSwitchPr
   const updateTreasureCollection=nextCollection=>onUpdateProgress?.({treasureCollection:nextCollection})
   return <div className="min-h-screen bg-[#fff0d6] pb-16 text-[#3b1607]">
     <HighFiveDelivery progress={progress} profileName={profileName} ageGroup="toddler" onUpdateProgress={onUpdateProgress}/>
-    <header className="pt-safe border-b-2 border-[#9a4b20]/15 bg-[#fff4dc] px-3 pb-3 shadow-sm sm:px-4"><div className="mx-auto flex max-w-6xl items-center gap-2 sm:gap-3"><div className="mascot-video relative hidden h-20 w-24 shrink-0 sm:block"><img src="/yaagvi-3d-wave.png" alt="Yaagvi waving" className="absolute inset-0 h-full w-full object-contain drop-shadow-lg"/><video className="absolute inset-0 h-full w-full object-contain drop-shadow-lg" autoPlay muted loop playsInline preload="metadata" poster="/yaagvi-3d-wave.png" aria-hidden="true"><source src="/yaagvi-3d-wave.webm" type="video/webm"/></video></div><div className="min-w-0 flex-1"><p className="truncate font-round text-[9px] font-black uppercase text-[#b44b20] sm:text-xs sm:tracking-[.15em]">Yaagvi’s little treasure hunt</p><h1 className="truncate font-bubble text-lg sm:text-3xl">Hi, {profileName}! 👋</h1><p className="hidden font-round text-sm font-bold text-[#8a5435] sm:block">Find two treasures, then celebrate.</p></div><div className="hidden rounded-xl bg-[#ffe29a] px-2 py-2 text-center sm:block sm:px-3"><p className="text-sm">⭐</p><p className="font-bubble text-lg leading-none">{totalStars}</p></div><AvatarWorkshopButton progress={progress} compact light onClick={()=>setShowAvatarWorkshop(true)}/>{onParent&&<button type="button" onClick={onParent} aria-label="Open Parent Zone" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#9a4b20]/20 bg-white/80 font-round text-xs font-black text-[#7a351b] sm:flex sm:w-auto sm:px-3">🔒 <span className="hidden sm:inline">Parents</span></button>}{onSwitchProfiles&&<button type="button" onClick={onSwitchProfiles} aria-label={`Switch from ${profileName} to another child`} className="min-h-10 shrink-0 rounded-xl bg-white px-2 font-bubble text-xs text-[#7a351b] shadow sm:px-3 sm:text-sm">⇄ <span className="hidden min-[390px]:inline">Switch</span></button>}</div></header>
+    <header className="pt-safe border-b-2 border-[#9a4b20]/15 bg-[#fff4dc] px-3 pb-3 shadow-sm sm:px-4"><div className="mx-auto flex max-w-6xl items-center gap-2 sm:gap-3"><div className="relative h-14 w-12 shrink-0 sm:h-20 sm:w-24"><YaagviCharacter state="wave" size="100%" style={{ height: '100%' }}/></div><div className="min-w-0 flex-1"><p className="truncate font-round text-[9px] font-black uppercase text-[#b44b20] sm:text-xs sm:tracking-[.15em]">Yaagvi’s little treasure hunt</p><h1 className="truncate font-bubble text-lg sm:text-3xl">Hi, {profileName}! 👋</h1><p className="hidden font-round text-sm font-bold text-[#8a5435] sm:block">Find two treasures, then celebrate.</p></div><div className="hidden rounded-xl bg-[#ffe29a] px-2 py-2 text-center sm:block sm:px-3"><p className="text-sm">⭐</p><p className="font-bubble text-lg leading-none">{totalStars}</p></div><AvatarWorkshopButton progress={progress} compact light onClick={()=>setShowAvatarWorkshop(true)}/>{onParent&&<button type="button" onClick={onParent} aria-label="Open Parent Zone" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#9a4b20]/20 bg-white/80 font-round text-xs font-black text-[#7a351b] sm:flex sm:w-auto sm:px-3">🔒 <span className="hidden sm:inline">Parents</span></button>}{onSwitchProfiles&&<button type="button" onClick={onSwitchProfiles} aria-label={`Switch from ${profileName} to another child`} className="min-h-10 shrink-0 rounded-xl bg-white px-2 font-bubble text-xs text-[#7a351b] shadow sm:px-3 sm:text-sm">⇄ <span className="hidden min-[390px]:inline">Switch</span></button>}</div></header>
     <BloomAdventureHome ageGroup="toddler" profileName={profileName} progress={progress} dailyNext={nextModule} dailySteps={dailyPath.steps} dailyDone={dailyPath.doneCount} dailyRequired={2} dailyClaimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} libraryOpen={showExploreMap} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress} onClaimTreasure={claimTreasure} onToggleLibrary={()=>setShowExploreMap(value=>!value)} onOpenWorld={onWonderWorld} onOpenWonder={()=>onNavigate('wonderwhy','foundation-adventure')} onOpenTreasureRoom={()=>setShowShelf(true)}/>
     {showExploreMap&&<div className="mx-auto mt-4 grid max-w-6xl grid-cols-2 gap-2 px-4 sm:flex sm:overflow-x-auto">{[{id:'daily',label:"📍 Today's path"},{id:'story',label:'📖 Story adventure'},{id:'endless',label:'🧭 Endless mode'},{id:'map',label:'🗺️ Full map'}].map(t=><button key={t.id} onClick={()=>setExploreTab(t.id)} className="min-h-10 rounded-lg px-2 py-2 font-round text-[10px] font-black uppercase transition-colors sm:shrink-0 sm:rounded-full sm:px-4 sm:text-xs sm:tracking-wide" style={exploreTab===t.id?{background:'#ef3f83',color:'#fff'}:{background:'#fff',color:'#ef3f83',border:'1.5px solid #ef3f8340'}}>{t.label}</button>)}</div>}
     {showExploreMap&&exploreTab==='daily'&&<OneDailyJourney ageGroup="toddler" profileName={profileName} steps={dailyPath.steps} doneCount={dailyPath.doneCount} required={2} claimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} streak={progress.loginStreak||0} onPlayNext={()=>onNavigate(nextModule.id)} onClaimTreasure={claimTreasure} onOpenTreasureRoom={()=>setShowShelf(true)} onOpenWorld={onWonderWorld} exploreOpen={showExploreMap} onToggleExplore={()=>setShowExploreMap(value=>!value)}/>}
@@ -1336,7 +1339,7 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
   const moodLog = progress.moodLog || []
   const moodLoggedToday = moodLog.some(entry => entry.date === todayKey)
   const [returnTarget] = useState(() => consumeReturnDeepLinkTarget('toddler'))
-  const [screen, setScreen] = useState(returnTarget || (classroomMode || !hasCompletedFirstMission(progress) || moodLoggedToday ? 'home' : 'mood'))
+  const [screen, setScreen] = useState(returnTarget || 'home')
   const [moduleArrival, setModuleArrival] = useState(returnTarget || null)
   const [rewardInfo, setRewardInfo] = useState(null)
   const rewardTimerRef = useRef(null)
@@ -1498,6 +1501,15 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
     }
   }, [update, logSession, progress, profileId])
 
+  if (!classroomMode && screen === 'tiny-picnic') {
+    return <VoiceContext.Provider value="en-US-AnaNeural"><TinyPicnic progress={progress} update={update} onExplore={() => openModule('library')} onBack={() => openModule('home')} /></VoiceContext.Provider>
+  }
+  if (!classroomMode && screen === 'home') {
+    return <VoiceContext.Provider value="en-US-AnaNeural"><TinyHome profileName={profileName} progress={progress}
+      onPlay={() => { if (progress.collectionAdventures?.tiny?.state?.phase === 'complete') update(p => applyCollectionAction(p, 'tiny', {type:'REPLAY'})); openModule('tiny-picnic') }}
+      onExplore={() => openModule('library')} onParents={parentPin || verifyParentPin ? () => openModule('parent') : undefined} onSwitchProfiles={onSwitchProfiles} /></VoiceContext.Provider>
+  }
+
   if (screen === 'avatar') {
     return <ScreenEnter key={screen}><ToddlerAvatarSelector onSelect={handleAvatarSelect} /></ScreenEnter>
   }
@@ -1586,6 +1598,7 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
   return (
     <ScreenEnter key={screen}>
     <VoiceContext.Provider value="en-US-AnaNeural">
+      {!classroomMode && <button className="m-4 px-5 py-3 rounded-2xl bg-white text-green-900 font-bold" onClick={() => openModule('home')}>Back to my home</button>}
       <ToddlerDashboard
         theme={theme}
         profileId={profileId}

@@ -69,7 +69,7 @@ export default function ToddlerChoiceAdventure({
       const guided = attemptsRef.current >= 2
       setGuideAnswer(guided)
       setMascotState(guided ? 'point' : 'think')
-      setMessage(guided ? 'Yaagvi made the matching choice glow!' : 'Good try — use Yaagvi’s clue!')
+      setMessage(guided ? 'Bumi made the matching choice glow!' : 'Good try — use Bumi’s clue!')
       const clue = guided
         ? `Look for the choice with the golden glow. ${hintOf(current)}`
         : hintOf(current)
@@ -109,7 +109,7 @@ export default function ToddlerChoiceAdventure({
       <div className="game-ambient pointer-events-none absolute inset-0 opacity-70" />
       <header className="relative z-10 mx-auto flex max-w-4xl items-center justify-between py-3">
         <button onClick={onBack} className="min-h-11 rounded-full border-2 border-white/30 bg-black/15 px-4 font-round text-sm font-black">← Map</button>
-        <button aria-label="Hear Yaagvi read this question" onClick={() => hearQuestion()} className="flex min-h-11 items-center gap-2 rounded-full border-2 border-white/35 bg-white/20 px-4 font-round text-sm font-black"><span className="text-xl">{speaking ? '🔊' : '🔈'}</span><span>Hear Yaagvi</span></button>
+        <button aria-label="Hear Bumi read this question" onClick={() => hearQuestion()} className="flex min-h-11 items-center gap-2 rounded-full border-2 border-white/35 bg-white/20 px-4 font-round text-sm font-black"><span className="text-xl">{speaking ? '🔊' : '🔈'}</span><span>Hear Bumi</span></button>
       </header>
 
       <main className="relative z-10 mx-auto mt-2 max-w-4xl rounded-[32px] border-4 border-white/35 bg-[#fff8e8]/95 p-4 text-[#3b1607] shadow-2xl sm:p-7">

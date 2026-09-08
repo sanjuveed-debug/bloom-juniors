@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import AdventureModuleFrame from './components/AdventureModuleFrame.jsx'
+import { TREASURE_QUEST_PATHS, TREASURE_MODULE_NAMES } from './utils/treasureLoadout.js'
 import './index.css'
 
 const params = new URLSearchParams(window.location.search)
 const ageGroup = params.get('age') || 'early'
-const moduleId = params.get('module') || 'math'
+const initialModuleId = params.get('module') || 'math'
 const questReady = params.get('quest') === 'ready'
 
 function Harness() {
+  const [moduleId,setModuleId] = useState(initialModuleId)
   const [homeCount,setHomeCount] = useState(0)
   const [progress,setProgress] = useState({
     totalStars: 48,
@@ -30,9 +32,9 @@ function Harness() {
     window.dispatchEvent(new CustomEvent('yaagvi:celebrate',{detail:{module:moduleId,stars:5,eventId}}))
     if(showReward) window.dispatchEvent(new CustomEvent('bloom:game-complete',{detail:{module:moduleId,stars:3,correct:4,total:4,reward:'A new treasure-map clue was saved.',firstMission:true}}))
   }
-  return <AdventureModuleFrame moduleId={moduleId} ageGroup={ageGroup} progress={progress} onUpdateProgress={setProgress} onMap={()=>setHomeCount(value=>value+1)}>
+  return <><AdventureModuleFrame moduleId={moduleId} ageGroup={ageGroup} progress={progress} onUpdateProgress={setProgress} onMap={()=>setHomeCount(value=>value+1)}>
     <div className="mx-auto max-w-xl p-8 text-center"><h1 className="font-bubble text-3xl">Companion Learning Test</h1><p className="mt-2 font-round">What is 4 + 4?</p><div className="mt-5 grid grid-cols-3 gap-3"><button data-companion-answer="wrong" className="rounded-2xl bg-white p-4 font-bubble">6</button><button data-companion-answer="correct" className="rounded-2xl bg-white p-4 font-bubble">8</button><button data-companion-answer="wrong" className="rounded-2xl bg-white p-4 font-bubble">9</button></div><div className="mt-8 flex flex-wrap justify-center gap-3"><button onClick={()=>finish(false)} className="rounded-2xl bg-emerald-500 px-6 py-4 font-bubble text-white">Finish a learning win</button><button onClick={()=>finish(true)} className="rounded-2xl bg-fuchsia-600 px-6 py-4 font-bubble text-white">Finish and show reward</button></div></div>
-  </AdventureModuleFrame>
+  </AdventureModuleFrame><aside aria-label="Local companion review result" style={{background:'white',color:'#111',padding:16}}><p>Synthetic fixture. Home callbacks: {homeCount}. Stars: {progress.totalStars}.</p><label>Fixture learning module<select value={moduleId} onChange={event=>setModuleId(event.target.value)}>{(TREASURE_QUEST_PATHS[ageGroup] || TREASURE_QUEST_PATHS.early).map(id=><option key={id} value={id}>{TREASURE_MODULE_NAMES[id]} ({id})</option>)}</select></label><pre>{JSON.stringify({companionPowers:progress.companionPowers,treasureCollection:progress.treasureCollection},null,2)}</pre></aside></>
 }
 
 createRoot(document.getElementById('root')).render(<Harness/>)

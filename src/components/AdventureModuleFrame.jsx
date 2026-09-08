@@ -6,6 +6,9 @@ import { ActiveGameTreasure, TreasureLoadoutBadge, TreasureLoadoutPicker } from 
 import { spendCompanionPower } from '../utils/companionPowers.js'
 import { activateTreasurePower, getActiveTreasure, getTreasureQuest, getTreasureQuestRewards, processTreasureLearningWin, setActiveTreasure } from '../utils/treasureLoadout.js'
 import GameCompleteReveal from './GameCompleteReveal.jsx'
+import { recordActivationTelemetry } from '../utils/retentionTelemetry.js'
+import { trackEvent } from '../utils/analytics.js'
+import { formatLocalDate } from '../utils/date.js'
 
 const META = {
   phonics:['Echo Jungle','🎤'],math:['Number Falls','🔢'],tricky:['Starry Caves','⭐'],story:['Story Tree','📖'],shapes:['Shape River','🔷'],logic:['Puzzle Pass','🧩'],davinci:['Rainbow Mountain','🎨'],shop:['Treasure Market','🛍️'],worldgk:['World Lookout','🌍'],science:['Wonder Springs','🔬'],planets:['Moon Camp','🪐'],anatomy:['Body Basecamp','🫀'],exercise:['Movement Meadow','🏃'],arcade:['Treasure Arcade','🎮'],sacred:['Story Temple','🕊️'],piggybank:['Coin Cove','🐷'],
@@ -23,6 +26,19 @@ export default function AdventureModuleFrame({ moduleId, ageGroup='early', progr
   const [place,icon]=(ageGroup==='junior'&&JUNIOR_META_OVERRIDE[moduleId])||META[moduleId]||['Explorer Trail','🗺️']
   const toddler=ageGroup==='toddler', junior=ageGroup==='junior'
   const { speak, speaking, primeSpeech } = useSpeech()
+  const activationRecorded = useRef(false)
+  useEffect(() => {
+    if (activationRecorded.current || progress?.childInterest?.active?.source !== 'first-mission') return
+    if (progress?.retentionTelemetry?.events?.some(event => event.type === 'activation_activity_started')) return
+    activationRecorded.current = true
+    // This frame commits only after the lazy activity has rendered. A home tap
+    // alone must not claim that a failed or blocked module actually started.
+    onUpdateProgress?.(current => ({ ...current, retentionTelemetry: recordActivationTelemetry(current.retentionTelemetry, {
+      type: 'activation_activity_started', date: formatLocalDate(), module: moduleId,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+    }) }))
+    trackEvent('activation_activity_started', { age_group: ageGroup, module: moduleId })
+  }, [ageGroup, moduleId, onUpdateProgress, progress])
   const [tap,setTap]=useState(null), timer=useRef(null)
   const [treasurePicker,setTreasurePicker]=useState(false)
   const [treasureMessage,setTreasureMessage]=useState('')
@@ -93,7 +109,7 @@ export default function AdventureModuleFrame({ moduleId, ageGroup='early', progr
     const candidates=[...(root?.querySelectorAll('[data-speech],h1,h2,h3,p')||[])]
       .map(el=>el.textContent?.replace(/\s+/g,' ').trim()).filter(text=>text&&text.length>3&&!/back|progress|correct$/i.test(text))
     const visible=[...new Set(candidates)].slice(0,3).join('. ').slice(0,360)
-    const fallback=toddler?`Welcome to ${place}. Tap, look, and play with Yaagvi.`:junior?`Mission briefing for ${place}. Complete the challenge to earn experience and treasure.`:`Welcome to ${place}. Complete the clue to move forward on your treasure map.`
+    const fallback=toddler?`Welcome to ${place}. Tap, look, and play with Bumi.`:junior?`Mission briefing for ${place}. Complete the challenge to earn experience and treasure.`:`Welcome to ${place}. Complete the clue to move forward on your treasure map.`
     speak(visible||fallback,{mood:'instruct'})
   }
   const activateCompanionPower=(powerState)=>{

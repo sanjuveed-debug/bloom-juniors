@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { preservesGuidedDestination } from '../utils/guidedNavigation.js'
 import { motion, AnimatePresence } from 'framer-motion'
 import { THEMES } from '../themes'
 import { getAssistant } from '../assistants'
@@ -1210,7 +1211,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
       setPremiumMod(mod)
       return
     }
-    if (!mod || isDailyPathDone || dailyAccess.availableIds.has(to)) {
+    if (!mod || preservesGuidedDestination(interestSource) || isDailyPathDone || dailyAccess.availableIds.has(to)) {
       onNavigate(to, interestSource)
       return
     }

@@ -1,0 +1,63 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { newPicnic, picnicReducer as reduce, checkPlaces, restorePicnic, PICNIC_ROUNDS } from '../src/utils/picnicAdventure.js'
+const setCorrect = s => PICNIC_ROUNDS[s.round].guests.reduce((s, name, to) => name ? reduce(s, { type: 'PLACE', to }) : s, s)
+const finish = s => reduce(reduce(setCorrect(s), { type: 'SUBMIT' }), { type: 'NEXT' })
+test('only exact one-to-one matching succeeds; empty Ready is not an attempt', () => {
+  let s = reduce(newPicnic(), { type: 'SUBMIT' })
+  assert.equal(s.attempts, 0)
+  assert.deepEqual(checkPlaces([true, true, true, true, false, false], 0), { correct: false, missing: [4], extra: [2] })
+  s = reduce(setCorrect(s), { type: 'SUBMIT' })
+  assert.equal(s.phase, 'celebrate')
+  assert.equal(s.attempts, 1)
+  assert.equal(reduce(s, { type: 'SUBMIT' }), s)
+})
+test('retry evidence survives reload and repeated unchanged Ready', () => {
+  let s = reduce(reduce(newPicnic(), { type: 'PLACE', to: 0 }), { type: 'SUBMIT' })
+  s = reduce(s, { type: 'SUBMIT' })
+  assert.equal(s.attempts, 1)
+  s = restorePicnic(JSON.stringify(s))
+  s = finish(s)
+  assert.equal(s.results[0].attempts, 2)
+  assert.equal(s.results[0].firstCorrect, false)
+  s = finish(s)
+  assert.equal(s.report.firstTryCorrect, 1)
+  assert.equal(s.report.supportedCorrect, 1)
+})
+test('help does not place plates or grant completion, and excludes independent credit', () => {
+  let s = reduce(newPicnic(), { type: 'HELP' })
+  assert.deepEqual(s.placements, Array(6).fill(false))
+  s = restorePicnic(JSON.stringify(s))
+  s = finish(finish(s))
+  assert.equal(s.report.firstTryCorrect, 1)
+  assert.equal(s.report.results[0].helped, true)
+})
+test('transfer uses three guests in a new layout; replay preserves original report', () => {
+  let s = finish(newPicnic())
+  assert.equal(s.round, 1)
+  assert.deepEqual(s.placements, Array(6).fill(false))
+  assert.equal(PICNIC_ROUNDS[1].guests.filter(Boolean).length, 3)
+  assert.equal(s.report, null)
+  s = finish(s)
+  const report = s.report
+  s = reduce(s, { type: 'REPLAY' })
+  s = reduce(s, { type: 'HELP' })
+  s = finish(finish(s))
+  assert.deepEqual(s.report, report)
+  assert.deepEqual(restorePicnic(JSON.stringify(s)).report, report)
+})
+test('moving cannot stack plates, lose plates at an invalid target or change completed work', () => {
+  const s = reduce(newPicnic(), { type: 'PLACE', to: 0 })
+  assert.equal(reduce(s, { type: 'MOVE', from: 0, to: 9 }), s)
+  assert.equal(reduce(s, { type: 'MOVE', from: 1, to: 2 }), s)
+  const moved = reduce(s, { type: 'MOVE', from: 0, to: 2 })
+  assert.deepEqual(moved.placements, [false, false, true, false, false, false])
+  const done = reduce(setCorrect(newPicnic()), { type: 'SUBMIT' })
+  assert.equal(reduce(done, { type: 'TOGGLE', to: 0 }), done)
+})
+test('corrupt and inconsistent saves reset safely; completion scores are recomputed', () => {
+  for (const raw of ['bad', '{}', 'null', JSON.stringify({ ...newPicnic(), phase: 'complete' }), JSON.stringify({ ...newPicnic(), attempts: 9 })]) assert.deepEqual(restorePicnic(raw), newPicnic())
+  const done = finish(finish(newPicnic()))
+  done.report.firstTryCorrect = 900
+  assert.equal(restorePicnic(JSON.stringify(done)).report.firstTryCorrect, 2)
+})

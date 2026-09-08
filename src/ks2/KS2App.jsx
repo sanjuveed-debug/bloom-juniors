@@ -1,3 +1,5 @@
+import MarketMission, { MarketHome } from './MarketMission.jsx'
+import { applyMarketAction } from '../utils/marketMission.js'
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
@@ -523,7 +525,7 @@ function LegacyKS2Dashboard({ theme, profileName, progress, todayKey, gamesUnloc
           name: 'Yaagvi',
           title: 'Power coach',
           sample: 'Pick the next mission and I will keep you moving.',
-          image: '/yaagvi-mascot-single.webp',
+          image: '/bumi/avatar-v1.webp',
           imagePosition: 'center',
           emoji: '⭐',
         }}
@@ -535,7 +537,7 @@ function LegacyKS2Dashboard({ theme, profileName, progress, todayKey, gamesUnloc
         profileName={profileName}
         progress={progress}
         prompts={[
-          `Hi ${profileName || 'there'}. Yaagvi is ready. Your next mission is ${dailyMission.next?.module?.label || 'ready'}.`,
+          `Hi ${profileName || 'there'}. Bumi is ready. Your next mission is ${dailyMission.next?.module?.label || 'ready'}.`,
           `Complete ${DAILY_UNLOCK_TARGET} study missions to open the Game Zone. You have ${studyDoneCount} done today.`,
           gamesUnlocked
             ? 'Game Zone is unlocked. Choose a reward game or keep building XP.'
@@ -609,7 +611,7 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
   const moodLog = progress.moodLog || []
   const moodLoggedToday = moodLog.some(entry => entry.date === todayKey)
   const [returnTarget] = useState(() => consumeReturnDeepLinkTarget('junior'))
-  const [screen, setScreen] = useState(returnTarget || (classroomMode || !hasCompletedFirstMission(progress) || moodLoggedToday ? 'home' : 'mood'))
+  const [screen, setScreen] = useState(returnTarget || 'home')
   const [lockedModule, setLockedModule] = useState(null)
   const [moduleArrival, setModuleArrival] = useState(returnTarget || null)
   const [showCountryLibrary, setShowCountryLibrary] = useState(false)
@@ -806,6 +808,15 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
     window.dispatchEvent(new CustomEvent('bloom:game-complete',{detail:{module:'exercise',stars:3,eventId,reward,firstMission}}))
   }, [update, todayKey, profileId, progress])
 
+  if (!classroomMode && screen === 'market') {
+    return <VoiceContext.Provider value="en-GB-SoniaNeural"><MarketMission progress={progress} update={update} onExplore={() => gatedNavigate('library')} onBack={() => gatedNavigate('home')} /></VoiceContext.Provider>
+  }
+  if (!classroomMode && screen === 'home') {
+    return <MarketHome progress={progress} profileName={profileName}
+      onPlay={() => { if (progress.marketMission?.state?.phase === 'complete') update(p => applyMarketAction(p, {type:'REPLAY'})); gatedNavigate('market') }}
+      onExplore={() => gatedNavigate('library')} onParents={parentPin || verifyParentPin ? () => gatedNavigate('parent') : undefined} onSwitchProfiles={onSwitchProfiles} />
+  }
+
   if (screen === 'avatar') return <ScreenEnter key={screen}><KS2AvatarSelector onSelect={handleAvatarSelect} /></ScreenEnter>
   if (screen === 'mood') return <ScreenEnter key={screen}><MoodCheckIn avatar={progress.ks2Avatar} profileName={profileName} themeOverride={theme} onComplete={handleMoodComplete} onSkip={() => handleMoodComplete({ key: 'skipped', emoji: '⏭️' })} /></ScreenEnter>
 
@@ -909,6 +920,7 @@ export default function KS2App({ profileId, profileName, profileAgeGroup, onSwit
   return (
     <ScreenEnter key={screen}>
     <VoiceContext.Provider value="en-GB-SoniaNeural">
+      {!classroomMode && <button className="m-4 px-5 py-3 rounded-xl bg-white text-green-900 font-bold" onClick={() => gatedNavigate('home')}>Back to my missions</button>}
       <KS2Dashboard
         theme={theme}
         profileName={profileName}

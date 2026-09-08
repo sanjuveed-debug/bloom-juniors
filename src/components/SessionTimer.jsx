@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion'
  *   onTimeUp        — called once when countdown reaches 0
  *   theme           — THEMES[avatar] object for colours
  */
-export default function SessionTimer({ sessionMinutes = 30, profileName, onTimeUp, theme }) {
+export default function SessionTimer({ sessionMinutes = 30, profileName, onTimeUp, theme, hidePill = false }) {
   const totalSecs = sessionMinutes * 60
   const [remaining, setRemaining] = useState(totalSecs)
   const [expired, setExpired] = useState(false)
@@ -62,7 +62,7 @@ export default function SessionTimer({ sessionMinutes = 30, profileName, onTimeU
   return (
     <>
       {/* Timer pill — always visible in top-right */}
-      <motion.div
+      {!hidePill && <motion.div
         data-testid="session-timer"
         className="fixed z-40 flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-lg select-none"
         style={{
@@ -79,7 +79,7 @@ export default function SessionTimer({ sessionMinutes = 30, profileName, onTimeU
         <span className="font-bubble text-sm leading-none" style={{ color: pillColor }}>
           {pad(mins)}:{pad(secs)}
         </span>
-      </motion.div>
+      </motion.div>}
 
       {/* Time's up overlay */}
       <AnimatePresence>

@@ -148,7 +148,8 @@ export function buildFounderRetentionReport({
         progress,
         sessions,
         activeDates,
-        firstActiveDate: firstAt ? dateKey(firstAt, safeTimezone) : '',
+        firstActiveDate: [...activeDates].sort()[0] || '',
+        firstMissionDate: firstAt ? dateKey(firstAt, safeTimezone) : '',
         reminder: normalizeReturnReminder(progress.returnReminder),
         telemetry: normalizeRetentionTelemetry(progress.retentionTelemetry),
         feedback: normalizeRetentionFeedback(progress.retentionFeedback),
@@ -156,7 +157,7 @@ export function buildFounderRetentionReport({
     })
 
   const firstMission = children.filter(child => child.sessions.length > 0)
-  const sameDayActivation = firstMission.filter(child => child.firstActiveDate === child.createdDate)
+  const sameDayActivation = firstMission.filter(child => child.firstMissionDate === child.createdDate)
   const familiesWithProfiles = new Set(children.map(child => child.userId).filter(Boolean))
   const activatedFamilies = new Set(firstMission.map(child => child.userId).filter(Boolean))
   const newToday = children.filter(child => child.createdDate === today)
@@ -409,6 +410,8 @@ export function buildFounderRetentionReport({
       d1,
       d3,
       d7,
+      d14: retentionMetric(children, 14, today),
+      d30: retentionMetric(children, 30, today),
     },
     funnel: [
       { id: 'auth_accounts', label: 'Login accounts created', count: authAccounts.length, rate: authAccounts.length ? 100 : null },

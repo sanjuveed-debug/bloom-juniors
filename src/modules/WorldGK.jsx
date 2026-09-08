@@ -1,3 +1,4 @@
+import { uniqueAnswerOptions, isWorldAnswerCorrect } from '../utils/worldQuizOptions'
 import { useState, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
@@ -337,8 +338,6 @@ function makeQuestion(pool, mode) {
   const seed = (Date.now() + Math.random() * 99999) >>> 0
   const shuffled = shuffle(getQuestionPool(pool, mode), seed)
   const correct = shuffled[0]
-  const distractors = shuffled.slice(1, 4)
-  const options = shuffle([correct, ...distractors], (seed * 7) >>> 0)
 
   let question, answerKey
   if (mode === 'Capitals') {
@@ -351,6 +350,8 @@ function makeQuestion(pool, mode) {
     question = `What is the currency of ${correct.name}?`
     answerKey = 'currency'
   }
+  const candidates = [...shuffled.slice(1), ...shuffle(getQuestionPool(COUNTRIES, mode), seed)]
+  const options = shuffle(uniqueAnswerOptions(correct, candidates, answerKey), (seed * 7) >>> 0)
   return { correct, options, question, answerKey }
 }
 
@@ -443,7 +444,7 @@ export default function WorldGK({
     if (chosen) return
     setChosen(opt)
     const isHistoryQuiz = quizMode === 'History'
-    const isCorrect = isHistoryQuiz ? opt === question.correct.yearLabel : opt.name === question.correct.name
+    const isCorrect = isWorldAnswerCorrect(opt, question)
     const newScore = score + (isCorrect && !missedCurrent ? 1 : 0)
     const rightAns = quizMode === 'Capitals' ? question.correct.capital
       : quizMode === 'Flags' ? question.correct.name
@@ -584,7 +585,7 @@ export default function WorldGK({
           <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
             {options.map(opt => {
               const optionKey = isHistoryQuiz ? opt : opt.name
-              const isCorrect = isHistoryQuiz ? opt === correct.yearLabel : opt.name === correct.name
+              const isCorrect = isWorldAnswerCorrect(opt, question)
               const isChosen  = isHistoryQuiz ? chosen === opt : chosen?.name === opt.name
               let borderColor = 'transparent'
               let bg = theme.card

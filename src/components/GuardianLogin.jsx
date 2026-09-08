@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { isSupabaseConfigured } from '../lib/supabase.js'
 
@@ -20,6 +20,15 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
   const [loading, setLoading] = useState(false)
   const [resetting, setResetting] = useState(false)
   const [notice, setNotice] = useState('')
+  const [sessionExpired, setSessionExpired] = useState(false)
+  const recoveryRef = useRef(null)
+  const loginPending = useRef(false)
+  useEffect(() => {
+    if (sessionExpired) {
+      recoveryRef.current?.scrollIntoView({ block: 'start' })
+      document.getElementById('guardian-login-password')?.focus({ preventScroll: true })
+    }
+  }, [sessionExpired])
 
   // PIN reset flow
   const [pinResetMode, setPinResetMode] = useState(false)
@@ -67,29 +76,45 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
   const pinDots = pin.padEnd(4, '·')
 
   const handlePin = (digit) => {
-    if (pin.length >= 4) return
+    if (loading || pin.length >= 4) return
     setPin(p => p + digit)
     setError('')
   }
 
-  const handleDelete = () => setPin(p => p.slice(0, -1))
+  const handleDelete = () => { if (!loading) setPin(p => p.slice(0, -1)) }
 
   const handleLogin = async () => {
+    if (loginPending.current) return
     if (fullLogin && !email.trim()) { setError('Please enter your email address.'); return }
     if (fullLogin && isSupabaseConfigured && password.length < 8) { setError('Please enter your account password.'); return }
     if (pin.length !== 4) { setError('Please enter your 4-digit PIN.'); return }
+    loginPending.current = true
     setLoading(true)
-    // Small delay so the button feels responsive
-    await new Promise(r => setTimeout(r, 350))
-    const result = await onLogin(fullLogin ? email.trim() : '', pin, fullLogin ? password : '')
-    setLoading(false)
-    if (result !== true) {
-      setError(typeof result === 'string'
-        ? result
-        : fullLogin ? 'Email, password, or PIN is incorrect. Please try again.' : 'PIN is incorrect. Please try again.')
+    setError('')
+    setNotice('')
+    try {
+      const result = await onLogin(fullLogin ? email.trim() : '', pin, fullLogin ? password : '')
+      if (result !== true) {
+        if (!fullLogin && typeof result === 'string' && result.startsWith('Your saved sign-in has expired.')) {
+          setSessionExpired(true)
+          setFullLogin(true)
+          setEmail(guardianEmail || email)
+          setPassword('')
+          return
+        }
+        setError(typeof result === 'string'
+          ? result
+          : fullLogin ? 'Email, password, or PIN is incorrect. Please try again.' : 'PIN is incorrect. Please try again.')
+        setPin('')
+        setShaking(true)
+        setTimeout(() => setShaking(false), 600)
+      }
+    } catch {
+      setError('Sign in is unavailable right now. Please check your connection and try again.')
       setPin('')
-      setShaking(true)
-      setTimeout(() => setShaking(false), 600)
+    } finally {
+      loginPending.current = false
+      setLoading(false)
     }
   }
 
@@ -227,10 +252,26 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
 
         <div className="w-full rounded-3xl p-6 space-y-5" style={CARD_STYLE}>
 
+          {sessionExpired && (
+            <div ref={recoveryRef} role="status" className="rounded-2xl p-4 font-round text-sm" style={{ background: '#FFF7ED', color: TEXT }}>
+              <strong className="block mb-1">Sign in again to continue</strong>
+              Your saved sign-in has expired. Enter your account password below. Your PIN is still filled in; you can correct it if needed.
+            </div>
+          )}
+
+          {guardianName && !fullLogin && (
+            <button type="button" disabled={loading} onClick={() => { setFullLogin(true); setError(''); setPin('') }}
+              className="w-full rounded-2xl py-3 font-round text-sm font-bold"
+              style={{ background: '#FFF7ED', color: TEXT_MUTED }}>
+              Sign in with email and password
+            </button>
+          )}
+
           {fullLogin && (
             <div>
               <label htmlFor="guardian-login-email" className="font-round text-sm font-bold block mb-1" style={{ color: TEXT }}>Email Address</label>
               <input
+                disabled={loading}
                 id="guardian-login-email"
                 type="email"
                 value={email}
@@ -249,6 +290,7 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
             <div>
               <label htmlFor="guardian-login-password" className="font-round text-sm font-bold block mb-1" style={{ color: TEXT }}>Account Password</label>
               <input
+                disabled={loading}
                 id="guardian-login-password"
                 type="password"
                 value={password}
@@ -264,29 +306,26 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
 
           {/* PIN display */}
           <div>
-            <label className="font-round text-sm font-bold block mb-2" style={{ color: TEXT }}>Parent PIN</label>
+            <label htmlFor="guardian-login-pin" className="font-round text-sm font-bold block mb-2" style={{ color: TEXT }}>Parent PIN</label>
             <motion.div
               animate={shaking ? { x: [-8, 8, -6, 6, -4, 4, 0] } : {}}
               transition={{ duration: 0.4 }}
               className="flex justify-center gap-4 mb-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i}
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl font-bubble border-2 transition-all"
-                  style={{
-                    background: pin.length > i ? 'rgba(194,65,12,0.12)' : '#FFF7ED',
-                    border: pin.length > i ? `2px solid ${PRIMARY}80` : '2px solid rgba(66,32,6,0.14)',
-                    color: TEXT,
-                  }}>
-                  {pin.length > i ? '●' : ''}
-                </div>
-              ))}
+              <input id="guardian-login-pin" type="password" inputMode="numeric"
+                autoComplete="off" maxLength={4} pattern="[0-9]{4}" value={pin}
+                disabled={loading} aria-describedby="guardian-pin-help"
+                onChange={e => { setPin(e.target.value.replace(/\D/g, '').slice(0, 4)); setError('') }}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleLogin() } }}
+                className="w-full rounded-2xl px-4 py-3 text-center outline-none focus:ring-2 focus:ring-orange-700"
+                style={{ ...INPUT_STYLE, maxWidth: 240, fontSize: 28, letterSpacing: '0.65em' }} />
             </motion.div>
 
+            <p id="guardian-pin-help" className="font-round text-xs text-center mb-3" style={{ color: TEXT_MUTED }}>Type four digits or use the buttons below.</p>
             {/* Numpad */}
             <div className="grid grid-cols-3 gap-3">
               {[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map((k, i) => (
                 k === '' ? <div key={i} /> :
-                <motion.button key={i} whileTap={{ scale: 0.88 }}
+                <motion.button key={i} disabled={loading} whileTap={{ scale: 0.88 }}
                   onClick={() => k === '⌫' ? handleDelete() : handlePin(String(k))}
                   className="py-4 rounded-2xl font-bubble text-xl"
                   style={{
@@ -321,9 +360,9 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
             {loading ? 'Checking...' : fullLogin ? 'Log In' : 'Unlock'}
           </motion.button>
 
-          {guardianName && (
+          {guardianName && !sessionExpired && (
             <button
-              type="button"
+              type="button" disabled={loading}
               onClick={() => {
                 setFullLogin(value => !value)
                 setError('')
@@ -338,7 +377,7 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
 
           {/* Forgot PIN */}
           {onResetPin && (
-            <button onClick={() => { setPinResetMode(true); setPrEmail(email || guardianEmail || '') }}
+            <button disabled={loading} onClick={() => { setPinResetMode(true); setPrEmail(email || guardianEmail || '') }}
               className="w-full font-round text-xs text-center transition-colors" style={{ color: TEXT_FAINT }}>
               Forgot PIN? Reset it here
             </button>
@@ -349,21 +388,26 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
             setError('')
             setNotice('')
             setResetting(true)
-            const result = await onForgot?.((email || guardianEmail).trim())
-            setResetting(false)
-            if (typeof result === 'string') setError(result)
-            else if (result?.ok) setNotice(result.message)
-            else if (result?.message) setError(result.message)
+            try {
+              const result = await onForgot?.((email || guardianEmail).trim())
+              if (typeof result === 'string') setError(result)
+              else if (result?.ok) setNotice(result.message)
+              else if (result?.message) setError(result.message)
+            } catch {
+              setError('Password recovery is unavailable right now. Please try again shortly.')
+            } finally {
+              setResetting(false)
+            }
           }}
             className="w-full font-round text-xs text-center mt-1 transition-colors"
             style={{ color: TEXT_FAINT }}
-            disabled={resetting}>
+            disabled={resetting || loading}>
             {resetting ? 'Sending reset email...' : 'Forgot password? Send reset email'}
           </button>
 
           {onRegister && (
             <button
-              type="button"
+              type="button" disabled={loading}
               onClick={onRegister}
               className="w-full rounded-2xl py-3 font-round text-sm font-bold transition-colors"
               style={{ border: '1px solid rgba(66,32,6,0.14)', background: '#FFF7ED', color: TEXT_MUTED }}

@@ -29,7 +29,7 @@ export default function ParentHighFiveComposer({ progress = {}, profileName = 'y
           </div>
         </div>
         <p className="mt-3 rounded-2xl bg-white/80 px-4 py-3 font-round text-sm font-bold leading-6 text-slate-700">“{waiting?.message || message}”</p>
-        <p className="mt-2 font-round text-xs leading-5 text-slate-500">Yaagvi will deliver it with Azure voice when the child opens their home screen.</p>
+        <p className="mt-2 font-round text-xs leading-5 text-slate-500">Bumi will deliver it with Azure voice when the child opens their home screen.</p>
       </div>
     )
   }

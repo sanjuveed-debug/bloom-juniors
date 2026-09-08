@@ -1,3 +1,7 @@
+import { mergeFloatDiscovery } from '../utils/floatDiscovery.js'
+import { mergeMarket } from '../utils/marketMission.js'
+import { mergeCollections } from '../utils/collectionAdventure.js'
+import { mergePicnicProgress } from '../utils/picnicProgress.js'
 import { isSupabaseConfigured, supabase } from '../lib/supabase.js'
 import { mergeWonderWorld } from '../utils/wonderWorld.js'
 import { mergeCompanionPowers } from '../utils/companionPowers.js'
@@ -101,6 +105,13 @@ export function mergeProgress(local = {}, cloud = {}) {
     if (!cloudTimes.has(s.date)) merged.push(s)
   }
   merged.sort((a, b) => (a.date || 0) - (b.date || 0))
+  // The Picnic keeps one first-visit report across offline devices and replays.
+  const firstVisits = new Set()
+  for (let i = 0; i < merged.length; i++) {
+    const activity = merged[i].activityId
+    if (!['picnic-first', 'basket-first', 'snacks-first', 'tiny-first', 'market-first', 'float-discovery-first'].includes(activity)) continue
+    if (firstVisits.has(activity)) { merged.splice(i, 1); i-- } else firstVisits.add(activity)
+  }
 
   // Stickers can be earned on the child device while a parent is composing a
   // high-five elsewhere. Keep the union so a later parent save cannot erase it.
@@ -288,6 +299,10 @@ export function mergeProgress(local = {}, cloud = {}) {
     dreamProject: mergeDreamProject(local.dreamProject, cloud.dreamProject),
     projectAdventures: mergeProjectAdventures(local.projectAdventures, cloud.projectAdventures),
     parentHighFives: mergeParentHighFives(local.parentHighFives, cloud.parentHighFives),
+    collectionAdventures: mergeCollections(local.collectionAdventures, cloud.collectionAdventures),
+    marketMission: mergeMarket(local.marketMission, cloud.marketMission),
+    floatDiscovery: mergeFloatDiscovery(local.floatDiscovery, cloud.floatDiscovery),
+    picnic: mergePicnicProgress(local.picnic, cloud.picnic),
     childInterest: mergeChildInterest(local.childInterest, cloud.childInterest),
     weeklyBloomAdventure: mergeWeeklyBloomAdventure(local.weeklyBloomAdventure, cloud.weeklyBloomAdventure),
     returnReminder: mergeReturnReminder(local.returnReminder, cloud.returnReminder),
@@ -354,14 +369,21 @@ export async function loadPremiumStatus() {
   return data?.premium_status || null
 }
 
+async function getBillingToken() {
+  if (!configured) throw new Error('Sign in required')
+  const { data, error } = await supabase.auth.getSession()
+  const token = data?.session?.access_token
+  if (error || !token) throw new Error('Sign in required')
+  return token
+}
+
 // Opens the Stripe customer portal (manage/cancel subscription).
 export async function openBillingPortal() {
-  const userId = await getCloudUserId()
-  if (!userId) throw new Error('Sign in required')
+  const token = await getBillingToken()
   const resp = await fetch('/api/stripe-portal', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId }),
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({}),
   })
   const data = await resp.json().catch(() => ({}))
   if (!resp.ok || !data.url) throw new Error(data.error || 'Could not open billing portal')
@@ -369,13 +391,12 @@ export async function openBillingPortal() {
 }
 
 // Starts a Stripe Checkout subscription and redirects the browser to it.
-export async function startPremiumCheckout(email) {
-  const userId = await getCloudUserId()
-  if (!userId) throw new Error('Sign in required')
+export async function startPremiumCheckout() {
+  const token = await getBillingToken()
   const resp = await fetch('/api/stripe-checkout', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, email }),
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({}),
   })
   const data = await resp.json().catch(() => ({}))
   if (!resp.ok || !data.url) throw new Error(data.error || 'Could not start checkout')
@@ -620,10 +641,10 @@ export async function loadCloudProgress(profileId) {
 
 export async function saveCloudProgress(profileId, progress) {
   const userId = await getCloudUserId()
-  if (!profileId) return null
+  if (!profileId) throw new Error('A child profile is required to save progress')
   if (!userId) {
     const classSession = loadClassSession(profileId)
-    if (!classSession) return null
+    if (!classSession) throw new Error('Sign in again to sync this child profile')
     const resp = await fetch('/api/class-progress-save', {
       method: 'POST',
       headers: {
@@ -643,7 +664,7 @@ export async function saveCloudProgress(profileId, progress) {
     .maybeSingle()
 
   if (profileError) throw profileError
-  if (!profile) return null
+  if (!profile) throw new Error('This child profile is unavailable for saving')
 
   // Merge with any existing cloud state so offline sessions from other devices are preserved
   let toSave = progress

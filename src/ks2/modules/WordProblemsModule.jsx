@@ -142,6 +142,7 @@ export default function WordProblemsModule({ theme, onDone, onBack, played = 0 }
     lockedRef.current = true
     const correct = ans === curr.ans
     const ns = score + (correct && !missedRef.current ? 1 : 0)
+    setScore(ns)
     if (!correct) missedRef.current = true
     if (correct) confetti({ particleCount: 60, spread: 80, origin: { x: 0.5, y: 0.4 } })
     reactYaagvi(correct ? 'correct' : 'wrong', correct ? { streak: ns % 3 === 0 ? 3 : 1 } : { attempt: 1 })

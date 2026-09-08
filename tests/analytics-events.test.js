@@ -55,7 +55,7 @@ test('trackEventOnce suppresses refresh duplicates in the selected storage scope
   assert.equal(calls.length, 2)
 })
 
-test('retention tracking records daily opens and D1/D7 milestones once', () => {
+test('retention tracking does not label a day-eight return as exact D7', () => {
   const calls = []
   globalThis.localStorage = new MemoryStorage()
   globalThis.sessionStorage = new MemoryStorage()
@@ -71,7 +71,7 @@ test('retention tracking records daily opens and D1/D7 milestones once', () => {
   const names = calls.map(call => call[1])
   assert.equal(names.filter(name => name === 'daily_active_profile').length, 4)
   assert.equal(names.filter(name => name === 'retention_day_1').length, 1)
-  assert.equal(names.filter(name => name === 'retention_day_7').length, 1)
+  assert.equal(names.filter(name => name === 'retention_day_7').length, 0)
 })
 
 test('push return records the notification open and first activity after return', () => {
@@ -118,4 +118,22 @@ test('pilot entry is recorded as the first-open return source', () => {
   assert.equal(result.returnSource, 'founding_pilot')
   const daily = calls.find(call => call[1] === 'daily_active_profile')
   assert.equal(daily[2].return_source, 'founding_pilot')
+})
+
+
+test('exact D1 D3 D7 D14 D30 milestones deduplicate and omit identifiers', () => {
+  const calls = []
+  globalThis.localStorage = new MemoryStorage()
+  globalThis.sessionStorage = new MemoryStorage()
+  globalThis.window = { gtag: (...args) => calls.push(args) }
+  globalThis.location = { search: '' }
+  for (const day of [0, 1, 3, 7, 14, 30]) {
+    const date = new Date(2026, 6, 1 + day, 12)
+    trackRetentionOpen({ profileId: 'private-child-id', ageGroup: 'early' }, date)
+    trackRetentionOpen({ profileId: 'private-child-id', ageGroup: 'early' }, date)
+  }
+  for (const day of [1, 3, 7, 14, 30]) {
+    assert.equal(calls.filter(call => call[1] === `retention_day_${day}`).length, 1)
+  }
+  assert.ok(!JSON.stringify(calls).includes('private-child-id'))
 })

@@ -1,3 +1,4 @@
+import { offerAppUpdate } from './utils/appUpdate.js'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { MotionConfig } from 'framer-motion'
@@ -7,24 +8,20 @@ import ErrorBoundary from './components/ErrorBoundary.jsx'
 import VoiceStatusToast from './components/VoiceStatusToast.jsx'
 import { initErrorMonitor } from './utils/errorMonitor.js'
 import './index.css'
+import { LearningCompanionContext } from './components/LearningCompanionContext.jsx'
+
+const PlayFloat = React.lazy(() => import('./pages/PlayFloat.jsx'))
+const guestFloat = window.location.pathname.replace(/\/$/, '') === '/play/float'
+const PlayPicnic = React.lazy(() => import('./pages/PlayPicnic.jsx'))
+const guestPlay = window.location.pathname.replace(/\/$/, '') === '/play'
 
 initErrorMonitor()
 
-// Auto-reload when a new service worker takes over.
-// hadController = false means first install (no old SW) — skip reload to avoid a flash.
-// hadController = true means an update — reload silently so the user gets new code.
-if ('serviceWorker' in navigator) {
-  const hadController = Boolean(navigator.serviceWorker.controller)
-  let reloading = false
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!hadController || reloading) return
-    reloading = true
-    window.location.reload()
-  })
-}
-
-registerSW({
+// Keep the current learning session intact. Waiting updates activate after all
+// tabs using the old version close; do not reload a child's in-progress activity.
+const updateSW = registerSW({
   immediate: true,
+  onNeedRefresh() { offerAppUpdate(reload => updateSW(reload)) },
   onRegisterError(error) {
     console.error('Service worker registration failed', error)
   },
@@ -33,10 +30,12 @@ registerSW({
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <MotionConfig reducedMotion="user">
+      <LearningCompanionContext.Provider value="bumi">
       <ErrorBoundary>
-        <App />
+        {guestFloat ? <React.Suspense fallback={<p className="p-8 text-center">Getting the water lab ready...</p>}><PlayFloat /></React.Suspense> : guestPlay ? <React.Suspense fallback={<p className="p-8 text-center">Getting your picnic ready...</p>}><PlayPicnic /></React.Suspense> : <App />}
       </ErrorBoundary>
       <VoiceStatusToast />
+      </LearningCompanionContext.Provider>
     </MotionConfig>
   </React.StrictMode>,
 )

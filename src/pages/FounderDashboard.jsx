@@ -220,7 +220,11 @@ export default function FounderDashboard({ onBack, onLogout, initialData = null,
           <Metric label="Day 1 return" value={rate(summary.d1?.rate)} note={`${summary.d1?.retained || 0}/${summary.d1?.eligible || 0} eligible`} />
           <Metric label="Day 3 return" value={rate(summary.d3?.rate)} note={`${summary.d3?.retained || 0}/${summary.d3?.eligible || 0} eligible`} />
           <Metric label="Day 7 return" value={rate(summary.d7?.rate)} note={`${summary.d7?.retained || 0}/${summary.d7?.eligible || 0} eligible`} critical={summary.d7?.rate != null && summary.d7.rate < 20} />
+          <Metric label="Day 14 return" value={rate(summary.d14?.rate)} note={`${summary.d14?.retained || 0}/${summary.d14?.eligible || 0} eligible`} />
+          <Metric label="Day 30 return" value={rate(summary.d30?.rate)} note={`${summary.d30?.retained || 0}/${summary.d30?.eligible || 0} eligible`} />
         </div>
+
+        <p className="px-4 py-2 font-round text-xs text-slate-600">Return rates use exact calendar days after the earliest recorded open or completed activity. Profiles without recorded activity are not yet eligible. Older histories may be incomplete; compare cohorts using the same definition.</p>
 
         {Number(summary.incompleteAuthAccounts) > 0 && (
           <div className="mt-3 border border-amber-300 bg-amber-50 px-4 py-3 font-round text-xs font-bold text-amber-950">

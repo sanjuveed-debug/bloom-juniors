@@ -130,6 +130,7 @@ test('getExerciseCompletionReward only awards the full workout bonus at the real
       sessionMode: 'full',
       exerciseIndex: 7,
       totalExercises: 8,
+      completedExercises: [0, 1, 2, 3, 4, 5, 6, 7],
     }),
     {
       stars: 5,
