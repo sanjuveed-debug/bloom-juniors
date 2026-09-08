@@ -314,6 +314,7 @@ export default function LittleDaVinci({ avatar, onBack, profileName, onAddStars,
   const lastPos       = useRef(null)
   const bgColorRef    = useRef('#FFFBF0')
   const drawTokenRef  = useRef(0)
+  const unsavedStrokeRef = useRef(true)
 
   const [color,          setColor]          = useState('#EF4444')
   const [brushSize,      setBrushSize]      = useState(8)
@@ -454,15 +455,18 @@ export default function LittleDaVinci({ avatar, onBack, profileName, onAddStars,
       const sz  = brushSize * 3.5
       ctx.font = `${sz}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
       ctx.fillText(stamp, pos.x, pos.y)
+      unsavedStrokeRef.current = true
       return
     }
 
     if (tool === 'fill') {
       floodFill(pos.x, pos.y)
+      unsavedStrokeRef.current = true
       return
     }
 
     isDrawing.current = true
+    unsavedStrokeRef.current = true
     lastPos.current   = pos
     const ctx    = canvasRef.current.getContext('2d')
     const radius = (tool === 'eraser' ? brushSize * 2.5 : brushSize) / 2
@@ -524,10 +528,15 @@ export default function LittleDaVinci({ avatar, onBack, profileName, onAddStars,
       }
       const next = [entry, ...existing].slice(0, 20)
       onUpdateProgress?.({ artGallery: next })
-      onAddStars?.('davinci', 2, { total: 1, correct: 1, struggles: [], stayOnModule: true })
       confetti({ particleCount: 80, spread: 120, origin: { x: 0.5, y: 0.5 } })
       setSavedMsg(true)
-      speak('Saved to your gallery! You earned two stars!', { mood: 'celebrate' })
+      if (unsavedStrokeRef.current) {
+        onAddStars?.('davinci', 2, { total: 1, correct: 1, struggles: [], stayOnModule: true })
+        unsavedStrokeRef.current = false
+        speak('Saved to your gallery! You earned two stars!', { mood: 'celebrate' })
+      } else {
+        speak('Saved again! Draw something new to earn more stars!', { mood: 'instruct' })
+      }
       setTimeout(() => setSavedMsg(false), 3000)
     } catch (err) {
       console.warn('save art failed', err)

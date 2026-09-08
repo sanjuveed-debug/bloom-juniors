@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bloom Juniors | Free British Curriculum Learning for Ages 3-9</title>
+    <meta name="description" content="Safe, ad-free British curriculum learning for ages 3–9. No downloads, no child accounts, and no credit card needed. Start your free 2-minute demo today!">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Nunito', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            mint: '#D1FAE5', 
+                            yellow: '#FEF3C7', 
+                            blue: '#E0F2FE', 
+                            coral: '#F97316', 
+                            coralHover: '#EA580C',
+                            dark: '#1E293B', 
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Smooth scrolling for anchor links */
+        html { scroll-behavior: smooth; }
+        /* Custom scrollbar for a polished feel */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="font-sans text-slate-700 antialiased bg-white">
+
+    <!-- ==========================================
+         SECTION 1: HEADER / NAVIGATION
+         ========================================== -->
+    <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center gap-2">
+                    <span class="text-3xl">🌸</span>
+                    <span class="font-display font-extrabold text-2xl text-brand-dark tracking-tight">Bloom Juniors</span>
+                </div>
+
+                <!-- Desktop Nav -->
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#how-it-works" class="text-slate-600 hover:text-brand-coral font-medium transition">How it Works</a>
+                    <a href="#parents" class="text-slate-600 hover:text-brand-coral font-medium transition">For Parents</a>
+                    <a href="#schools" class="text-slate-600 hover:text-brand-coral font-medium transition">For Schools</a>
+                </nav>
+
+                <!-- Desktop CTA -->
+                <div class="hidden md:flex items-center space-x-4">
+                    <a href="#" class="text-slate-600 hover:text-brand-dark font-medium">Log In</a>
+                    <a href="#" class="bg-brand-coral hover:bg-brand-coralHover text-white font-bold py-2.5 px-6 rounded-full shadow-lg shadow-orange-200 transition transform hover:-translate-y-0.5">
+                        Start Free Demo 🚀
+                    </a>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-btn" class="text-slate-600 hover:text-brand-dark focus:outline-none">
+                        <i class="fa-solid fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu (Hidden by default) -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-100 px-4 py-4 space-y-4">
+            <a href="#how-it-works" class="block text-slate-600 font-medium">How it Works</a>
+            <a href="#parents" class="block text-slate-600 font-medium">For Parents</a>
+            <a href="#schools" class="block text-slate-600 font-medium">For Schools</a>
+            <a href="#" class="block text-slate-600 font-medium">Log In</a>
+            <a href="#" class="block w-full text-center bg-brand-coral text-white font-bold py-3 rounded-full">Start Free Demo 🚀</a>
+        </div>
+    </header>
+
+    <!-- ==========================================
+         SECTION 2: HERO SECTION
+         ========================================== -->
+    <section class="relative overflow-hidden bg-gradient-to-br from-brand-mint via-white to-brand-blue pt-16 pb-24 lg:pt-24 lg:pb-32">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <!-- Left: Copy -->
+                <div class="text-center lg:text-left">
+                    <h1 class="font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl text-brand-dark leading-tight mb-6">
+                        Free, Safe, British Curriculum Learning for Ages 3–9
+                    </h1>
+                    <p class="text-lg sm:text-xl text-slate-600 mb-8 max-w-2xl mx-auto lg:mx-0">
+                        Build healthy digital habits with our "study first, play after" method. No ads, no downloads, and no child accounts required.
+                    </p>
+                    
+                    <!-- Trust Badges -->
+                    <div class="flex flex-wrap justify-center lg:justify-start gap-4 mb-8 text-sm font-semibold text-slate-500">
+                        <span class="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-full"><i class="fa-solid fa-check text-green-500"></i> 100% Ad-Free</span>
+                        <span class="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-full"><i class="fa-solid fa-lock text-blue-500"></i> GDPR Compliant</span>
+                        <span class="flex items-center gap-2 bg-white/60 px-3 py-1.5 rounded-full"><i class="fa-solid fa-graduation-cap text-purple-500"></i> EYFS & KS1 Aligned</span>
+                    </div>
+
+                    <!-- CTAs -->
+                    <div class="flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
+                        <a href="#" class="bg-brand-coral hover:bg-brand-coralHover text-white font-bold text-lg py-4 px-8 rounded-full shadow-xl shadow-orange-200 transition transform hover:-translate-y-1 text-center">
+                            Start Your Free 2-Minute Demo 🚀
+                        </a>
+                        <a href="#" class="bg-white hover:bg-slate-50 text-brand-dark font-bold text-lg py-4 px-8 rounded-full border-2 border-slate-200 transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-play text-brand-coral"></i> Watch How It Works
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Right: Visual -->
+                <div class="relative flex justify-center lg:justify-end">
+                    <!-- Decorative blobs -->
+                    <div class="absolute top-0 right-0 -mr-20 -mt-20 w-72 h-72 bg-brand-yellow rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
+                    <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-72 h-72 bg-brand-mint rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
+                    
+                    <!-- Mockup Image Placeholder -->
+                    <div class="relative bg-white p-4 rounded-3xl shadow-2xl border-4 border-white transform rotate-2 hover:rotate-0 transition duration-500">
+                        <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Happy child learning on tablet" class="rounded-2xl w-full max-w-md object-cover">
+                        <!-- Floating Badge -->
+                        <div class="absolute -bottom-6 -left-6 bg-white p-4 rounded-2xl shadow-lg flex items-center gap-3">
+                            <div class="bg-brand-yellow p-2 rounded-full text-2xl">⭐</div>
+                            <div>
+                                <p class="font-display font-bold text-brand-dark">Mastery Unlocked!</p>
+                                <p class="text-xs text-slate-500">Playtime ready</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         SECTION 3: SOCIAL PROOF BAR
+         ========================================== -->
+    <section class="py-10 bg-slate-50 border-y border-slate-100">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-6">Trusted by thousands of UK families and early years educators</p>
+            <div class="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition duration-500">
+                <!-- Using FontAwesome as placeholder logos for visual structure -->
+                <div class="flex items-center gap-2 text-xl font-display font-bold text-slate-600"><i class="fa-solid fa-crown text-yellow-500"></i> UK Curriculum</div>
+                <div class="flex items-center gap-2 text-xl font-display font-bold text-slate-600"><i class="fa-solid fa-shield-halved text-blue-500"></i> GDPR Kid-Safe</div>
+                <div class="flex items-center gap-2 text-xl font-display font-bold text-slate-600"><i class="fa-solid fa-star text-orange-500"></i> 5-Star Parents</div>
+                <div class="flex items-center gap-2 text-xl font-display font-bold text-slate-600"><i class="fa-solid fa-school text-green-500"></i> SENCO Approved</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         SECTION 4: HOW IT WORKS
+         ========================================== -->
+    <section id="how-it-works" class="py-20 lg:py-28 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="font-display font-extrabold text-3xl sm:text-4xl text-brand-dark mb-4">Learning that feels like play. <br class="hidden sm:block"><span class="text-brand-coral">But actually builds mastery.</span></h2>
+                <p class="text-lg text-slate-600">Our unique "Study First, Play After" loop builds intrinsic motivation and healthy digital habits.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 lg:gap-12">
+                <!-- Step 1 -->
+                <div class="bg-brand-mint/30 p-8 rounded-3xl text-center hover:shadow-xl transition duration-300 border border-brand-mint">
+                    <div class="w-16 h-16 bg-white rounded-2xl shadow-md flex items-center justify-center mx-auto mb-6 text-3xl">📚</div>
+                    <h3 class="font-display font-bold text-xl text-brand-dark mb-3">1. Learn</h3>
+                    <p class="text-slate-600">Your child tackles a bite-sized, curriculum-aligned activity (Phonics, Maths, or Logic).</p>
+                </div>
+                <!-- Step 2 -->
+                <div class="bg-brand-yellow/30 p-8 rounded-3xl text-center hover:shadow-xl transition duration-300 border border-brand-yellow">
+                    <div class="w-16 h-16 bg-white rounded-2xl shadow-md flex items-center justify-center mx-auto mb-6 text-3xl">⭐</div>
+                    <h3 class="font-display font-bold text-xl text-brand-dark mb-3">2. Achieve</h3>
+                    <p class="text-slate-600">Yaagvi, their learning companion, celebrates their effort and mastery with positive reinforcement.</p>
+                </div>
+                <!-- Step 3 -->
+                <div class="bg-brand-blue/30 p-8 rounded-3xl text-center hover:shadow-xl transition duration-300 border border-brand-blue">
+                    <div class="w-16 h-16 bg-white rounded-2xl shadow-md flex items-center justify-center mx-auto mb-6 text-3xl">🎮</div>
+                    <h3 class="font-display font-bold text-xl text-brand-dark mb-3">3. Play</h3>
+                    <p class="text-slate-600">Educational game time is unlocked as a healthy, earned reward. No nagging required.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         SECTION 5: INTERACTIVE TEASER
+         ========================================== -->
+    <section class="py-20 bg-brand-dark text-white relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h2 class="font-display font-extrabold text-3xl sm:text-4xl mb-4">Try it right now. <span class="text-brand-coral">No email required.</span></h2>
+                    <p class="text-lg text-slate-300 mb-8">See how easy it is. Help Yaagvi count the flowers! Experience the friction-free learning your child will love.</p>
+                    <a href="#" class="inline-flex items-center gap-2 bg-white text-brand-dark font-bold py-3 px-8 rounded-full hover:bg-slate-100 transition">
+                        Loved it? Save progress & unlock more <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+                
+                <!-- Mock Interactive Game UI -->
+                <div class="bg-white rounded-3xl p-6 shadow-2xl text-slate-800 max-w-md mx-auto w-full transform hover:scale-105 transition duration-500">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="bg-brand-mint text-green-700 font-bold px-3 py-1 rounded-full text-sm">Level 1: Counting</span>
+                        <span class="text-yellow-500"><i class="fa-solid fa-star"></i> 0/3</span>
+                    </div>
+                    <div class="bg-brand-blue/20 rounded-2xl p-8 text-center mb-6">
+                        <p class="font-display font-bold text-2xl mb-4">How many bears are there?</p>
+                        <div class="text-6xl mb-2">🐻 🐻 </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button class="bg-slate-100 hover:bg-brand-coral hover:text-white font-display font-bold text-xl py-3 rounded-xl transition">2</button>
+                        <button class="bg-brand-coral text-white font-display font-bold text-xl py-3 rounded-xl shadow-lg">3</button>
+                        <button class="bg-slate-100 hover:bg-brand-coral hover:text-white font-display font-bold text-xl py-3 rounded-xl transition">4</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         SECTION 6: PARENT PEACE OF MIND
+         ========================================== -->
+    <section id="parents" class="py-20 lg:py-28 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="font-display font-extrabold text-3xl sm:text-4xl text-brand-dark mb-4">Designed for kids. <br class="hidden sm:block">Built for parental peace of mind.</h2>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 lg:gap-8">
+                <!-- Feature 1 -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex gap-5">
+                    <div class="flex-shrink-0 w-12 h-12 bg-red-100 text-red-500 rounded-xl flex items-center justify-center text-xl"><i class="fa-solid fa-ban"></i></div>
+                    <div>
+                        <h3 class="font-display font-bold text-lg text-brand-dark mb-2">Zero Ads, Zero In-App Purchases</h3>
+                        <p class="text-slate-600">A completely safe walled garden. No accidental credit card charges, ever.</p>
+                    </div>
+                </div>
+                <!-- Feature 2 -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex gap-5">
+                    <div class="flex-shrink-0 w-12 h-12 bg-blue-100 text-blue-500 rounded-xl flex items-center justify-center text-xl"><i class="fa-solid fa-lock"></i></div>
+                    <div>
+                        <h3 class="font-display font-bold text-lg text-brand-dark mb-2">No Child Accounts Needed</h3>
+                        <p class="text-slate-600">We don’t harvest kids' data. Period. Full GDPR-K and safeguarding compliance.</p>
+                    </div>
+                </div>
+                <!-- Feature 3 -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex gap-5">
+                    <div class="flex-shrink-0 w-12 h-12 bg-purple-100 text-purple-500 rounded-xl flex items-center justify-center text-xl"><i class="fa-solid fa-graduation-cap"></i></div>
+                    <div>
+                        <h3 class="font-display font-bold text-lg text-brand-dark mb-2">True British Curriculum</h3>
+                        <p class="text-slate-600">Crafted with UK teachers to support EYFS, KS1, and Systematic Synthetic Phonics (SSP).</p>
+                    </div>
+                </div>
+                <!-- Feature 4 -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex gap-5">
+                    <div class="flex-shrink-0 w-12 h-12 bg-green-100 text-green-500 rounded-xl flex items-center justify-center text-xl"><i class="fa-solid fa-mobile-screen"></i></div>
+                    <div>
+                        <h3 class="font-display font-bold text-lg text-brand-dark mb-2">Works on Any Device</h3>
+                        <p class="text-slate-600">No downloads or app store visits. Just open your browser on a tablet, phone, or laptop.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         SECTION 7: FOUNDER'S NOTE
+         ========================================== -->
+    <section class="py-20 bg-white">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-brand-mint/20 rounded-3xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 border border-brand-mint">
+                <div class="flex-shrink-0">
+                    <img src="https://images.unsplash.com/photo-1544717305-2782549b5136?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Founder and child" class="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover shadow-lg border-4 border-white">
+                </div>
+                <div>
+                    <i class="fa-solid fa-quote-left text-3xl text-brand-coral/30 mb-4"></i>
+                    <p class="text-lg md:text-xl text-slate-700 italic mb-6 leading-relaxed">
+                        "I built Bloom Juniors because I was tired of choosing between 'educational' apps that were just addictive games, and 'safe' apps that were boring. I wanted a space where my own child could learn independently, and I could feel good about the screen time. Bloom is tested daily by my toughest critic: my little one."
+                    </p>
+                    <p class="font-display font-bold text-brand-dark">— Sanju, Founder & Dad</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         SECTION 8: DUAL PATHWAY (PARENTS VS SCHOOLS)
+         ========================================== -->
+    <section id="schools" class="py-20 lg:py-28 bg-gradient-to-b from-white to-slate-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="font-display font-extrabold text-3xl sm:text-4xl text-brand-dark mb-4">Who are you learning with today?</h2>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                <!-- Card 1: Home -->
+                <div class="bg-white p-8 md:p-10 rounded-3xl shadow-lg border border-slate-100 hover:border-brand-coral transition duration-300 flex flex-col">
+                    <div class="w-14 h-14 bg-brand-coral/10 text-brand-coral rounded-2xl flex items-center justify-center text-2xl mb-6"><i class="fa-solid fa-house-chimney"></i></div>
+                    <h3 class="font-display font-bold text-2xl text-brand-dark mb-3">For Home</h3>
+                    <p class="text-slate-600 mb-6 flex-grow">Give your child a head start with parent dashboards, weekly progress summaries, and healthy habit building.</p>
+                    <a href="#" class="block w-full text-center bg-brand-coral hover:bg-brand-coralHover text-white font-bold py-3.5 rounded-xl transition">Start Free at Home</a>
+                </div>
+                <!-- Card 2: Schools -->
+                <div class="bg-brand-dark p-8 md:p-10 rounded-3xl shadow-lg hover:shadow-2xl transition duration-300 flex flex-col text-white">
+                    <div class="w-14 h-14 bg-white/10 text-brand-mint rounded-2xl flex items-center justify-center text-2xl mb-6"><i class="fa-solid fa-school"></i></div>
+                    <h3 class="font-display font-bold text-2xl mb-3">For Schools & Nurseries</h3>
+                    <p class="text-slate-300 mb-6 flex-grow">Engage your classroom with zero admin. Class-wide progress tracking, SEN-friendly, no individual pupil logins required.</p>
+                    <a href="#" class="block w-full text-center bg-white text-brand-dark hover:bg-slate-100 font-bold py-3.5 rounded-xl transition">Get Free School Access</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         SECTION 9: FAQ
+         ========================================== -->
+    <section class="py-20 bg-white">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="font-display font-extrabold text-3xl sm:text-4xl text-brand-dark mb-4">Common Questions</h2>
+            </div>
+
+            <div class="space-y-4">
+                <!-- FAQ Item 1 -->
+                <div class="border border-slate-200 rounded-2xl overflow-hidden">
+                    <button class="faq-btn w-full px-6 py-5 text-left flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition">
+                        <span class="font-display font-bold text-lg text-brand-dark">Is Bloom Juniors really free?</span>
+                        <i class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300"></i>
+                    </button>
+                    <div class="faq-content hidden px-6 py-5 bg-white text-slate-600 border-t border-slate-100">
+                        Yes! Our core learning modules are completely free, forever. We also offer a Premium tier (coming soon) with advanced topics, but the foundational EYFS/KS1 content is always free.
+                    </div>
+                </div>
+                <!-- FAQ Item 2 -->
+                <div class="border border-slate-200 rounded-2xl overflow-hidden">
+                    <button class="faq-btn w-full px-6 py-5 text-left flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition">
+                        <span class="font-display font-bold text-lg text-brand-dark">Do I need to download an app?</span>
+                        <i class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300"></i>
+                    </button>
+                    <div class="faq-content hidden px-6 py-5 bg-white text-slate-600 border-t border-slate-100">
+                        No. Bloom Juniors runs smoothly in any modern web browser (Safari, Chrome, Edge) on tablets, computers, or phones. No app store visits required.
+                    </div>
+                </div>
+                <!-- FAQ Item 3 -->
+                <div class="border border-slate-200 rounded-2xl overflow-hidden">
+                    <button class="faq-btn w-full px-6 py-5 text-left flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition">
+                        <span class="font-display font-bold text-lg text-brand-dark">Is my child’s data safe?</span>
+                        <i class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300"></i>
+                    </button>
+                    <div class="faq-content hidden px-6 py-5 bg-white text-slate-600 border-t border-slate-100">
+                        Absolutely. We do not create child accounts, we do not track personal data, and we are fully compliant with UK GDPR and child safeguarding laws.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==========================================
+         SECTION 10: FOOTER
+         ========================================== -->
+    <footer class="bg-brand-dark text-slate-400 py-12 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+                <!-- Left -->
+                <div class="text-center md:text-left">
+                    <div class="flex items-center justify-center md:justify-start gap-2 mb-2">
+                        <span class="text-2xl">🌸</span>
+                        <span class="font-display font-extrabold text-xl text-white">Bloom Juniors</span>
+                    </div>
+                    <p class="text-sm">Healthy screen time, built on the British curriculum.</p>
+                </div>
+                
+                <!-- Center Links -->
+                <div class="flex flex-wrap justify-center gap-6 text-sm font-medium">
+                    <a href="#" class="hover:text-white transition">About Us</a>
+                    <a href="#" class="hover:text-white transition">For Schools</a>
+                    <a href="#" class="hover:text-white transition">Privacy Policy</a>
+                    <a href="#" class="hover:text-white transition">Terms of Service</a>
+                    <a href="#" class="hover:text-white transition">Contact</a>
+                </div>
+
+                <!-- Right Socials -->
+                <div class="flex gap-4">
+                    <a href="#" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-brand-coral hover:text-white transition"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-brand-coral hover:text-white transition"><i class="fa-brands fa-linkedin-in"></i></a>
+                </div>
+            </div>
+            <div class="border-t border-slate-800 mt-8 pt-8 text-center text-xs">
+                &copy; 2026 Bloom Juniors. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- ==========================================
+         JAVASCRIPT FOR INTERACTIVITY
+         ========================================== -->
+    <script>
+        // Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // FAQ Accordion Toggle
+        const faqBtns = document.querySelectorAll('.faq-btn');
+        
+        faqBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const content = btn.nextElementSibling;
+                const icon = btn.querySelector('i');
+                
+                // Toggle current
+                content.classList.toggle('hidden');
+                icon.classList.toggle('rotate-180');
+                
+                // Optional: Close others
+                faqBtns.forEach(otherBtn => {
+                    if (otherBtn !== btn) {
+                        otherBtn.nextElementSibling.classList.add('hidden');
+                        otherBtn.querySelector('i').classList.remove('rotate-180');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

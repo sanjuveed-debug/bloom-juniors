@@ -1,0 +1,42 @@
+﻿import { chromium, expect } from '@playwright/test'
+import assert from 'node:assert/strict'
+const browser = await chromium.launch({headless:true})
+try {
+ const page = await browser.newPage({viewport:{width:390,height:844}})
+ await page.route('**/*', r => new URL(r.request().url()).hostname === '127.0.0.1' ? r.continue() : r.abort())
+ await page.goto('http://127.0.0.1:5173/play')
+ await expect(page.getByRole('button',{name:'Take an apple',exact:true})).toBeVisible()
+ await page.evaluate(async()=>{
+  const {speechController}=await import('/src/lib/speechController.js')
+  window.spoken=[];window.stopped=0
+  speechController.speak=(_owner,text)=>window.spoken.push(text)
+  speechController.stopAll=()=>window.stopped++
+ })
+ await page.getByRole('button',{name:'Take an apple',exact:true}).click()
+ await expect.poll(()=>page.evaluate(()=>window.spoken.length)).toBe(1)
+ assert.match(await page.evaluate(()=>window.spoken[0]),/Give each friend one apple/)
+ await page.getByRole('region',{name:"Pip's place"}).locator('.collection-answer').click()
+ await page.waitForTimeout(350)
+ assert.equal(await page.evaluate(()=>window.spoken.length),1,'Placement must not interrupt instructions')
+ await page.getByRole('button',{name:/Let.s check together/}).click()
+ await expect.poll(()=>page.evaluate(()=>window.spoken.at(-1))).toMatch(/still waiting/)
+ await page.getByRole('button',{name:'Mute automatic voice'}).click()
+ const before=await page.evaluate(()=>window.spoken.length)
+ await page.getByRole('button',{name:'Show me how',exact:true}).click()
+ await page.waitForTimeout(350)
+ assert.equal(await page.evaluate(()=>window.spoken.length),before)
+ await page.getByRole('button',{name:'Hear the instructions'}).click()
+ await expect.poll(()=>page.evaluate(()=>window.spoken.length)).toBe(before+1)
+ await page.reload()
+ await expect(page.getByRole('button',{name:'Turn on automatic voice'})).toBeVisible()
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth))
+ await page.goto('http://127.0.0.1:5173/test-picnic-profile.html')
+ await page.getByRole('button',{name:'Play with Bumi',exact:true}).click()
+ await page.evaluate(async()=>{const {speechController}=await import('/src/lib/speechController.js');window.spoken=[];speechController.speak=(_o,text)=>window.spoken.push(text)})
+ await page.getByRole('button',{name:'Turn on automatic voice'}).click()
+ await expect.poll(()=>page.evaluate(()=>window.spoken.length)).toBeGreaterThan(0)
+ assert.match(await page.evaluate(()=>window.spoken.at(-1)),/plate/)
+ await page.getByRole('button',{name:/Ready for our picnic/}).click()
+ await expect.poll(()=>page.evaluate(()=>window.spoken.at(-1))).toMatch(/Take a plate from the basket/)
+ console.log('PASS: first gesture, instructions, no placement interruption, correction, mute, replay, persisted preference, picnic voice and mobile width')
+} finally {await browser.close()}

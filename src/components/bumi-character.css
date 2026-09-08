@@ -1,0 +1,34 @@
+.bumi-wrap.yaagvi-wrap{position:relative;display:flex;align-items:flex-end;justify-content:center;isolation:isolate;flex-shrink:0}
+.bumi-rig{position:relative;width:100%;aspect-ratio:1;flex-shrink:0;filter:drop-shadow(0 4px 3px #153c2920);pointer-events:none}
+.bumi-body-motion{position:absolute;inset:0;transform-origin:50% 96%;animation:bumi-breathe 5.7s ease-in-out infinite}
+.bumi-reaction{position:absolute;inset:0;transform-origin:50% 96%}
+.bumi-part{position:absolute;display:block;max-width:none!important;height:auto;user-select:none;pointer-events:none}
+.bumi-body{left:21%;top:27%;width:58%;z-index:3}
+.bumi-leaves{left:22.3%;top:1.5%;width:47.5%;z-index:1;transform-origin:59% 95%;animation:bumi-leaf-sway 4.3s ease-in-out infinite}
+.bumi-arm-left{left:16.3%;top:57.5%;width:15.5%;z-index:2;transform-origin:70% 13%;transform:rotate(var(--arm-left,0deg))}
+.bumi-arm-right{left:68.2%;top:57.5%;width:15.5%;z-index:2;transform-origin:30% 13%;transform:rotate(var(--arm-right,0deg))}
+.bumi-face{position:absolute;inset:0;z-index:4;transform:translate(var(--face-x,0%),var(--face-y,0%));transition:transform 240ms ease-out}
+.bumi-brows{left:32%;top:37.5%;width:33%;transform:translateY(var(--brow,0%))}
+.bumi-eye{position:absolute;top:44%;width:14.8%;height:18.15%;transform-origin:center;overflow:hidden;border-radius:50%;animation:bumi-blink 13.7s linear infinite}
+.bumi-eye-left{left:31.5%}.bumi-eye-right{left:51.2%}
+.bumi-eye>.bumi-part{inset:0;width:100%;height:100%}
+.bumi-gaze{position:absolute;left:29%;top:23%;width:51%;height:59%;transform:translate(var(--gaze-x,0%),var(--gaze-y,0%));transition:transform 180ms ease-out}
+.bumi-gaze .bumi-part{width:100%;height:100%}
+.bumi-smile{left:41.8%;top:64%;width:17%;opacity:calc(1 - var(--mouth,0))}
+.bumi-mouth{left:41.8%;top:63%;width:17%;opacity:var(--mouth,0)}
+.bumi-wrap[data-bumi-talking=true] .bumi-mouth{animation:bumi-murmur 310ms ease-in-out infinite alternate}
+.bumi-wrap[data-bumi-talking=true] .bumi-smile{opacity:0}
+.bumi-wrap[data-bumi-paused=true] *{animation-play-state:paused!important}
+@keyframes bumi-breathe{0%,100%{transform:scale(1,1) rotate(-.5deg)}40%{transform:scale(.994,1.014) rotate(.5deg)}72%{transform:scale(.999,1.003) rotate(0)}}
+@keyframes bumi-leaf-sway{0%,100%{transform:rotate(-1.4deg)}46%{transform:rotate(2.6deg)}75%{transform:rotate(.4deg)}}
+@keyframes bumi-blink{0%,22.5%,24.2%,56.8%,58.5%,59%,60.6%,88.9%,90.6%,100%{transform:scaleY(1)}23.35%,57.66%,59.7%,89.78%{transform:scaleY(.04)}}
+@keyframes bumi-murmur{from{opacity:.45;transform:scaleY(.7)}to{opacity:1;transform:scaleY(1)}}
+@media(prefers-reduced-motion:reduce){.bumi-wrap *{animation:none!important;transition:none!important}.bumi-face,.bumi-gaze{transform:none}}
+.bumi-fallback{align-self:center;font-weight:800;color:#245744}
+.meet-bumi{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:18px 0;border-block:1px solid #d9e5da;margin:16px 0}
+.meet-bumi>div:not(.bumi-wrap):not(.meet-bumi-actions){flex:1;min-width:160px}
+.meet-bumi h3{font-size:20px;margin:0 0 8px;color:#245744}
+.meet-bumi p{font-size:14px;line-height:1.5}
+.child-parent-dialog .meet-bumi p{font-size:14px;line-height:1.5;letter-spacing:0;font-weight:400;text-transform:none}
+.meet-bumi-actions{width:100%;display:flex;gap:10px;flex-wrap:wrap}
+.meet-bumi-actions button{min-height:44px;padding:9px 16px;background:#e7f3de;border:1px solid #b4cdab;border-radius:13px;font:800 14px Nunito,sans-serif;color:#245744;cursor:pointer}

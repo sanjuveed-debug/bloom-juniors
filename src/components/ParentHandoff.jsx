@@ -151,7 +151,7 @@ function ShareCard({ data, profileName, onClose }) {
 
           <div className="mb-1 inline-flex items-center gap-1.5 rounded-full px-3 py-1"
             style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}>
-            <img src="/yaagvi-mascot-single.webp" alt="" className="h-5 w-5 rounded-full object-cover" />
+            <img src="/bumi/avatar-v1.webp" alt="" className="h-5 w-5 rounded-full object-cover" />
             <span className="font-round text-xs font-bold text-white/70">Bloom Juniors</span>
           </div>
 

@@ -9,6 +9,7 @@ export function buildSoundPopCompletion({
   correctAnswers,
   bonusStars,
   wrongSounds,
+  questionSignatures = [],
 }) {
   return {
     stars: bonusStars,
@@ -16,6 +17,7 @@ export function buildSoundPopCompletion({
       total: totalRounds,
       correct: correctAnswers,
       struggles: wrongSounds,
+      ...(questionSignatures.length ? { questionSignatures } : {}),
     },
   }
 }
@@ -24,18 +26,29 @@ export function getExerciseCompletionReward({
   sessionMode,
   exerciseIndex,
   totalExercises,
+  completedExercises = [],
 }) {
+  const completed = new Set(completedExercises.filter(index => Number.isInteger(index) && index >= 0 && index < totalExercises))
   const completedWorkout =
-    sessionMode === 'full' && exerciseIndex + 1 >= totalExercises
+    sessionMode === 'full' && totalExercises > 0 && completed.size === totalExercises && exerciseIndex + 1 >= totalExercises
 
-  if (!completedWorkout) return null
-
-  return {
-    stars: 5,
-    sessionData: {
-      total: totalExercises,
-      correct: totalExercises,
-      struggles: [],
-    },
+  if (completedWorkout) {
+    return {
+      stars: 5,
+      sessionData: {
+        total: totalExercises,
+        correct: totalExercises,
+        struggles: [],
+      },
+    }
   }
+
+  if (sessionMode === 'single') {
+    return {
+      stars: 1,
+      sessionData: { total: 1, correct: 1, struggles: [] },
+    }
+  }
+
+  return null
 }

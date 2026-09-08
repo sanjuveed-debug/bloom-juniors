@@ -4,16 +4,20 @@ import confetti from 'canvas-confetti'
 
 import { THEMES } from '../themes'
 import { useSpeech } from '../hooks/useSpeech'
-import { STUDY_MODULES, getArcadeUnlockStatus } from '../utils/arcadeUnlock'
+import { useModuleStart } from '../hooks/useModuleStart'
+import { getArcadeUnlockStatus } from '../utils/arcadeUnlock'
 import { formatLocalDate } from '../utils/date.js'
+import BloomQuizShow from '../components/BloomQuizShow.jsx'
 
+// Memory (unplayed-board credit) and Slice (zero-input rewards) are withdrawn
+// from child selection pending redesign. Keep their saved levels intact.
 const ARCADE_GAMES = [
   {
-    id: 'memory',
-    emoji: '🧠',
-    title: 'Magic Memory',
-    desc: 'Flip cards, build streaks, and clear 3 themed worlds.',
-    accent: '#FB7185',
+    id: 'quiz',
+    emoji: '🎤',
+    title: 'The Big Bloom Quiz',
+    desc: 'Take the contestant seat, use lifelines, and open the spotlight chest.',
+    accent: '#A855F7',
     reward: 'Up to 5 stars',
   },
   {
@@ -23,14 +27,6 @@ const ARCADE_GAMES = [
     desc: 'Pop the right balloons before the wave floats away.',
     accent: '#38BDF8',
     reward: 'Up to 5 stars',
-  },
-  {
-    id: 'slice',
-    emoji: '🍉',
-    title: 'Fruit Slice Frenzy',
-    desc: 'Swipe through flying fruit, dodge bombs, and build juicy combos.',
-    accent: '#F59E0B',
-    reward: 'Up to 6 stars',
   },
   {
     id: 'builder',
@@ -61,7 +57,7 @@ const ARCADE_GAMES = [
 // ── Per-game levels ───────────────────────────────────────────────────────────
 // Games level up (max 5) when a run scores 80%+ — each level raises difficulty.
 // Balloon (fixed learning waves) and Builder (creative sandbox) don't level.
-const LEVELED_GAMES = new Set(['memory', 'slice', 'shadow', 'rocket'])
+const LEVELED_GAMES = new Set(['quiz', 'memory', 'slice', 'shadow', 'rocket'])
 const MAX_ARCADE_LEVEL = 5
 
 function getArcadeLevel(progress, gameId) {
@@ -81,7 +77,11 @@ function getDailyArcade() {
     const j = seed % (i + 1)
     ;[pool[i], pool[j]] = [pool[j], pool[i]]
   }
-  return { featured: pool.slice(0, 2), resting: pool.slice(2), specialId: pool[0].id }
+  const quiz = pool.find(game => game.id === 'quiz')
+  const others = pool.filter(game => game.id !== 'quiz')
+  // The quiz is always available, while the rotating companion game receives
+  // the daily double-star bonus so the show cannot become a reward shortcut.
+  return { featured: [quiz, others[0]].filter(Boolean), resting: others.slice(1), specialId: others[0]?.id || quiz?.id }
 }
 
 const SLICE_FRUITS = [
@@ -463,7 +463,7 @@ function StudyLockScreen({ theme, status, onBack, onNavigate }) {
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-3">
-              {STUDY_MODULES.map(module => {
+              {status.assignedModules.map(module => {
                 const done = status.completedModules.some(item => item.id === module.id)
                 return (
                   <div
@@ -2275,12 +2275,13 @@ function RocketCount({ theme, profileName, speak, onBack, onComplete, level = 1 
 export default function GameArcade({ avatar, progress, profileName, onAddStars, onBack, onNavigate, onUpdateProgress }) {
   const theme = THEMES[avatar] || THEMES.rumi
   const { speak } = useSpeech()
+  const startSignal = useModuleStart('arcade')
   const status = getArcadeUnlockStatus(progress)
   const [activeGame, setActiveGame] = useState(null)
   const [levelUp, setLevelUp] = useState(null)
 
   useEffect(() => {
-    if (activeGame) return
+    if (activeGame || !startSignal) return
 
     const timer = setTimeout(() => {
       if (status.unlocked) {
@@ -2291,7 +2292,7 @@ export default function GameArcade({ avatar, progress, profileName, onAddStars, 
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [activeGame, speak, status.unlocked])
+  }, [activeGame, speak, status.unlocked, startSignal])
 
   const handleGameComplete = useCallback((payload) => {
     const isSpecial = getDailyArcade().specialId === activeGame
@@ -2316,7 +2317,9 @@ export default function GameArcade({ avatar, progress, profileName, onAddStars, 
       total: payload.total,
       correct: payload.correct,
       struggles: payload.struggles || [],
-      stayOnModule: true,
+      stayOnModule: false,
+      // Quiz already shows its own "Open my prize" completion screen — don't stack a second one.
+      suppressCompletionModal: activeGame === 'quiz',
     })
     setActiveGame(null)
   }, [onAddStars, activeGame, speak, progress, onUpdateProgress])
@@ -2343,6 +2346,10 @@ export default function GameArcade({ avatar, progress, profileName, onAddStars, 
         onComplete={handleGameComplete}
       />
     )
+  }
+
+  if (activeGame === 'quiz') {
+    return <BloomQuizShow ageGroup="early" profileName={profileName} played={getArcadeLevel(progress, 'quiz') - 1} onBack={() => setActiveGame(null)} onComplete={handleGameComplete} />
   }
 
   if (activeGame === 'balloon') {

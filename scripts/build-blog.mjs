@@ -85,7 +85,7 @@ function shell({ title, description, canonical, bodyHtml, jsonLd }) {
 <meta property="og:site_name" content="Bloom Juniors"/>
 <meta property="og:image" content="${SITE}/og-preview.png"/>
 <meta name="twitter:card" content="summary_large_image"/>
-<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<link rel="icon" type="image/svg+xml" href="/favicon-bloom-v3.svg?v=20260730"/>
 <meta name="theme-color" content="#C2410C"/>
 ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>` : ''}
 ${GA}

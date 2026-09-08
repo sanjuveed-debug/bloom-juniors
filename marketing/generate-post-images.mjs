@@ -183,6 +183,23 @@ slides.push(['post8-slide3', base(`
   ${body(['Play tricky-word hunt on cereal boxes,', 'signs and menus. Recognition, not decoding.'], 660, 42, 60)}
   ${footer()}`)])
 
+// POST 4 — ad count vs Bloom Juniors (illustrated stat card, not a real screenshot —
+// we don't screenshot a competitor's actual app UI without consent)
+slides.push(['post4-slide1', base(`
+  ${header(1, 2)} ${chip('ONE NIGHT, ONE COUNT')}
+  ${headline([[{ t: '14 ads', accent: true }, ' in 10'], ['minutes.']], 420, 96, 116)}
+  ${body(["That's what I counted in a “free”", 'kids app my daughter was using.'], 700, 42, 60)}
+  ${footer()}`)])
+
+slides.push(['post4-slide2', base(`
+  ${header(2, 2)} ${chip('WHAT FREE MEANS HERE')}
+  ${checkRow(300, 'Typical "free" kids app: ads', false)}
+  ${checkRow(444, 'Typical "free" kids app: in-app purchases', false)}
+  ${checkRow(588, 'Bloom Juniors: zero ads, ever', true)}
+  ${checkRow(732, 'Bloom Juniors: zero purchases, ever', true)}
+  ${body(['Free means free. Not free-with-a-catch.'], 900, 40)}
+  ${footer()}`)])
+
 // POST 11 — 10-minute routine
 slides.push(['post11-slide1', base(`
   ${header(1, 3)} ${chip('AFTER-SCHOOL ROUTINE')}
@@ -201,6 +218,25 @@ slides.push(['post11-slide3', base(`
   ${header(3, 3)} ${chip('THE SECRET')}
   ${headline([[`It's not the minutes.`], [{ t: `It's the daily.`, accent: true }]], 430, 84, 106)}
   ${body(['Little and often rewires reading brains.', 'Consistency > intensity.'], 670, 42, 60)}
+  ${footer()}`)])
+
+// POST 13 — Wonder Why mission announcement (forward-looking, honestly framed as "coming")
+slides.push(['post13-slide1', base(`
+  ${header(1, 3)} ${chip('A DAD’S QUESTION')}
+  ${headline([['Why is the'], [{ t: 'sun red', accent: true }, ' at'], ['sunset?']], 420, 88, 106)}
+  ${body(['I asked that as a kid.', 'Nobody had time to answer.'], 780, 42, 60)}
+  ${footer()}`)])
+
+slides.push(['post13-slide2', base(`
+  ${header(2, 3)} ${chip('WHAT I’M BUILDING NEXT')}
+  ${headline([['Reading and maths'], [{ t: 'aren’t enough.', accent: true }]], 400, 78, 98)}
+  ${body(['A strong foundation means understanding', 'your world too — science, history,', 'and where you come from.'], 640, 40, 58)}
+  ${footer()}`)])
+
+slides.push(['post13-slide3', base(`
+  ${header(3, 3)} ${chip('COMING TO BLOOM JUNIORS')}
+  ${headline([[{ t: 'Wonder Why', accent: true }]], 420, 96, 116)}
+  ${body(['One real question a day. A prediction.', 'A story. A tiny experiment.', 'A Wonder Book that remembers it all.'], 620, 40, 58)}
   ${footer()}`)])
 
 // ── Render ────────────────────────────────────────────────────────────────────

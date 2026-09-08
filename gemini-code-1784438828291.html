@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bloom Juniors | Ad-Free Learning for Ages 3–9</title>
+    
+    <!-- Google Fonts: Fredoka One (Headings) & Nunito (Body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS (CDN for instant browser rendering) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        bubble: ['"Fredoka One"', 'cursive'],
+                        round: ['Nunito', 'sans-serif'],
+                    },
+                    colors: {
+                        canvas: '#FBF9F4',     
+                        night: '#1E1F38',      
+                        sage: '#8FA88B',       
+                        terracotta: '#D4836A', 
+                        gold: '#E7C169'        
+                    },
+                    animation: {
+                        shake: 'shake 0.4s ease-in-out',
+                        fadeIn: 'fadeIn 0.6s ease-out forwards'
+                    },
+                    keyframes: {
+                        shake: {
+                            '0%, 100%': { transform: 'translateX(0)' },
+                            '25%': { transform: 'translateX(-6px)' },
+                            '50%': { transform: 'translateX(6px)' },
+                            '75%': { transform: 'translateX(-6px)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #FBF9F4; 
+            color: #1E1F38;
+            scroll-behavior: smooth;
+        }
+        
+        /* Soft, organic blob shape for hero background */
+        .blob-bg {
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            animation: morph 12s ease-in-out infinite;
+        }
+        @keyframes morph {
+            0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+            34% { border-radius: 70% 30% 50% 50% / 30% 30% 70% 70%; }
+            67% { border-radius: 100% 60% 60% 100% / 100% 100% 60% 60%; }
+        }
+
+        /* Global Accessibility: Disables UI motion if device requests it */
+        @media (prefers-reduced-motion: reduce) {
+            *, ::before, ::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+            .blob-bg { border-radius: 50%; }
+        }
+
+        .hidden-view { display: none !important; }
+    </style>
+</head>
+<body class="font-round antialiased selection:bg-gold/40">
+
+    <!-- NAVIGATION -->
+    <nav class="fixed w-full top-0 z-50 bg-canvas/90 backdrop-blur-md border-b border-stone-200/50 transition-all">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
+            <a href="#" class="flex items-center gap-3 group" onclick="showMarketing()">
+                <div class="w-10 h-10 bg-night rounded-xl flex items-center justify-center text-white font-bubble text-2xl shadow-sm group-hover:rotate-6 transition-transform">B</div>
+                <span class="font-bubble text-2xl tracking-tight text-night">bloom juniors</span>
+            </a>
+            
+            <div class="hidden md:flex items-center gap-8 font-bold text-night/80" id="nav-links">
+                <a href="#philosophy" class="hover:text-night transition-colors">Philosophy</a>
+                <a href="#curriculum" class="hover:text-night transition-colors">Curriculum</a>
+                <a href="#schools" class="hover:text-night transition-colors">For Schools</a>
+                <a href="#parents" class="hover:text-night transition-colors">Our Story</a>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <button onclick="showAppGateway()" class="hidden sm:block text-sm font-bold text-night hover:text-night/70 transition-colors">App Login</button>
+                <button onclick="showAppGateway()" class="text-sm font-bold tracking-wide uppercase px-6 py-3 bg-night text-white rounded-full hover:bg-night/90 hover:scale-105 active:scale-95 transition-all shadow-md">
+                    Open Beta
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ========================================== -->
+    <!-- VIEW 1: MARKETING LANDING PAGE             -->
+    <!-- ========================================== -->
+    <div id="view-marketing">
+        
+        <!-- HERO SECTION -->
+        <section class="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden px-6">
+            <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12">
+                <div class="w-full md:w-1/2 z-10 text-center md:text-left">
+                    <div class="inline-block px-4 py-1.5 mb-6 rounded-full bg-sage/20 border border-sage/30 text-night font-bold text-sm tracking-wide">
+                        🌱 Screen time you don't have to stress about.
+                    </div>
+                    <h1 class="font-bubble text-5xl md:text-7xl leading-[1.1] mb-6 text-night">
+                        Healthy screen time that makes children think.
+                    </h1>
+                    <p class="text-lg md:text-xl text-stone-600 mb-8 max-w-lg mx-auto md:mx-0 leading-relaxed font-medium">
+                        No ads. No dopamine traps. No flashing arrows. Just systematic phonics, early math, and calm, purposeful play for ages 3 to 9.
+                    </p>
+                    <div class="flex flex-col sm:flex-row items-center gap-4 justify-center md:justify-start">
+                        <button onclick="showAppGateway()" class="w-full sm:w-auto px-8 py-4 bg-terracotta text-white font-bold text-lg rounded-full hover:bg-terracotta/90 hover:shadow-lg transition-all text-center">
+                            Play for Free
+                        </button>
+                        <p class="text-sm text-stone-500 font-semibold">No credit card required. Zero child tracking.</p>
+                    </div>
+                </div>
+
+                <div class="w-full md:w-1/2 relative flex justify-center mt-12 md:mt-0">
+                    <div class="absolute w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-gradient-to-tr from-gold/30 to-terracotta/20 blob-bg -z-10"></div>
+                    <div class="relative w-full max-w-md bg-white border-[8px] border-night rounded-[2.5rem] shadow-2xl aspect-[4/3] overflow-hidden flex flex-col">
+                        <div class="w-full h-4 bg-stone-100 flex items-center px-4 gap-1.5">
+                            <div class="w-2 h-2 rounded-full bg-stone-300"></div>
+                            <div class="w-2 h-2 rounded-full bg-stone-300"></div>
+                            <div class="w-2 h-2 rounded-full bg-stone-300"></div>
+                        </div>
+                        <div class="flex-1 bg-gradient-to-b from-blue-50 to-emerald-50 p-6 flex flex-col items-center justify-center relative">
+                            <div class="font-bubble text-3xl text-night mb-2">Daily Path</div>
+                            <div class="w-full flex justify-center gap-4 mt-6">
+                                <div class="w-20 h-20 bg-white rounded-2xl shadow-sm border-2 border-sage flex flex-col items-center justify-center gap-1">
+                                    <span class="text-2xl">📚</span><span class="text-xs font-bold text-night">Phonics</span>
+                                </div>
+                                <div class="w-20 h-20 bg-white rounded-2xl shadow-sm border-2 border-stone-200 flex flex-col items-center justify-center gap-1 opacity-50">
+                                    <span class="text-2xl">🔢</span><span class="text-xs font-bold text-night">Maths</span>
+                                </div>
+                            </div>
+                            <div class="absolute bottom-4 right-4 text-4xl">🦊</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PHILOSOPHY / THE PROBLEM WE FIX -->
+        <section id="philosophy" class="py-24 bg-white border-y border-stone-200/50">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="font-bubble text-4xl text-night mb-4">Why we built Bloom Juniors</h2>
+                    <p class="text-xl text-stone-600 max-w-2xl mx-auto font-medium">Most educational apps are designed like digital casinos. We threw out the flashing lights and focused on real cognitive development.</p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-10">
+                    <div class="bg-canvas p-8 rounded-3xl border border-stone-200/50 text-center hover:-translate-y-1 transition-transform">
+                        <div class="w-16 h-16 mx-auto bg-sage/20 text-sage rounded-2xl flex items-center justify-center text-3xl mb-6">🧘‍♀️</div>
+                        <h3 class="font-bubble text-2xl text-night mb-3">An Oasis of Calm</h3>
+                        <p class="text-stone-600 font-medium">No rapid-fire sound loops or hyper-stimulating colors. A peaceful environment that respects your child's developing nervous system.</p>
+                    </div>
+                    <div class="bg-canvas p-8 rounded-3xl border border-stone-200/50 text-center hover:-translate-y-1 transition-transform">
+                        <div class="w-16 h-16 mx-auto bg-terracotta/20 text-terracotta rounded-2xl flex items-center justify-center text-3xl mb-6">🧠</div>
+                        <h3 class="font-bubble text-2xl text-night mb-3">No Visual Shortcuts</h3>
+                        <p class="text-stone-600 font-medium">If they get stuck, we don't flash a giant arrow over the right answer. We offer gentle verbal clues to encourage active problem solving.</p>
+                    </div>
+                    <div class="bg-canvas p-8 rounded-3xl border border-stone-200/50 text-center hover:-translate-y-1 transition-transform">
+                        <div class="w-16 h-16 mx-auto bg-gold/20 text-yellow-600 rounded-2xl flex items-center justify-center text-3xl mb-6">🔒</div>
+                        <h3 class="font-bubble text-2xl text-night mb-3">Strictly Ad-Free</h3>
+                        <p class="text-stone-600 font-medium">Zero advertisements. Zero hidden in-app purchases. Zero child email accounts required. Your data never leaves the family.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CURRICULUM BANDS -->
+        <section id="curriculum" class="py-24 bg-canvas">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="font-bubble text-4xl text-night mb-4">36 Modules. Three Age Bands.</h2>
+                    <p class="text-xl text-stone-600 max-w-2xl mx-auto font-medium">A single curriculum that grows with them from preschool through primary.</p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="p-8 rounded-[2rem] bg-emerald-50 border border-emerald-100 shadow-sm relative overflow-hidden group">
+                        <div class="absolute -right-6 -bottom-6 text-8xl opacity-10 group-hover:scale-110 transition-transform">🌟</div>
+                        <span class="text-xs font-bold uppercase tracking-widest text-emerald-800 bg-emerald-200/50 px-3 py-1 rounded-full">Ages 3–4</span>
+                        <h3 class="font-bubble text-3xl text-night mt-6 mb-2">Tiny Stars</h3>
+                        <p class="text-stone-600 font-medium mb-6">Exploration & Sensory</p>
+                        <ul class="space-y-3 text-stone-700 font-semibold">
+                            <li class="flex items-center gap-2"><span>•</span> Foundational Sounds</li>
+                            <li class="flex items-center gap-2"><span>•</span> Shape & Color Logic</li>
+                            <li class="flex items-center gap-2"><span>•</span> Counting 1 to 5</li>
+                        </ul>
+                    </div>
+
+                    <div class="p-8 rounded-[2rem] bg-orange-50 border border-orange-100 shadow-sm relative overflow-hidden group">
+                        <div class="absolute -right-6 -bottom-6 text-8xl opacity-10 group-hover:scale-110 transition-transform">🚀</div>
+                        <span class="text-xs font-bold uppercase tracking-widest text-orange-800 bg-orange-200/50 px-3 py-1 rounded-full">Ages 5–6</span>
+                        <h3 class="font-bubble text-3xl text-night mt-6 mb-2">Little Stars</h3>
+                        <p class="text-stone-600 font-medium mb-6">Application & Phonics</p>
+                        <ul class="space-y-3 text-stone-700 font-semibold">
+                            <li class="flex items-center gap-2"><span>•</span> Systematic Phonics (EYFS)</li>
+                            <li class="flex items-center gap-2"><span>•</span> Numbers to 20</li>
+                            <li class="flex items-center gap-2"><span>•</span> Daily Study Path</li>
+                        </ul>
+                    </div>
+
+                    <div class="p-8 rounded-[2rem] bg-indigo-50 border border-indigo-100 shadow-sm relative overflow-hidden group">
+                        <div class="absolute -right-6 -bottom-6 text-8xl opacity-10 group-hover:scale-110 transition-transform">⚡</div>
+                        <span class="text-xs font-bold uppercase tracking-widest text-indigo-800 bg-indigo-200/50 px-3 py-1 rounded-full">Ages 7–9</span>
+                        <h3 class="font-bubble text-3xl text-night mt-6 mb-2">Super Kids</h3>
+                        <p class="text-stone-600 font-medium mb-6">Mastery & Independence</p>
+                        <ul class="space-y-3 text-stone-700 font-semibold">
+                            <li class="flex items-center gap-2"><span>•</span> Reading Comprehension</li>
+                            <li class="flex items-center gap-2"><span>•</span> Times Tables & Fractions</li>
+                            <li class="flex items-center gap-2"><span>•</span> Logic Word Problems</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FOR SCHOOLS & EDUCATORS -->
+        <section id="schools" class="py-24 bg-sage/10 border-y border-sage/20">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="text-center mb-16">
+                    <div class="inline-block px-4 py-1.5 mb-4 rounded-full bg-sage/20 text-night font-bold text-sm tracking-wide uppercase">B2B & Classroom Edition</div>
+                    <h2 class="font-bubble text-4xl text-night mb-4">Designed for classrooms. Trusted by teachers.</h2>
+                    <p class="text-xl text-stone-600 max-w-2xl mx-auto font-medium">Bloom Juniors provides a parallel teacher dashboard to manage entire classes without the IT headaches.</p>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center gap-12">
+                    <div class="w-full md:w-1/2 space-y-8">
+                        <div class="flex gap-4">
+                            <div class="w-12 h-12 shrink-0 bg-white rounded-2xl shadow-sm border border-stone-200 flex items-center justify-center text-2xl">🏫</div>
+                            <div>
+                                <h4 class="font-bubble text-xl text-night mb-1">Simple Class Codes</h4>
+                                <p class="text-stone-600 font-medium text-sm">No child email accounts required. Generate a single 4-digit class code and let students tap their visual name card to log in.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="w-12 h-12 shrink-0 bg-white rounded-2xl shadow-sm border border-stone-200 flex items-center justify-center text-2xl">📊</div>
+                            <div>
+                                <h4 class="font-bubble text-xl text-night mb-1">Live Classroom Dashboard</h4>
+                                <p class="text-stone-600 font-medium text-sm">Monitor class-wide engagement, track individual curriculum progress, and assign specific daily paths from a single screen.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="w-12 h-12 shrink-0 bg-white rounded-2xl shadow-sm border border-stone-200 flex items-center justify-center text-2xl">📚</div>
+                            <div>
+                                <h4 class="font-bubble text-xl text-night mb-1">EYFS & KS1 Aligned</h4>
+                                <p class="text-stone-600 font-medium text-sm">Content carefully mapped to early years foundation stages and key stage 1 milestones, ensuring playtime is productive.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="w-full md:w-1/2">
+                        <div class="relative w-full bg-white border border-stone-200 rounded-3xl shadow-xl overflow-hidden aspect-[4/3] flex flex-col">
+                            <div class="w-full h-12 bg-stone-50 border-b border-stone-200 flex items-center px-4 gap-4">
+                                <div class="flex gap-1.5">
+                                    <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                                    <div class="w-3 h-3 rounded-full bg-amber-400"></div>
+                                    <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                                </div>
+                                <div class="bg-white border border-stone-200 rounded-md px-3 py-1 text-xs text-stone-400 flex-1 text-center font-mono">
+                                    teacher.bloomjuniors.com
+                                </div>
+                            </div>
+                            <div class="p-6 bg-canvas flex-1">
+                                <div class="flex justify-between items-center mb-6">
+                                    <h3 class="font-bubble text-xl text-night">Year 1 - Miss Sarah</h3>
+                                    <span class="bg-night text-white text-xs px-3 py-1 rounded-full font-bold">Code: 8492</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
+                                        <div class="text-xs text-stone-500 mb-1">Class Accuracy</div>
+                                        <div class="font-bubble text-2xl text-sage">92%</div>
+                                    </div>
+                                    <div class="bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
+                                        <div class="text-xs text-stone-500 mb-1">Active Today</div>
+                                        <div class="font-bubble text-2xl text-terracotta">24 / 28</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PARENT / TEACHER STORY -->
+        <section id="parents" class="py-24 bg-night text-white overflow-hidden">
+            <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
+                <div class="w-full md:w-1/2">
+                    <h2 class="font-bubble text-4xl mb-6">Built for my daughter. Shared with your family.</h2>
+                    <p class="text-lg text-stone-300 font-medium leading-relaxed mb-6">
+                        I got tired of opening "educational" apps for my kids only to find manipulative loops and endless videos. So I built an alternative.
+                    </p>
+                    <p class="text-lg text-stone-300 font-medium leading-relaxed mb-8">
+                        Bloom Juniors includes a dedicated <strong>Parent Zone</strong>. You can see what they are learning, send them digital "High Fives" to their dashboard, and set daily limits without fighting over the device.
+                    </p>
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-terracotta rounded-full flex items-center justify-center text-xl">👨‍💻</div>
+                        <div>
+                            <p class="font-bold">Sanju</p>
+                            <p class="text-sm text-stone-400">Founder & Parent</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="w-full md:w-1/2 relative">
+                    <div class="absolute -inset-4 bg-terracotta/20 blur-2xl rounded-full"></div>
+                    <div class="relative bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-2xl">
+                        <div class="flex justify-between items-center mb-6">
+                            <h4 class="font-bubble text-xl">Weekly Digest</h4>
+                            <span class="text-sm bg-sage text-night px-3 py-1 rounded-full font-bold">Great Job!</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="bg-white/5 p-4 rounded-xl border border-white/10">
+                                <p class="text-sm text-stone-300 mb-1">Phonics Mastery</p>
+                                <div class="w-full bg-night rounded-full h-2">
+                                    <div class="bg-gold h-2 rounded-full" style="width: 85%"></div>
+                                </div>
+                            </div>
+                            <div class="bg-white/5 p-4 rounded-xl border border-white/10">
+                                <p class="text-sm text-stone-300 mb-1">Maths Foundation</p>
+                                <div class="w-full bg-night rounded-full h-2">
+                                    <div class="bg-terracotta h-2 rounded-full" style="width: 60%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- BOTTOM CTA -->
+        <section class="py-24 bg-canvas text-center">
+            <div class="max-w-3xl mx-auto px-6">
+                <h2 class="font-bubble text-4xl md:text-5xl text-night mb-6">Ready for better screen time?</h2>
+                <p class="text-xl text-stone-600 font-medium mb-10">Join the open beta today. It works beautifully on tablets, phones, and desktop browsers.</p>
+                <button onclick="showAppGateway()" class="inline-block px-10 py-5 bg-night text-white font-bold text-xl rounded-full hover:bg-night/90 hover:-translate-y-1 hover:shadow-xl active:scale-95 transition-all">
+                    Create a Free Account
+                </button>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="bg-white border-t border-stone-200 py-12">
+            <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-night rounded-lg flex items-center justify-center text-white font-bubble text-xl">B</div>
+                    <span class="font-bubble text-xl text-night">bloom juniors</span>
+                </div>
+                <div class="text-stone-500 font-medium text-sm flex gap-6">
+                    <a href="#" class="hover:text-night transition-colors">Privacy Policy</a>
+                    <a href="#" class="hover:text-night transition-colors">Terms of Service</a>
+                </div>
+                <p class="text-stone-400 text-sm">© 2026 Bloom Juniors.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VIEW 2: APP GATEWAY (PWA Entry)            -->
+    <!-- ========================================== -->
+    <div id="view-app-gateway" class="hidden-view min-h-screen flex flex-col items-center justify-center py-12 px-6 animate-fadeIn relative">
+        <button onclick="showMarketing()" class="absolute top-8 left-8 text-stone-500 hover:text-night font-bold tracking-wide flex items-center gap-2">
+            ← Back to Website
+        </button>
+
+        <div class="w-full text-center max-w-4xl mx-auto">
+            <h1 class="font-bubble text-4xl sm:text-5xl text-night mb-4">Welcome back to your adventure.</h1>
+            <p class="text-stone-600 max-w-md mx-auto mb-12 text-lg">Pick your profile to continue your daily path. No ads, no rushing, just calm learning.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <button class="p-8 rounded-3xl bg-gradient-to-b from-emerald-100 to-emerald-200/80 border border-stone-200/40 shadow-sm text-left flex flex-col justify-between h-64 relative overflow-hidden group hover:-translate-y-1 hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer">
+                    <div class="absolute -right-12 -bottom-12 w-36 h-36 bg-white/20 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-700 pointer-events-none"></div>
+                    <div>
+                        <span class="text-xs uppercase font-bold tracking-widest text-night/60 bg-white/40 px-3 py-1 rounded-full backdrop-blur-sm">Ages 3–4</span>
+                        <h3 class="font-bubble text-2xl text-night mt-4 mb-2">Tiny Stars</h3>
+                    </div>
+                    <div class="w-10 h-10 bg-white/80 rounded-full flex items-center justify-center shadow-sm font-bold text-night group-hover:bg-night group-hover:text-white transition-colors">→</div>
+                </button>
+
+                <button class="p-8 rounded-3xl bg-gradient-to-b from-amber-100 to-orange-200 border border-stone-200/40 shadow-sm text-left flex flex-col justify-between h-64 relative overflow-hidden group hover:-translate-y-1 hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer">
+                    <div class="absolute -right-12 -bottom-12 w-36 h-36 bg-white/20 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-700 pointer-events-none"></div>
+                    <div>
+                        <span class="text-xs uppercase font-bold tracking-widest text-night/60 bg-white/40 px-3 py-1 rounded-full backdrop-blur-sm">Ages 5–6</span>
+                        <h3 class="font-bubble text-2xl text-night mt-4 mb-2">Little Stars</h3>
+                    </div>
+                    <div class="w-10 h-10 bg-white/80 rounded-full flex items-center justify-center shadow-sm font-bold text-night group-hover:bg-night group-hover:text-white transition-colors">→</div>
+                </button>
+
+                <button class="p-8 rounded-3xl bg-gradient-to-b from-indigo-100 to-indigo-200 border border-stone-200/40 shadow-sm text-left flex flex-col justify-between h-64 relative overflow-hidden group hover:-translate-y-1 hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer">
+                    <div class="absolute -right-12 -bottom-12 w-36 h-36 bg-white/20 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-700 pointer-events-none"></div>
+                    <div>
+                        <span class="text-xs uppercase font-bold tracking-widest text-night/60 bg-white/40 px-3 py-1 rounded-full backdrop-blur-sm">Ages 7–9</span>
+                        <h3 class="font-bubble text-2xl text-night mt-4 mb-2">Super Kids</h3>
+                    </div>
+                    <div class="w-10 h-10 bg-white/80 rounded-full flex items-center justify-center shadow-sm font-bold text-night group-hover:bg-night group-hover:text-white transition-colors">→</div>
+                </button>
+            </div>
+            
+            <button class="mt-12 text-sm font-semibold tracking-wide uppercase px-6 py-3 border border-stone-300 rounded-full hover:bg-stone-100 active:scale-95 transition-all text-night">
+                🔑 Teacher & Parent Zone
+            </button>
+        </div>
+    </div>
+
+    <!-- Interactive Navigation Logic -->
+    <script>
+        const viewMarketing = document.getElementById('view-marketing');
+        const viewAppGateway = document.getElementById('view-app-gateway');
+        const navLinks = document.getElementById('nav-links');
+
+        function showAppGateway() {
+            viewMarketing.classList.add('hidden-view');
+            viewAppGateway.classList.remove('hidden-view');
+            navLinks.classList.add('hidden-view');
+            window.scrollTo(0, 0);
+        }
+
+        function showMarketing() {
+            viewAppGateway.classList.add('hidden-view');
+            viewMarketing.classList.remove('hidden-view');
+            navLinks.classList.remove('hidden-view');
+            window.scrollTo(0, 0);
+        }
+    </script>
+</body>
+</html>

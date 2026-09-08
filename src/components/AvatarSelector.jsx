@@ -111,7 +111,7 @@ export default function AvatarSelector({ currentAvatar, onSelect, profileName })
             </h1>
 
             <p className="mt-3 max-w-xl font-round text-base font-semibold leading-7 text-slate-600 md:text-lg">
-              Yaagvi is your learning buddy. She stays nearby, gives gentle nudges, and helps every lesson feel personal.
+              Bumi is your learning buddy. Bumi stays nearby, gives gentle nudges, and helps every lesson feel personal.
             </p>
 
             <div

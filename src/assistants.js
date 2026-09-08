@@ -1,12 +1,13 @@
 export const ASSISTANTS = {
   yaagvi: {
     key: 'yaagvi',
-    name: 'Yaagvi',
+    // Keep the legacy key so existing profiles retain their chosen guide.
+    name: 'Bumi',
     title: 'Learning buddy',
     tagline: 'A cheerful mascot who guides every child through one clear learning adventure.',
     sample: 'I am here with you. Let us try one small step together.',
     focus: 'Friendly prompts, gentle encouragement, and a consistent face across every age group.',
-    image: '/yaagvi-mascot-single.webp',
+    image: '/bumi/avatar-v1.webp',
     imagePosition: 'center',
     emoji: '⭐',
   },

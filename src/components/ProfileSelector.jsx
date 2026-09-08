@@ -1,3 +1,4 @@
+import YaagviCharacter from './YaagviCharacter'
 import React, { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
@@ -141,14 +142,7 @@ export default function ProfileSelector({
             {AGE_GROUP_META[ageGroup]?.emoji || '🌟'}
           </motion.div>
           <div className="relative mx-auto mb-3 flex w-full max-w-sm flex-col items-center">
-            <motion.img
-              src="/yaagvi-mascot.webp"
-              alt="Bloom Juniors learning guide"
-              className="h-32 w-auto object-contain object-left drop-shadow-2xl"
-              draggable={false}
-              animate={{ y: [0, -6, 0], rotate: [0, -1.5, 1.5, 0] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            />
+            <div className="mx-auto h-32 aspect-square"><YaagviCharacter state="wave" size="100%"/></div>
             <motion.div
               className="relative z-10 order-first mb-2 max-w-[260px] rounded-[24px] border border-white bg-white px-3 py-2 text-left shadow-xl"
               initial={{ opacity: 0, x: 14, scale: 0.92 }}

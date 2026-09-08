@@ -1,0 +1,6 @@
+import { MARKET_REASONS, normalizeMarket } from '../utils/marketMission.js'
+export default function MarketParentSummary({progress}){
+ const report=normalizeMarket(progress.marketMission).state.report
+ if(!report)return null
+ return <section aria-label="Mini-market learning recap" className="rounded-3xl bg-amber-50 text-green-950 p-6 mb-5"><p className="text-xs font-bold uppercase tracking-widest">First completed visit</p><h2 className="text-2xl font-bold my-3">The picnic budget</h2><p>Planned four fruits and four drinks. Spent {report.cost} of 12 pretend coins, with {report.left} left.</p><ul className="my-3">{['plan','total','change'].map(k=><li key={k}>{k==='plan'?'Basket checks':k==='total'?'Cost checks':'Change checks'}: {report.attempts[k]}. {report.helped[k]?'Used the working hint.':'No working hint used.'}</li>)}</ul><p>Selected reason: {MARKET_REASONS.find(r=>r.id===report.reason)?.label}</p><p className="text-sm mt-3">This records choices and checks, not mastery. Unchanged repeat answers count once. We cannot observe help away from the screen. Replays preserve this first recap.</p><p className="font-bold mt-3">Try together: make a pretend shop and plan for two people with six counters.</p></section>
+}

@@ -168,8 +168,11 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
   const [selected, setSelected] = useState(null)
   const [feedback, setFeedback] = useState(null)     // 'correct' | 'wrong'
   const [correct, setCorrect]   = useState(0)
+  const [questionMisses, setQuestionMisses] = useState(0)
+  const strugglesRef = useRef([])
   const [towerPicks, setTowerPicks] = useState(new Set())
   const [towerChecked, setTowerChecked] = useState(false)
+  const [towerFeedback, setTowerFeedback] = useState('')
 
   const { reaction: yaagviReaction, react: reactYaagvi } = useYaagviReactions({
     activityKey: `${mode}-${qIdx}-${currentShape}-${towerPicks.size}`,
@@ -220,10 +223,13 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
       setSelected(null)
       setFeedback(null)
       setCorrect(0)
+      setQuestionMisses(0)
+      strugglesRef.current = []
     }
     if (nextMode === 'tower') {
       setTowerPicks(new Set())
       setTowerChecked(false)
+      setTowerFeedback('')
     }
     setMode(nextMode)
     reactYaagvi(nextMode === 'tower' ? 'build' : nextMode === 'learn' ? 'shape' : 'start')
@@ -233,7 +239,8 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
     if (lockedRef.current || completedRef.current) return
     lockedRef.current = true
     setSelected(opt)
-    const nextCorrect = correct + (opt.correct ? 1 : 0)
+    const firstTry = questionMisses === 0
+    const nextCorrect = correct + (opt.correct && firstTry ? 1 : 0)
     if (opt.correct) {
       setFeedback('correct')
       setCorrect(nextCorrect)
@@ -241,12 +248,20 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
       speak('Correct! Great thinking!', { mood: 'celebrate' })
     } else {
       setFeedback('wrong')
-      reactYaagvi('wrong', { attempt: 1 })
-      speak(`Not quite. ${question.shape.fun}`, { mood: 'instruct' })
+      const misses = questionMisses + 1
+      setQuestionMisses(misses)
+      if (misses === 1) strugglesRef.current.push(question.question)
+      reactYaagvi('wrong', { attempt: misses })
+      speak(misses === 1 ? `Good try. ${question.shape.fun} Look again.` : 'Keep trying. Think about whether it rolls, stacks, or has flat faces.', { mood: 'instruct' })
     }
     track(() => {
       setFeedback(null)
       setSelected(null)
+      if (!opt.correct) {
+        lockedRef.current = false
+        return
+      }
+      setQuestionMisses(0)
       if (qIdx < questions.length - 1) {
         setQIdx(q => q + 1)
         lockedRef.current = false
@@ -259,11 +274,11 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
         )
         confetti({ particleCount: 100, spread: 100, origin: { x: 0.5, y: 0.5 } })
         reactYaagvi('complete')
-        onAddStars('shapes', 3, { total, correct: nextCorrect, struggles: [] })
+        onAddStars('shapes', Math.max(1, Math.ceil(nextCorrect / 3)), { total, correct: nextCorrect, struggles: strugglesRef.current })
         setQIdx(total) // trigger isLast result screen
       }
     }, 1400)
-  }, [correct, qIdx, questions, speak, profileName, onAddStars, question, track, reactYaagvi])
+  }, [correct, questionMisses, qIdx, questions, speak, profileName, onAddStars, question, track, reactYaagvi])
 
   const checkTower = useCallback(() => {
     const correctAnswers = new Set(TOWER_QUESTION.answer)
@@ -276,6 +291,8 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
       confetti({ particleCount: 80, spread: 80 })
       onAddStars('shapes', 2, { total: TOWER_QUESTION.answer.length, correct: TOWER_QUESTION.answer.length, struggles: [] })
     } else {
+      setTowerChecked(false)
+      setTowerFeedback('That tower wobbled. Choose shapes with a flat bottom and try again!')
       reactYaagvi('hint')
       speak('Not quite. Think about which shapes have flat bottoms and can balance.', { mood: 'instruct' })
     }
@@ -506,7 +523,7 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
           <div className={`grid gap-3 ${question.options.length === 2 ? 'grid-cols-2' : 'grid-cols-2'}`}>
             {question.options.map((opt, i) => {
               const isSel = selected === opt
-              const showRight = feedback && opt.correct
+              const showRight = feedback === 'correct' && opt.correct
               const showWrong = feedback && isSel && !opt.correct
               return (
                 <motion.button key={i} data-companion-answer={opt.correct ? 'correct' : 'wrong'}
@@ -623,13 +640,16 @@ export default function ShapeWorld({ avatar, progress, onAddStars, onBack, profi
         </div>
 
         {!towerChecked ? (
+          <div className="mx-4">
+            {towerFeedback && <p className="mb-3 rounded-2xl bg-amber-100 px-4 py-3 text-center font-round font-bold text-amber-900">💡 {towerFeedback}</p>}
           <motion.button whileTap={{ scale: 0.9 }}
-            onClick={checkTower}
+            onClick={() => { setTowerFeedback(''); checkTower() }}
             disabled={towerPicks.size === 0}
-            className="mx-4 py-4 rounded-2xl font-bubble text-white text-xl disabled:opacity-40 shadow-lg"
+            className="w-full py-4 rounded-2xl font-bubble text-white text-xl disabled:opacity-40 shadow-lg"
             style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}>
             Check My Tower! 🏗️
           </motion.button>
+          </div>
         ) : (
           <div className="mx-4 flex flex-col gap-3">
             <div className="p-4 rounded-2xl text-center"

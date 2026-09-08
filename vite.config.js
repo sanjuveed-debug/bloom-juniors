@@ -1,11 +1,18 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { resolveDevApiTarget } from './scripts/dev-api-target.mjs'
+
+const devApiTarget = resolveDevApiTarget(process.env.BLOOM_DEV_API_TARGET || '')
 
 export default defineConfig({
+  server: {
+    proxy: devApiTarget ? { '/api': { target: devApiTarget, changeOrigin: true } } : {},
+  },
   build: {
     chunkSizeWarningLimit: 800,
     rollupOptions: {
+      input: { main: 'index.html', meetYaagvi: 'meet-yaagvi.html', meetYaagviDirect: 'blog/meet-yaagvi/index.html' },
       output: {
         manualChunks(id) {
           if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) return 'react-vendor'
@@ -16,11 +23,23 @@ export default defineConfig({
     },
   },
   plugins: [
+    {
+      name: 'bloom-local-api-only',
+      configureServer(server) {
+        if (devApiTarget) return
+        server.middlewares.use('/api', (_request, response) => {
+          response.statusCode = 503
+          response.setHeader('Content-Type', 'application/json')
+          response.end(JSON.stringify({ error: 'Local API backend is not configured.' }))
+        })
+      },
+    },
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'bm-apple-touch-icon.png', 'masked-icon.svg', 'offline.html'],
+      registerType: 'prompt',
+      includeAssets: ['favicon-bloom-v3.svg', 'bloom-v3-touch.png', 'offline.html'],
       workbox: {
+        importScripts: ['/push-handler.js'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//, /^\/blog\//],
         runtimeCaching: [
@@ -61,9 +80,9 @@ export default defineConfig({
         lang: 'en',
         categories: ['education', 'kids'],
         icons: [
-          { src: 'bj-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: 'bj-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: 'bj-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+          { src: 'bloom-v3-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'bloom-v3-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'bloom-v3-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ],
         screenshots: [
           {
@@ -80,7 +99,7 @@ export default defineConfig({
             short_name: 'Learn',
             description: 'Jump straight into learning',
             url: '/?shortcut=learn',
-            icons: [{ src: 'bj-192.png', sizes: '192x192' }]
+            icons: [{ src: 'bloom-v3-192.png', sizes: '192x192' }]
           }
         ]
       }

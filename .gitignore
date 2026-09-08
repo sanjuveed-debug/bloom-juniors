@@ -9,12 +9,22 @@
 .env*.local
 
 node_modules/
+.laptop-migration/
 dist/
 test-results/
 tmp-video-check/
 smoke-shots/
 Video/
 Bloom Juniors - Google Play package/
+
+# Local design inputs and generated UAT evidence
+/3d_mascot.mp4
+/Bloom Juniors * Consolidation Plan*
+/New folder/
+/Story_video/
+/output/
+/download-lottie.js
+/tests/*.png
 
 *.log
 /*.png
@@ -24,9 +34,14 @@ eDUaPP*_SUPA.txt
 eDUaPP*.txt
 instagram.txt
 ig-session.json
+reddit-session.json
+x-session.json
 ig-error.png
 smoke-test.cjs
 scripts/live-commercial-audit.cjs
 .playwright-audit/
 stripe.key
 marketing/profile-check.png
+marketing/instagram-insights-debug.json
+marketing/.*-render.html
+marketing/**/*-windows-preview.wmv

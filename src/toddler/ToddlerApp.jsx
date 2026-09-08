@@ -1,8 +1,12 @@
+import { applyCollectionAction } from '../utils/collectionAdventure.js'
+import TinyPicnic, { TinyHome } from './TinyPicnic.jsx'
+import YaagviCharacter from '../components/YaagviCharacter'
 import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useProgress } from '../hooks/useProgress'
 import JarvisOrb from '../components/JarvisOrb'
+import ScreenEnter from '../components/ScreenEnter'
 import RetentionPanel from '../components/RetentionWidgets'
 import MoodCheckIn from '../components/MoodCheckIn'
 import ParentZone from '../components/ParentZone'
@@ -18,12 +22,26 @@ import { grantWonderSeed } from '../utils/wonderWorld.js'
 import { shouldSendAutoDigest, markDigestSent, buildDigestPayload, sendDigestEmail, sendNudgeEmail } from '../utils/weeklyDigest.js'
 import { useSpeech } from '../hooks/useSpeech'
 import { VoiceContext } from '../contexts/VoiceContext'
-import { trackActivityComplete } from '../utils/analytics.js'
+import { trackActivityComplete, trackEvent, trackRetentionOpen } from '../utils/analytics.js'
+import { recordActivationTelemetry, recordRetentionOpen } from '../utils/retentionTelemetry.js'
 import { dailySeedFor, seededShuffle, getToddlerLevel, getToddlerSessionSize } from '../utils/seededRandom'
 import { speakThenAdvance } from '../utils/speechAdvance'
 import { recordAdaptiveSession } from '../utils/adaptiveLearning.js'
 import { claimTreasureReward, equipTreasureReward } from '../utils/treasureRewards.js'
 import { stopAllSpeech } from '../lib/speechController.js'
+import HighFiveDelivery from '../components/HighFiveDelivery.jsx'
+import BloomAdventureHome from '../components/BloomAdventureHome.jsx'
+import BloomQuizShow from '../components/BloomQuizShow.jsx'
+import RetentionSetup from '../components/RetentionSetup.jsx'
+import { hasCompletedFirstMission } from '../utils/returnReminder.js'
+import { getStarterPathCompletion, getStarterPathState } from '../utils/starterPath.js'
+import ToddlerChoiceAdventure from '../components/ToddlerChoiceAdventure.jsx'
+import { recordInterestComplete, recordInterestExit, recordInterestStart } from '../utils/childInterest.js'
+import { consumeReturnDeepLinkTarget } from '../utils/returnDeepLink.js'
+import { getFoundationDailyPath } from '../utils/foundationRecommendations.js'
+import WonderWhy from '../modules/WonderWhy.jsx'
+import AvatarWorkshop, { AvatarWorkshopButton } from '../components/AvatarWorkshop.jsx'
+import { awardBloomCoin, canEarnBloomCoin } from '../utils/avatarWorkshop.js'
 
 // ── Toddler themes (3–4 year olds) ───────────────────────────────────────────
 const TODDLER_THEMES = {
@@ -78,6 +96,7 @@ const TODDLER_MODULES = [
   { id: 'fruits',     label: 'Fruits',      emoji: '🍎', desc: 'Name the fruits!',  bg: '#FF9A3C', comingSoon: false },
   { id: 'bodyparts',  label: 'My Body',     emoji: '🖐️', desc: 'Head to toe!',     bg: '#E879F9', comingSoon: false },
   { id: 'alphabet',   label: 'A B C',       emoji: '🔤', desc: 'Learn letters!',    bg: '#F59E0B', comingSoon: false },
+  { id: 'quizshow',   label: 'Big Quiz',    emoji: '🎤', desc: 'Take the contestant seat!', bg: '#7C3AED', comingSoon: false },
 ]
 
 // ── Session helper: daily + play-count seeded subset so repeat plays differ
@@ -125,11 +144,11 @@ function todayStamp() {
 
 function getToddlerDailyPath(progress = {}) {
   const today = todayStamp()
-  const playable = TODDLER_MODULES.filter(module => !module.comingSoon)
-  const seed = new Date().getDate()
-  const first = playable[seed % playable.length] || playable[0]
-  const second = playable[(seed + 2) % playable.length] || playable[1] || first
-  const steps = [first, second].filter(Boolean).map(module => ({
+  const assigned = getFoundationDailyPath(progress, 'toddler', { date: today }).modules
+  const steps = assigned
+    .map(item => TODDLER_MODULES.find(module => module.id === item.id))
+    .filter(Boolean)
+    .map(module => ({
     module,
     done: progress[module.id]?.lastPlayedDate === today,
   }))
@@ -1153,48 +1172,216 @@ function LegacyToddlerDashboard({ theme, profileId, profileName, progress, onNav
 }
 
 // ── Main toddler app ──────────────────────────────────────────────────────────
-const TODDLER_MAP_POSITIONS = { colours:['17%','42%'], shapes:['35%','69%'], numbers:['49%','43%'], animals:['65%','68%'], fruits:['82%','42%'], bodyparts:['8%','70%'], alphabet:['91%','70%'] }
+const TODDLER_MAP_POSITIONS = { colours:['17%','42%'], shapes:['35%','69%'], numbers:['49%','43%'], animals:['65%','68%'], fruits:['82%','42%'], bodyparts:['8%','70%'], alphabet:['91%','70%'], quizshow:['50%','86%'] }
 
 export function ToddlerDashboard({ profileName, progress, onNavigate, onSwitchProfiles, onParent, onUpdateProgress, onWonderWorld }) {
   const totalStars=TODDLER_MODULES.reduce((sum,m)=>sum+(progress[m.id]?.stars||0),0), dailyPath=getToddlerDailyPath(progress)
   const nextId=dailyPath.next?.module?.id||dailyPath.steps[0]?.module?.id, nextModule=TODDLER_MODULES.find(m=>m.id===nextId)||TODDLER_MODULES[0]
   const [rewardTreasure,setRewardTreasure]=useState(null),[showShelf,setShowShelf]=useState(false),[showExploreMap,setShowExploreMap]=useState(false)
+  const [showAvatarWorkshop,setShowAvatarWorkshop]=useState(false)
+  const [exploreTab,setExploreTab]=useState('daily')
   const treasureCollection=progress.treasureCollection||{items:[],claims:{}},claimKey=`toddler:${formatLocalDate()}`,treasureClaimed=Boolean(treasureCollection.claims?.[claimKey])
   const claimTreasure=()=>{if(treasureClaimed||dailyPath.doneCount<2)return;const reward=claimTreasureReward(treasureCollection,{claimKey,source:'toddler-path'});if(!reward.claimed||!reward.item)return;onUpdateProgress?.({treasureCollection:reward.collection,wonderWorld:grantWonderSeed(progress.wonderWorld,`daily:${claimKey}`,'toddler-path')});setRewardTreasure(reward)}
   const equipTreasure=item=>onUpdateProgress?.({treasureCollection:equipTreasureReward(treasureCollection,item)})
+  const updateTreasureCollection=nextCollection=>onUpdateProgress?.({treasureCollection:nextCollection})
   return <div className="min-h-screen bg-[#fff0d6] pb-16 text-[#3b1607]">
-    <header className="border-b-2 border-[#9a4b20]/15 bg-[#fff4dc] px-4 py-3 shadow-sm"><div className="mx-auto flex max-w-6xl items-center gap-3"><div className="mascot-video relative h-20 w-24 shrink-0"><img src="/yaagvi-3d-wave.png" alt="Yaagvi waving" className="absolute inset-0 h-full w-full object-contain drop-shadow-lg"/><video className="absolute inset-0 h-full w-full object-contain drop-shadow-lg" autoPlay muted loop playsInline preload="metadata" poster="/yaagvi-3d-wave.png" aria-hidden="true"><source src="/yaagvi-3d-wave.webm" type="video/webm"/></video></div><div className="min-w-0 flex-1"><p className="font-round text-xs font-black uppercase tracking-[.15em] text-[#b44b20]">Yaagvi’s little treasure hunt</p><h1 className="truncate font-bubble text-2xl sm:text-3xl">Hi, {profileName}! 👋</h1><p className="font-round text-sm font-bold text-[#8a5435]">Find two treasures, then celebrate.</p></div><div className="rounded-2xl bg-[#ffe29a] px-3 py-2 text-center"><p>⭐</p><p className="font-bubble text-lg leading-none">{totalStars}</p></div>{onSwitchProfiles&&<button onClick={onSwitchProfiles} className="hidden rounded-xl bg-white/70 px-3 py-2 font-bubble text-sm sm:block">Switch</button>}</div></header>
-    <OneDailyJourney ageGroup="toddler" profileName={profileName} steps={dailyPath.steps} doneCount={dailyPath.doneCount} required={2} claimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} streak={progress.loginStreak||0} onPlayNext={()=>onNavigate(nextModule.id)} onClaimTreasure={claimTreasure} onOpenTreasureRoom={()=>setShowShelf(true)} onOpenWorld={onWonderWorld} exploreOpen={showExploreMap} onToggleExplore={()=>setShowExploreMap(value=>!value)}/>
-    {!showExploreMap&&<><LivingAdventure ageGroup="toddler" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress} onOpenWonderWorld={onWonderWorld}/><NeverFinishedAdventure ageGroup="toddler" progress={progress} active={treasureClaimed} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress}/></>}
-    {showExploreMap&&<section className="mx-auto mt-5 max-w-6xl px-3 sm:px-5"><div className="relative min-h-[590px] overflow-hidden rounded-[34px] border-4 border-[#d58a46] bg-cover bg-center shadow-2xl sm:min-h-[650px]" style={{backgroundImage:'url(/treasure-map-bg.png)'}}><div className="absolute inset-0 bg-[#fff1cb]/15"/>
+    <HighFiveDelivery progress={progress} profileName={profileName} ageGroup="toddler" onUpdateProgress={onUpdateProgress}/>
+    <header className="pt-safe border-b-2 border-[#9a4b20]/15 bg-[#fff4dc] px-3 pb-3 shadow-sm sm:px-4"><div className="mx-auto flex max-w-6xl items-center gap-2 sm:gap-3"><div className="relative h-14 w-12 shrink-0 sm:h-20 sm:w-24"><YaagviCharacter state="wave" size="100%" style={{ height: '100%' }}/></div><div className="min-w-0 flex-1"><p className="truncate font-round text-[9px] font-black uppercase text-[#b44b20] sm:text-xs sm:tracking-[.15em]">Yaagvi’s little treasure hunt</p><h1 className="truncate font-bubble text-lg sm:text-3xl">Hi, {profileName}! 👋</h1><p className="hidden font-round text-sm font-bold text-[#8a5435] sm:block">Find two treasures, then celebrate.</p></div><div className="hidden rounded-xl bg-[#ffe29a] px-2 py-2 text-center sm:block sm:px-3"><p className="text-sm">⭐</p><p className="font-bubble text-lg leading-none">{totalStars}</p></div><AvatarWorkshopButton progress={progress} compact light onClick={()=>setShowAvatarWorkshop(true)}/>{onParent&&<button type="button" onClick={onParent} aria-label="Open Parent Zone" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#9a4b20]/20 bg-white/80 font-round text-xs font-black text-[#7a351b] sm:flex sm:w-auto sm:px-3">🔒 <span className="hidden sm:inline">Parents</span></button>}{onSwitchProfiles&&<button type="button" onClick={onSwitchProfiles} aria-label={`Switch from ${profileName} to another child`} className="min-h-10 shrink-0 rounded-xl bg-white px-2 font-bubble text-xs text-[#7a351b] shadow sm:px-3 sm:text-sm">⇄ <span className="hidden min-[390px]:inline">Switch</span></button>}</div></header>
+    <BloomAdventureHome ageGroup="toddler" profileName={profileName} progress={progress} dailyNext={nextModule} dailySteps={dailyPath.steps} dailyDone={dailyPath.doneCount} dailyRequired={2} dailyClaimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} libraryOpen={showExploreMap} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress} onClaimTreasure={claimTreasure} onToggleLibrary={()=>setShowExploreMap(value=>!value)} onOpenWorld={onWonderWorld} onOpenWonder={()=>onNavigate('wonderwhy','foundation-adventure')} onOpenTreasureRoom={()=>setShowShelf(true)}/>
+    {showExploreMap&&<div className="mx-auto mt-4 grid max-w-6xl grid-cols-2 gap-2 px-4 sm:flex sm:overflow-x-auto">{[{id:'daily',label:"📍 Today's path"},{id:'story',label:'📖 Story adventure'},{id:'endless',label:'🧭 Endless mode'},{id:'map',label:'🗺️ Full map'}].map(t=><button key={t.id} onClick={()=>setExploreTab(t.id)} className="min-h-10 rounded-lg px-2 py-2 font-round text-[10px] font-black uppercase transition-colors sm:shrink-0 sm:rounded-full sm:px-4 sm:text-xs sm:tracking-wide" style={exploreTab===t.id?{background:'#ef3f83',color:'#fff'}:{background:'#fff',color:'#ef3f83',border:'1.5px solid #ef3f8340'}}>{t.label}</button>)}</div>}
+    {showExploreMap&&exploreTab==='daily'&&<OneDailyJourney ageGroup="toddler" profileName={profileName} steps={dailyPath.steps} doneCount={dailyPath.doneCount} required={2} claimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} streak={progress.loginStreak||0} onPlayNext={()=>onNavigate(nextModule.id)} onClaimTreasure={claimTreasure} onOpenTreasureRoom={()=>setShowShelf(true)} onOpenWorld={onWonderWorld} exploreOpen={showExploreMap} onToggleExplore={()=>setShowExploreMap(value=>!value)}/>}
+    {showExploreMap&&exploreTab==='story'&&<LivingAdventure ageGroup="toddler" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress} onOpenWonderWorld={onWonderWorld}/>}
+    {showExploreMap&&exploreTab==='endless'&&<NeverFinishedAdventure ageGroup="toddler" progress={progress} active={treasureClaimed} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress}/>}
+    {showExploreMap&&exploreTab==='map'&&<section className="mx-auto mt-5 max-w-6xl px-3 sm:px-5"><div className="relative min-h-[590px] overflow-hidden rounded-[34px] border-4 border-[#d58a46] bg-cover bg-center shadow-2xl sm:min-h-[650px]" style={{backgroundImage:'url(/treasure-map-bg.png)'}}><div className="absolute inset-0 bg-[#fff1cb]/15"/>
       <div className="absolute left-4 right-4 top-4 z-20 rounded-[24px] bg-[#fff8e8]/90 p-4 shadow-lg backdrop-blur-sm sm:left-7 sm:right-auto sm:w-[430px]"><p className="font-round text-xs font-black uppercase tracking-[.16em] text-[#b74818]">Start here</p><div className="mt-1 flex items-center gap-3"><span className="text-5xl">{nextModule.emoji}</span><div><h2 className="font-bubble text-2xl sm:text-3xl">Let’s find {nextModule.label}</h2><p className="font-round text-sm font-bold text-[#805033]">One tiny game. Yaagvi comes too!</p></div></div><motion.button whileTap={{scale:.94}} onClick={()=>onNavigate(nextModule.id)} className="mt-3 min-h-14 w-full rounded-2xl bg-gradient-to-r from-[#ff7b29] to-[#ef3f83] font-bubble text-xl text-white shadow-lg">PLAY →</motion.button></div>
       {TODDLER_MODULES.filter(m=>!m.comingSoon).map((mod,idx)=>{const [left,top]=TODDLER_MAP_POSITIONS[mod.id]||['50%','50%'],done=progress[mod.id]?.lastPlayedDate===todayStamp(),active=mod.id===nextId;return <motion.button key={mod.id} onClick={()=>onNavigate(mod.id)} whileTap={{scale:.9}} initial={{scale:0}} animate={{scale:1}} transition={{delay:.08*idx,type:'spring'}} className="absolute z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center" style={{left,top}}><motion.div className={`grid h-20 w-20 place-items-center rounded-full border-4 text-4xl shadow-xl sm:h-24 sm:w-24 sm:text-5xl ${done?'border-[#2f9d67] bg-[#eaffd9]':active?'border-white bg-gradient-to-br from-[#ff792f] to-[#ee3f82] ring-8 ring-[#ffd35b]/65':'border-[#fff4d9] bg-[#fff8e8]'}`} animate={active?{scale:[1,1.08,1]}:{}} transition={{duration:1.6,repeat:Infinity}}>{done?'✅':mod.emoji}</motion.div><span className="mt-1 rounded-full bg-[#fff8e8]/95 px-3 py-1 font-bubble text-sm shadow-md">{mod.label}</span></motion.button>})}
-    </div></section>}<div className="mx-auto mt-4 flex max-w-6xl justify-end gap-2 px-4">{onSwitchProfiles&&<button onClick={onSwitchProfiles} className="rounded-full bg-white px-4 py-2 font-bubble text-sm shadow sm:hidden">Switch</button>}{onParent&&<button onClick={onParent} className="rounded-full bg-white/70 px-4 py-2 font-round text-xs font-bold">🔒 Grown-ups</button>}</div>
-    <AnimatePresence>{rewardTreasure&&<TreasureChestReward item={rewardTreasure.item} duplicate={rewardTreasure.duplicate} weekly={rewardTreasure.weekly} onClose={()=>setRewardTreasure(null)}/>} {showShelf&&<TreasureShelf collection={treasureCollection} profileName={profileName} onEquip={equipTreasure} onClose={()=>setShowShelf(false)}/>}</AnimatePresence>
+    </div></section>}<div className="mx-auto mt-4 flex max-w-6xl justify-end gap-2 px-4">{onParent&&<button onClick={onParent} className="rounded-full bg-white/70 px-4 py-2 font-round text-xs font-bold">🔒 Grown-ups</button>}</div>
+    <AnimatePresence>{rewardTreasure&&<TreasureChestReward item={rewardTreasure.item} duplicate={rewardTreasure.duplicate} weekly={rewardTreasure.weekly} ageGroup="toddler" onClose={()=>setRewardTreasure(null)}/>} {showShelf&&<TreasureShelf collection={treasureCollection} profileName={profileName} ageGroup="toddler" onEquip={equipTreasure} onCollectionChange={updateTreasureCollection} onClose={()=>setShowShelf(false)}/>} {showAvatarWorkshop&&<AvatarWorkshop progress={progress} profileName={profileName} ageGroup="toddler" onUpdateProgress={onUpdateProgress} onClose={()=>setShowAvatarWorkshop(false)}/>}</AnimatePresence>
   </div>
 }
 
-export default function ToddlerApp({ profileId, profileName, profileAgeGroup, onSwitchProfiles, parentPin, onUpdateProfile, onLogout, guardianEmail, onUpdateGuardian, classroomMode }) {
-  const { progress, update, resetProgress, addSticker } = useProgress(profileId)
+const COLOUR_SWATCHES = Object.fromEntries(COLOUR_QUESTIONS.map(question => [question.colour, question.hex]))
+const SHAPE_GLYPHS = {
+  Circle: '●', Square: '■', Triangle: '▲', Star: '★', Heart: '♥',
+  Oval: '⬭', Diamond: '◆', Rectangle: '▬',
+}
+
+function CountingObjectScene({ question }) {
+  const [counted, setCounted] = useState([])
+  const toggleObject = index => {
+    setCounted(current => current.includes(index)
+      ? current.filter(item => item !== index)
+      : [...current, index])
+  }
+
+  return (
+    <div className="w-full" data-testid="toddler-counting-scene">
+      <p className="mb-3 font-round text-xs font-black text-[#17637a]">Tap each picture as you count it.</p>
+      <div className="mx-auto flex max-w-sm flex-wrap justify-center gap-2.5 [perspective:700px]">
+        {Array.from({ length: question.count }, (_, index) => {
+          const moved = counted.includes(index)
+          const countOrder = counted.indexOf(index) + 1
+          return (
+            <motion.button
+              key={index}
+              type="button"
+              aria-label={`${moved ? 'Counted' : 'Count'} ${question.emoji} ${index + 1}`}
+              aria-pressed={moved}
+              onClick={() => toggleObject(index)}
+              whileTap={{ y: 5, rotateX: 10, scale: .94 }}
+              animate={{ y: moved ? -7 : 0, rotateY: moved ? 8 : 0, scale: moved ? 1.04 : 1 }}
+              className="relative grid h-16 w-16 place-items-center rounded-2xl border-2 border-[#76c9d8] bg-white text-4xl"
+              style={{ boxShadow: moved ? '0 10px 0 #1686a0, 0 16px 24px rgba(20,91,110,.2)' : '0 7px 0 #83cbd8, 0 12px 20px rgba(20,91,110,.15)', transformStyle: 'preserve-3d' }}
+            >
+              {question.emoji}
+              {moved && <span className="absolute -right-1.5 -top-1.5 grid h-7 w-7 place-items-center rounded-full bg-[#0f7890] font-bubble text-sm text-white shadow">{countOrder}</span>}
+            </motion.button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+const TODDLER_CHOICE_GAMES = {
+  colours: {
+    title: 'Rainbow Garden', place: 'Rainbow Garden', instruction: 'Match the glowing colour.',
+    questions: played => makeSession(COLOUR_QUESTIONS, 'colours', played),
+    answerOf: question => question.colour, optionsOf: question => question.options,
+    promptOf: () => 'Which colour matches?',
+    speechOf: question => `Look at the glowing colour. Which colour matches? Your choices are ${question.options.join(', ')}.`,
+    hintOf: () => 'Look at the big colour circle, then find the little circle that looks exactly the same.',
+    correctSpeechOf: question => `You matched ${question.colour}! The rainbow garden is glowing.`,
+    renderVisual: question => <motion.div className="flex flex-col items-center" animate={{ scale: [1, 1.06, 1] }} transition={{ duration: 1.8, repeat: Infinity }}><span className="text-6xl">{question.emoji}</span><span className="mt-3 h-24 w-24 rounded-full border-4 border-white shadow-xl" style={{ background: question.hex }} /></motion.div>,
+    renderOption: option => <span className="flex flex-col items-center gap-1"><span className="h-9 w-9 rounded-full border-2 border-white shadow" style={{ background: COLOUR_SWATCHES[option] }} /><span>{option}</span></span>,
+    background: 'linear-gradient(145deg,#ff7a35,#f43f86 52%,#8b5cf6)',
+  },
+  shapes: {
+    title: 'Shape Pond', place: 'Shape Pond', instruction: 'Find the shape twin.',
+    questions: played => makeSession(SHAPE_QUESTIONS, 'shapes', played),
+    answerOf: question => question.shape, optionsOf: question => question.options,
+    promptOf: () => 'Which shape is its twin?',
+    speechOf: question => `Find the shape twin. Your choices are ${question.options.join(', ')}.`,
+    hintOf: () => 'Trace around the big shape with your finger. Look for the choice with the same edges.',
+    correctSpeechOf: question => `You found the ${question.shape} twin! The shape pond sparkles.`,
+    renderVisual: question => <motion.svg viewBox="0 0 100 100" className="h-36 w-36" fill="#7c3aed" animate={{ rotate: [0, 4, -4, 0] }} transition={{ duration: 2.4, repeat: Infinity }}>{question.svg}</motion.svg>,
+    renderOption: option => <span className="flex flex-col items-center"><span className="text-4xl text-[#7c3aed]">{SHAPE_GLYPHS[option]}</span><span className="text-xs sm:text-base">{option}</span></span>,
+    background: 'linear-gradient(145deg,#0284c7,#22c55e 58%,#facc15)',
+  },
+  numbers: {
+    title: 'Counting Falls', place: 'Counting Falls', instruction: 'Count the pictures, then choose.',
+    questions: played => makeSession(NUMBER_QUESTIONS, 'numbers', played),
+    answerOf: question => question.count, optionsOf: question => question.options,
+    promptOf: question => `How many ${question.emoji} can you count?`,
+    speechOf: question => `Count the pictures. How many are there? Your choices are ${question.options.join(', ')}.`,
+    hintOf: () => 'Point to every picture once and say the numbers slowly.',
+    correctSpeechOf: question => `You counted ${question.count}! The number waterfall is moving.`,
+    renderVisual: question => <CountingObjectScene key={`${question.emoji}-${question.count}`} question={question} />,
+    renderOption: option => <span className="text-3xl">{option}</span>,
+    background: 'linear-gradient(145deg,#2563eb,#06b6d4 55%,#34d399)',
+  },
+  animals: {
+    title: 'Animal Jungle', place: 'Animal Jungle', instruction: 'Listen, look, and meet an animal friend.',
+    questions: played => makeSession(ANIMAL_QUESTIONS, 'animals', played),
+    answerOf: question => question.animal, optionsOf: question => question.options,
+    promptOf: question => `Who says “${question.sound}”?`,
+    speechOf: question => `Listen. ${question.sound}. Which animal says that? Your choices are ${question.options.join(', ')}.`,
+    hintOf: question => `Listen to the sound again. ${question.sound}. Think about an animal you have seen make it.`,
+    correctSpeechOf: question => `It is the ${question.animal}! You made a new jungle friend.`,
+    renderVisual: question => <motion.span className="text-9xl" animate={{ rotate: [0, 8, -8, 0], y: [0, -5, 0] }} transition={{ duration: 2, repeat: Infinity }}>{question.emoji}</motion.span>,
+    background: 'linear-gradient(145deg,#166534,#22c55e 55%,#ca8a04)',
+  },
+  fruits: {
+    title: 'Fruit Orchard', place: 'Fruit Orchard', instruction: 'Pack the right fruit for Yaagvi’s picnic.',
+    questions: played => makeSession(FRUIT_QUESTIONS, 'fruits', played),
+    answerOf: question => question.fruit, optionsOf: question => question.options,
+    promptOf: () => 'Which fruit is ready for the picnic?',
+    speechOf: question => `What fruit is this? Your choices are ${question.options.join(', ')}.`,
+    hintOf: () => 'Look carefully at its colour and shape. Think about fruits you have eaten.',
+    correctSpeechOf: question => `Yes, it is ${question.fruit}! It is packed in Yaagvi's picnic basket.`,
+    renderVisual: question => <motion.span className="text-9xl" animate={{ scale: [1, 1.1, 1], rotate: [-3, 3, -3] }} transition={{ duration: 2, repeat: Infinity }}>{question.emoji}</motion.span>,
+    background: 'linear-gradient(145deg,#ea580c,#f59e0b 52%,#84cc16)',
+  },
+  bodyparts: {
+    title: 'Wiggle Meadow', place: 'Wiggle Meadow', instruction: 'Find it, then point to it on your body.',
+    questions: played => makeSession(BODY_QUESTIONS, 'bodyparts', played),
+    answerOf: question => question.part, optionsOf: question => question.options,
+    promptOf: () => 'Which body part is this?',
+    speechOf: question => `Look at the picture. Which body part is this? Your choices are ${question.options.join(', ')}.`,
+    hintOf: () => 'Can you find the same part on your own body? Point to it.',
+    correctSpeechOf: question => `You found ${question.part}! Point to yours and give it a wiggle.`,
+    renderVisual: question => <motion.span className="text-9xl" animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.08, 1] }} transition={{ duration: 1.8, repeat: Infinity }}>{question.emoji}</motion.span>,
+    background: 'linear-gradient(145deg,#db2777,#c026d3 55%,#7c3aed)',
+  },
+  alphabet: {
+    title: 'Letter Tree', place: 'Letter Tree', instruction: 'Spot the big letter and choose its match.',
+    questions: played => makeLetterSession(played),
+    answerOf: question => question.letter, optionsOf: question => question.options,
+    promptOf: () => 'Which letter matches?',
+    speechOf: question => `This letter says ${question.sound}, as in ${question.word}. Which letter is it? Your choices are ${question.options.join(', ')}.`,
+    hintOf: question => `Say ${question.sound}. Look at the tall and curved lines in the big letter.`,
+    correctSpeechOf: question => `${question.letter} says ${question.sound}, as in ${question.word}. The letter tree grew a new leaf!`,
+    renderVisual: question => <div className="flex flex-col items-center"><motion.span className="font-bubble text-8xl text-[#7c3aed]" initial={{ scale: .5 }} animate={{ scale: 1 }} transition={{ type: 'spring' }}>{question.letter}{question.letter.toLowerCase()}</motion.span><span className="mt-2 text-4xl">{question.emoji}</span><span className="font-round text-sm font-black text-[#85512f]">{question.sound} as in {question.word}</span></div>,
+    renderOption: option => <span className="text-3xl">{option}{option.toLowerCase()}</span>,
+    background: 'linear-gradient(145deg,#7c3aed,#2563eb 58%,#14b8a6)',
+  },
+}
+
+export function ToddlerChoiceModule({ moduleId, played = 0, onBack, onDone }) {
+  const config = TODDLER_CHOICE_GAMES[moduleId]
+  const [questions] = useState(() => config.questions(played))
+  return <ToddlerChoiceAdventure {...config} moduleId={moduleId} questions={questions} onBack={onBack} onDone={onDone} />
+}
+
+export default function ToddlerApp({ profileId, profileName, profileAgeGroup, onSwitchProfiles, parentPin, verifyParentPin, onUpdateProfile, onLogout, guardianEmail, onUpdateGuardian, classroomMode }) {
+  const { progress, update, logSession, resetProgress, addSticker } = useProgress(profileId)
   const todayKey = todayStamp()
   const moodLog = progress.moodLog || []
   const moodLoggedToday = moodLog.some(entry => entry.date === todayKey)
-  const [screen, setScreen] = useState(classroomMode || moodLoggedToday ? 'home' : 'mood')
+  const [returnTarget] = useState(() => consumeReturnDeepLinkTarget('toddler'))
+  const [screen, setScreen] = useState(returnTarget || 'home')
+  const [moduleArrival, setModuleArrival] = useState(returnTarget || null)
   const [rewardInfo, setRewardInfo] = useState(null)
-  const [moduleArrival, setModuleArrival] = useState(null)
   const rewardTimerRef = useRef(null)
 
   useEffect(() => () => {
     if (rewardTimerRef.current) clearTimeout(rewardTimerRef.current)
   }, [])
 
-  const openModule = useCallback((to) => {
+  useEffect(() => {
+    if (!classroomMode) {
+      const retention = trackRetentionOpen({ profileId, ageGroup: 'toddler' })
+      if (retention?.isNewDay) {
+        update(p => ({
+          ...p,
+          retentionTelemetry: recordRetentionOpen(p.retentionTelemetry, {
+            date: retention.today,
+            source: retention.returnSource,
+            at: Date.now(),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+          }),
+        }))
+      }
+    }
+  }, [classroomMode, profileId])
+  useEffect(() => {
+    if (returnTarget) {
+      update(p => ({ ...p, childInterest: recordInterestStart(p.childInterest, returnTarget, { source: 'notification' }) }))
+    }
+  // run once for the consumed return target
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const openModule = useCallback((to, interestSource = 'choice') => {
     stopAllSpeech('navigation')
+    if (['colours','shapes','numbers','animals','fruits','bodyparts','alphabet','quizshow'].includes(to)) {
+      update(p => ({ ...p, childInterest: recordInterestStart(p.childInterest, to, { source: interestSource }) }))
+    }
     setScreen(to)
     let skipArrival = false
     try { skipArrival = sessionStorage.getItem('bloom_living_launch') === to; if (skipArrival) sessionStorage.removeItem('bloom_living_launch') } catch {}
-    if (!skipArrival && ['colours','shapes','numbers','animals','fruits','bodyparts','alphabet'].includes(to)) setModuleArrival(to)
-  }, [])
+    if (!skipArrival && !['first-mission', 'starter-path'].includes(interestSource) && ['colours','shapes','numbers','animals','fruits','bodyparts','alphabet','quizshow'].includes(to)) setModuleArrival(to)
+  }, [update])
 
   // Auto-assign default buddy on first visit so child skips the buddy picker
   useEffect(() => {
@@ -1235,95 +1422,183 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
     setScreen('home')
   }, [update, todayKey])
 
-  const handleModuleDone = useCallback((moduleId, stars) => {
-    trackActivityComplete(moduleId, 'toddler')
-    const firstTreasureToday = progress[moduleId]?.lastPlayedDate !== todayStamp()
+  const handleModuleDone = useCallback((moduleId, stars, sessionTotal, options = {}) => {
+    const { suppressCompletionModal = false } = options
+    trackActivityComplete(moduleId, 'toddler', profileId)
+    const today = todayStamp()
+    const firstTreasureToday = progress[moduleId]?.lastPlayedDate !== today
+    const total = Math.max(1, Number(sessionTotal) || getToddlerSessionSize(getToddlerLevel(progress[moduleId]?.played || 0), 10))
+    const correct = Math.min(total, Math.max(0, Number(stars) || 0))
+    const coinAwarded = correct > 0 && canEarnBloomCoin(progress.avatarWorkshop, moduleId, today)
+    const firstMission = !hasCompletedFirstMission(progress)
+    const starterBefore = getStarterPathState(progress, 'toddler')
+    const starterAfter = getStarterPathCompletion(progress, 'toddler', moduleId)
+    if (coinAwarded) trackEvent('bloom_coin_earned', { module: moduleId, age_group: 'toddler' })
     update(p => {
-      const today = todayStamp()
       const firstToday = p[moduleId]?.lastPlayedDate !== today
       const nextPlayed = (p[moduleId]?.played || 0) + 1
-      return {
-        ...recordAdaptiveSession(p, moduleId, { total: Math.max(1, getToddlerSessionSize(getToddlerLevel(p[moduleId]?.played || 0), 10)), correct: stars, struggles: [] }),
+      const nextProgress = {
+        ...recordAdaptiveSession(p, moduleId, { total, correct, struggles: [] }),
+        retentionTelemetry: firstMission
+          ? recordActivationTelemetry(p.retentionTelemetry, {
+              type: 'activation_first_mission_completed',
+              date: today,
+              module: moduleId,
+              at: Date.now(),
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+            })
+          : p.retentionTelemetry,
+        childInterest: recordInterestComplete(p.childInterest, moduleId, { score: correct }),
+        totalStars: (p.totalStars || 0) + correct,
         toddlerTreasurePoints: (p.toddlerTreasurePoints || 0) + (firstToday ? 5 : 0),
         [moduleId]: {
           ...p[moduleId],
           stars: Math.max(p[moduleId]?.stars || 0, stars),
           played: nextPlayed,
           level: getToddlerLevel(nextPlayed),
-          lastPlayedDate: todayStamp(),
+          lastPlayedDate: today,
         },
       }
+      return correct > 0
+        ? awardBloomCoin(nextProgress, moduleId, today).progress
+        : nextProgress
     })
+    logSession({
+      module: moduleId,
+      stars: correct,
+      total,
+      correct,
+      accuracy: Math.round((correct / total) * 100),
+      date: Date.now(),
+      ...(options.foundationStrands ? { foundationStrands: options.foundationStrands } : {}),
+      ...(options.foundationArcs ? { foundationArcs: options.foundationArcs } : {}),
+      ...(options.foundationLessonId ? { foundationLessonId: options.foundationLessonId } : {}),
+    })
+    if (firstMission) trackEvent('activation_first_mission_completed', { age_group: 'toddler', module: moduleId })
     confetti({ particleCount: 120, spread: 140, origin: { x: 0.5, y: 0.3 } })
-    const mod = TODDLER_MODULES.find(m => m.id === moduleId)
-    setScreen('home')
-    setRewardInfo({ mod, stars, treasure: firstTreasureToday ? 5 : 0 })
-    if (rewardTimerRef.current) clearTimeout(rewardTimerRef.current)
-    rewardTimerRef.current = window.setTimeout(() => {
-      rewardTimerRef.current = null
-      setRewardInfo(null)
-    }, 3000)
-  }, [update, progress])
+    const eventId=`learning:${profileId || 'local'}:${moduleId}:${Date.now()}`
+    window.dispatchEvent(new CustomEvent('yaagvi:celebrate',{detail:{module:moduleId,stars,eventId}}))
+    if (!suppressCompletionModal) {
+      const reward = [
+        coinAwarded ? '+1 Bloom Coin for your Avatar Workshop!' : null,
+        firstTreasureToday ? 'You found 5 new treasure points!' : 'Your practice made this adventure stronger.',
+      ].filter(Boolean).join(' ')
+      window.dispatchEvent(new CustomEvent('bloom:game-complete',{detail:{
+        module:moduleId,
+        stars,
+        total,
+        correct,
+        eventId,
+        reward,
+        firstMission,
+        starterPath: starterBefore.active ? {
+          completed: starterAfter.completed,
+          total: starterAfter.total,
+          nextTitle: starterAfter.module?.label || '',
+          complete: !starterAfter.active,
+        } : null,
+      }}))
+    }
+  }, [update, logSession, progress, profileId])
+
+  if (!classroomMode && screen === 'tiny-picnic') {
+    return <VoiceContext.Provider value="en-US-AnaNeural"><TinyPicnic progress={progress} update={update} onExplore={() => openModule('library')} onBack={() => openModule('home')} /></VoiceContext.Provider>
+  }
+  if (!classroomMode && screen === 'home') {
+    return <VoiceContext.Provider value="en-US-AnaNeural"><TinyHome profileName={profileName} progress={progress}
+      onPlay={() => { if (progress.collectionAdventures?.tiny?.state?.phase === 'complete') update(p => applyCollectionAction(p, 'tiny', {type:'REPLAY'})); openModule('tiny-picnic') }}
+      onExplore={() => openModule('library')} onParents={parentPin || verifyParentPin ? () => openModule('parent') : undefined} onSwitchProfiles={onSwitchProfiles} /></VoiceContext.Provider>
+  }
 
   if (screen === 'avatar') {
-    return <ToddlerAvatarSelector onSelect={handleAvatarSelect} />
+    return <ScreenEnter key={screen}><ToddlerAvatarSelector onSelect={handleAvatarSelect} /></ScreenEnter>
   }
 
   if (screen === 'mood') {
-    return <MoodCheckIn avatar={progress.toddlerAvatar} profileName={profileName} themeOverride={theme} onComplete={handleMoodComplete} onSkip={() => setScreen('home')} />
+    return <ScreenEnter key={screen}><MoodCheckIn avatar={progress.toddlerAvatar} profileName={profileName} themeOverride={theme} onComplete={handleMoodComplete} onSkip={() => handleMoodComplete({ key: 'skipped', emoji: '⏭️' })} /></ScreenEnter>
   }
 
   if (screen === 'parent') {
     return (
-      <ParentZone
-        avatar={progress.toddlerAvatar || 'rumi'}
-        progress={progress}
-        profileId={profileId}
-        profileName={profileName}
-        profileAgeGroup={profileAgeGroup}
-        parentPin={parentPin}
-        onBack={() => setScreen('home')}
-        onSetChallenge={() => {}}
-        onAddSticker={addSticker}
-        onReset={resetProgress}
-        onSwitchProfiles={onSwitchProfiles}
-        onUpdateProgress={(patch) => update(p => ({ ...p, ...patch }))}
-        onUpdateProfile={onUpdateProfile}
-        onLogout={onLogout}
-        guardianEmail={guardianEmail}
-        onUpdateGuardian={onUpdateGuardian}
-        classroomMode={classroomMode}
-      />
+      <ScreenEnter key={screen}>
+        <ParentZone
+          avatar={progress.toddlerAvatar || 'rumi'}
+          progress={progress}
+          profileId={profileId}
+          profileName={profileName}
+          profileAgeGroup={profileAgeGroup}
+          parentPin={parentPin}
+          verifyParentPin={verifyParentPin}
+          onBack={() => setScreen('home')}
+          onSetChallenge={() => {}}
+          onAddSticker={addSticker}
+          onReset={resetProgress}
+          onSwitchProfiles={onSwitchProfiles}
+          onUpdateProgress={(patch) => update(p => ({ ...p, ...patch }))}
+          onUpdateProfile={onUpdateProfile}
+          onLogout={onLogout}
+          guardianEmail={guardianEmail}
+          onUpdateGuardian={onUpdateGuardian}
+          classroomMode={classroomMode}
+        />
+      </ScreenEnter>
     )
   }
 
   if (screen === 'wonderworld') {
-    return <WonderWorld ageGroup="toddler" progress={progress} profileName={profileName} onUpdateProgress={(patch)=>update(p=>({...p,...(typeof patch==='function'?patch(p):patch)}))} onBack={()=>setScreen('home')}/>
+    return <ScreenEnter key={screen}><WonderWorld ageGroup="toddler" progress={progress} profileName={profileName} onUpdateProgress={(patch)=>update(p=>({...p,...(typeof patch==='function'?patch(p):patch)}))} onBack={()=>setScreen('home')}/></ScreenEnter>
+  }
+
+  if (screen === 'wonderwhy') {
+    return (
+      <ScreenEnter key={screen}>
+        <VoiceContext.Provider value="en-US-AnaNeural">
+          <WonderWhy
+            ageGroup="toddler"
+            profileName={profileName}
+            progress={progress}
+            onUpdateProgress={(patch)=>update(p=>({...p,...(typeof patch==='function'?patch(p):patch)}))}
+            onAddStars={(module, stars, sessionData)=>handleModuleDone(module, stars, stars, { ...sessionData, suppressCompletionModal: true })}
+            onBack={()=>setScreen('home')}
+          />
+        </VoiceContext.Provider>
+      </ScreenEnter>
+    )
+  }
+
+  const goHome = () => {
+    update(p => ({ ...p, childInterest: recordInterestExit(p.childInterest, screen) }))
+    setScreen('home')
   }
 
   const moduleMap = {
-    colours:   <ColoursModule   theme={theme} onDone={(s) => handleModuleDone('colours', s)}   onBack={() => setScreen('home')} played={progress.colours?.played || 0} />,
-    shapes:    <ShapesModule    theme={theme} onDone={(s) => handleModuleDone('shapes', s)}    onBack={() => setScreen('home')} played={progress.shapes?.played || 0} />,
-    numbers:   <NumbersModule   theme={theme} onDone={(s) => handleModuleDone('numbers', s)}   onBack={() => setScreen('home')} played={progress.numbers?.played || 0} />,
-    animals:   <AnimalsModule   theme={theme} onDone={(s) => handleModuleDone('animals', s)}   onBack={() => setScreen('home')} played={progress.animals?.played || 0} />,
-    fruits:    <FruitsModule    theme={theme} onDone={(s) => handleModuleDone('fruits', s)}    onBack={() => setScreen('home')} played={progress.fruits?.played || 0} />,
-    bodyparts: <BodyPartsModule theme={theme} onDone={(s) => handleModuleDone('bodyparts', s)} onBack={() => setScreen('home')} played={progress.bodyparts?.played || 0} />,
-    alphabet:  <AlphabetModule theme={theme} onDone={(s) => handleModuleDone('alphabet', s)} onBack={() => setScreen('home')} played={progress.alphabet?.played || 0} />,
+    colours:   <ToddlerChoiceModule moduleId="colours" played={progress.colours?.played || 0} onDone={(s, t) => handleModuleDone('colours', s, t)} onBack={goHome} />,
+    shapes:    <ToddlerChoiceModule moduleId="shapes" played={progress.shapes?.played || 0} onDone={(s, t) => handleModuleDone('shapes', s, t)} onBack={goHome} />,
+    numbers:   <ToddlerChoiceModule moduleId="numbers" played={progress.numbers?.played || 0} onDone={(s, t) => handleModuleDone('numbers', s, t)} onBack={goHome} />,
+    animals:   <ToddlerChoiceModule moduleId="animals" played={progress.animals?.played || 0} onDone={(s, t) => handleModuleDone('animals', s, t)} onBack={goHome} />,
+    fruits:    <ToddlerChoiceModule moduleId="fruits" played={progress.fruits?.played || 0} onDone={(s, t) => handleModuleDone('fruits', s, t)} onBack={goHome} />,
+    bodyparts: <ToddlerChoiceModule moduleId="bodyparts" played={progress.bodyparts?.played || 0} onDone={(s, t) => handleModuleDone('bodyparts', s, t)} onBack={goHome} />,
+    alphabet:  <ToddlerChoiceModule moduleId="alphabet" played={progress.alphabet?.played || 0} onDone={(s, t) => handleModuleDone('alphabet', s, t)} onBack={goHome} />,
+    quizshow:  <BloomQuizShow ageGroup="toddler" profileName={profileName} played={progress.quizshow?.played || 0} onBack={goHome} onComplete={({ correct, total }) => { handleModuleDone('quizshow', correct, total, { suppressCompletionModal: true }); goHome() }} />,
   }
 
   if (moduleMap[screen]) {
     return (
-      <VoiceContext.Provider value="en-US-AnaNeural">
-        <AdventureModuleFrame moduleId={screen} ageGroup="toddler" progress={progress} onUpdateProgress={update} onMap={() => { setModuleArrival(null); setScreen('home') }}>{moduleMap[screen]}</AdventureModuleFrame>
-        <AnimatePresence>
-          {moduleArrival === screen && <ModuleArrival ageGroup="toddler" moduleId={screen} profileName={profileName} onStart={() => setModuleArrival(null)} onBack={() => { setModuleArrival(null); setScreen('home') }} />}
-        </AnimatePresence>
-      </VoiceContext.Provider>
+      <ScreenEnter key={screen}>
+        <VoiceContext.Provider value="en-US-AnaNeural">
+          <AdventureModuleFrame moduleId={screen} ageGroup="toddler" progress={progress} onUpdateProgress={update} onMap={() => { setModuleArrival(null); goHome() }}>{moduleMap[screen]}</AdventureModuleFrame>
+          <AnimatePresence>
+            {moduleArrival === screen && <ModuleArrival ageGroup="toddler" moduleId={screen} profileName={profileName} onStart={() => setModuleArrival(null)} onBack={() => { setModuleArrival(null); goHome() }} />}
+          </AnimatePresence>
+        </VoiceContext.Provider>
+      </ScreenEnter>
     )
   }
 
   return (
+    <ScreenEnter key={screen}>
     <VoiceContext.Provider value="en-US-AnaNeural">
+      {!classroomMode && <button className="m-4 px-5 py-3 rounded-2xl bg-white text-green-900 font-bold" onClick={() => openModule('home')}>Back to my home</button>}
       <ToddlerDashboard
         theme={theme}
         profileId={profileId}
@@ -1334,6 +1609,17 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
         onParent={parentPin ? () => setScreen('parent') : undefined}
         onUpdateProgress={(patch) => update(p => ({ ...p, ...patch }))}
         onWonderWorld={() => setScreen('wonderworld')}
+      />
+      <RetentionSetup
+        profileId={profileId}
+        profileName={profileName}
+        profileAgeGroup={profileAgeGroup}
+        guardianEmail={guardianEmail}
+        parentPin={parentPin}
+        verifyParentPin={verifyParentPin}
+        progress={progress}
+        onUpdateProgress={(patch) => update(p => ({ ...p, ...patch }))}
+        classroomMode={classroomMode}
       />
       <AnimatePresence>
         {rewardInfo && (
@@ -1399,5 +1685,6 @@ export default function ToddlerApp({ profileId, profileName, profileAgeGroup, on
         )}
       </AnimatePresence>
     </VoiceContext.Provider>
+    </ScreenEnter>
   )
 }

@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useSpeech } from '../hooks/useSpeech'
+import { useModuleStart } from '../hooks/useModuleStart'
 import { THEMES } from '../themes'
 
 const GRID_SIZE = 5
@@ -51,6 +52,7 @@ const DIRS = [
 export default function DirectionalPuzzle({ avatar, progress, onAddStars, onBack, profileName }) {
   const theme = THEMES[avatar] || THEMES.rumi
   const { speak } = useSpeech()
+  const startSignal = useModuleStart('logic')
   const [levelIndex, setLevelIndex] = useState(() =>
     Math.max(0, Math.min(progress?.logic?.maxLevel || 0, LEVELS.length - 1))
   )
@@ -78,9 +80,9 @@ export default function DirectionalPuzzle({ avatar, progress, onAddStars, onBack
     setSequence([])
     setTrail([])
     setStatus('idle')
-    speak(`Level ${level.id}: ${level.name}. Help get to the goal. Add your moves, then press Go`, { mood: 'instruct' })
+    if (startSignal) speak(`Level ${level.id}: ${level.name}. Help get to the goal. Add your moves, then press Go`, { mood: 'instruct' })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [levelIndex])
+  }, [levelIndex, startSignal])
 
   const addMove = useCallback((dir) => {
     if (running) return
@@ -133,6 +135,7 @@ export default function DirectionalPuzzle({ avatar, progress, onAddStars, onBack
           correct: 1,
           struggles: [],
           maxLevel: levelIndex + 1,
+          stayOnModule: true,
         })
         return
       }

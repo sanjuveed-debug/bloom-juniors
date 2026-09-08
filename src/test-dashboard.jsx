@@ -27,6 +27,14 @@ const initialProgress = {
   avatar: 'rumi',
   totalStars: 12,
   loginStreak: 2,
+  avatarWorkshop: {
+    awards: Object.fromEntries(
+      ['phonics', 'math', 'story', 'science'].map((moduleId, index) => [
+        `2026-07-29:${moduleId}`,
+        { coins: 1, moduleId, date: '2026-07-29', awardedAt: index + 1 },
+      ])
+    ),
+  },
   sessions,
   livingAdventure: scenario === 'living1'
     ? { storyId: 'moon-egg-v1', completed: [0, 1], lastCompletedDate: formatLocalDate(), launched: null }
@@ -43,7 +51,7 @@ function DashboardHarness() {
     profiles={[{ id: 'uat', name: 'UAT Bloom' }]}
     activeProfileId="uat"
     onNavigate={(to) => { document.title = `nav:${to}` }}
-    onLongPress={() => {}}
+    onLongPress={() => { document.title = 'nav:parent' }}
     onUpdateProgress={(patch) => setProgress(current => ({ ...current, ...patch }))}
   />
 }

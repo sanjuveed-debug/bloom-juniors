@@ -1,9 +1,11 @@
-import { useState, useCallback } from 'react'
+import { uniqueAnswerOptions, isWorldAnswerCorrect } from '../utils/worldQuizOptions'
+import { useState, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useSpeech } from '../hooks/useSpeech'
 import { THEMES } from '../themes'
 import { getWorldExplorerStars } from '../utils/moduleScoring'
+import HomeToWorld from './HomeToWorld.jsx'
 
 // ── Country data (ISO 3166-1 alpha-2 codes for flagcdn.com) ──────────────────
 const COUNTRIES = [
@@ -336,8 +338,6 @@ function makeQuestion(pool, mode) {
   const seed = (Date.now() + Math.random() * 99999) >>> 0
   const shuffled = shuffle(getQuestionPool(pool, mode), seed)
   const correct = shuffled[0]
-  const distractors = shuffled.slice(1, 4)
-  const options = shuffle([correct, ...distractors], (seed * 7) >>> 0)
 
   let question, answerKey
   if (mode === 'Capitals') {
@@ -350,6 +350,8 @@ function makeQuestion(pool, mode) {
     question = `What is the currency of ${correct.name}?`
     answerKey = 'currency'
   }
+  const candidates = [...shuffled.slice(1), ...shuffle(getQuestionPool(COUNTRIES, mode), seed)]
+  const options = shuffle(uniqueAnswerOptions(correct, candidates, answerKey), (seed * 7) >>> 0)
   return { correct, options, question, answerKey }
 }
 
@@ -382,10 +384,19 @@ function makeHistoryQuestion(pool) {
   }
 }
 
-export default function WorldGK({ avatar, onAddStars, onBack, profileName }) {
+export default function WorldGK({
+  avatar,
+  onAddStars,
+  onBack,
+  profileName,
+  ageGroup = 'early',
+  progress = {},
+  onUpdateProgress,
+}) {
   const theme = THEMES[avatar] || THEMES.rumi
   const { speak } = useSpeech()
 
+  const [experience, setExperience] = useState('journey')
   const [contentMode, setContentMode] = useState('countries')
   const [region,   setRegion]   = useState('All')
   const [inQuiz,   setInQuiz]   = useState(false)
@@ -396,6 +407,8 @@ export default function WorldGK({ avatar, onAddStars, onBack, profileName }) {
   const [qNum,     setQNum]     = useState(0)
   const [done,     setDone]     = useState(false)
   const [expanded, setExpanded] = useState(null)
+  const [missedCurrent, setMissedCurrent] = useState(false)
+  const strugglesRef = useRef([])
   const TOTAL_Q = 8
 
   const visibleCountries = region === 'All' ? COUNTRIES : COUNTRIES.filter(c => c.region === region)
@@ -417,6 +430,8 @@ export default function WorldGK({ avatar, onAddStars, onBack, profileName }) {
     setQNum(0)
     setDone(false)
     setChosen(null)
+    setMissedCurrent(false)
+    strugglesRef.current = []
     setQuestion(q)
     if (mode === 'History') {
       speak(`${q.question} ${q.correct.title}.`, { mood: 'question' })
@@ -429,18 +444,23 @@ export default function WorldGK({ avatar, onAddStars, onBack, profileName }) {
     if (chosen) return
     setChosen(opt)
     const isHistoryQuiz = quizMode === 'History'
-    const isCorrect = isHistoryQuiz ? opt === question.correct.yearLabel : opt.name === question.correct.name
-    const newScore = score + (isCorrect ? 1 : 0)
+    const isCorrect = isWorldAnswerCorrect(opt, question)
+    const newScore = score + (isCorrect && !missedCurrent ? 1 : 0)
     const rightAns = quizMode === 'Capitals' ? question.correct.capital
       : quizMode === 'Flags' ? question.correct.name
       : quizMode === 'Currencies' ? question.correct.currency
       : question.correct.yearLabel
 
     if (isCorrect) {
+      setScore(newScore)
       speak(`Correct! ${rightAns}! Well done!`, { mood: 'celebrate' })
       confetti({ particleCount: 40, spread: 70, origin: { x: 0.5, y: 0.4 } })
     } else {
-      speak(`Not quite! The answer is ${rightAns}. Keep going!`, { mood: 'instruct' })
+      if (!missedCurrent) strugglesRef.current.push(question.question)
+      setMissedCurrent(true)
+      speak('Good try. Look at the map clue and try the same question again.', { mood: 'instruct' })
+      setTimeout(() => setChosen(null), 1400)
+      return
     }
 
     setTimeout(() => {
@@ -448,12 +468,13 @@ export default function WorldGK({ avatar, onAddStars, onBack, profileName }) {
       if (next >= TOTAL_Q) {
         setDone(true)
         const stars = getWorldExplorerStars(newScore)
-        onAddStars('worldgk', stars, { total: TOTAL_Q, correct: newScore, struggles: [] })
+        onAddStars('worldgk', stars, { total: TOTAL_Q, correct: newScore, struggles: strugglesRef.current })
         speak(`Amazing ${profileName || 'explorer'}! You got ${newScore} out of ${TOTAL_Q}!`, { mood: 'celebrate' })
         confetti({ particleCount: 120, spread: 120, origin: { x: 0.5, y: 0.3 } })
       } else {
         setQNum(next)
         setChosen(null)
+        setMissedCurrent(false)
         const q = quizMode === 'History'
           ? makeHistoryQuestion(visibleHistoryEvents)
           : makeQuestion(getCountryPool(), quizMode)
@@ -465,9 +486,24 @@ export default function WorldGK({ avatar, onAddStars, onBack, profileName }) {
         }
       }
     }, 1600)
-  }, [chosen, question, qNum, score, quizMode, getCountryPool, visibleHistoryEvents, profileName, onAddStars, speak])
+  }, [chosen, question, qNum, score, missedCurrent, quizMode, getCountryPool, visibleHistoryEvents, profileName, onAddStars, speak])
 
   // ── Done ─────────────────────────────────────────────────────────────────
+  if (experience === 'journey') {
+    return (
+      <HomeToWorld
+        ageGroup={ageGroup}
+        profileName={profileName}
+        progress={progress}
+        moduleId="worldgk"
+        onUpdateProgress={onUpdateProgress}
+        onAddStars={onAddStars}
+        onBack={onBack}
+        onOpenExplorer={() => setExperience('library')}
+      />
+    )
+  }
+
   if (inQuiz && done) {
     const stars = getWorldExplorerStars(score)
     return (
@@ -549,12 +585,12 @@ export default function WorldGK({ avatar, onAddStars, onBack, profileName }) {
           <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
             {options.map(opt => {
               const optionKey = isHistoryQuiz ? opt : opt.name
-              const isCorrect = isHistoryQuiz ? opt === correct.yearLabel : opt.name === correct.name
+              const isCorrect = isWorldAnswerCorrect(opt, question)
               const isChosen  = isHistoryQuiz ? chosen === opt : chosen?.name === opt.name
               let borderColor = 'transparent'
               let bg = theme.card
               if (chosen) {
-                if (isCorrect) { bg = '#22c55e18'; borderColor = '#22c55e' }
+                if (isCorrect && isChosen) { bg = '#22c55e18'; borderColor = '#22c55e' }
                 else if (isChosen) { bg = '#ef444418'; borderColor = '#ef4444' }
               }
               return (
@@ -599,10 +635,10 @@ export default function WorldGK({ avatar, onAddStars, onBack, profileName }) {
       style={{ background: `linear-gradient(160deg, ${theme.bg}, ${theme.card})` }}>
 
       <div className="flex items-center justify-between px-4 pt-safe pb-3">
-        <motion.button whileTap={{ scale: 0.9 }} onClick={onBack}
+        <motion.button whileTap={{ scale: 0.9 }} onClick={() => setExperience('journey')}
           className="w-10 h-10 rounded-full flex items-center justify-center shadow"
           style={{ background: theme.card, color: theme.text }}>←</motion.button>
-        <p className="font-bubble text-xl" style={{ color: theme.primary }}>🌍 World Explorer</p>
+        <p className="font-bubble text-xl" style={{ color: theme.primary }}>🌍 Country Library</p>
         <div className="w-10" />
       </div>
 

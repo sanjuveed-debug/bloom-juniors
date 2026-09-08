@@ -85,6 +85,7 @@ export default function JarvisOrb({ avatar, profileName, progress, assistantOver
   const [tourStarted, setTourStarted] = useState(false)
   const [videoStarted, setVideoStarted] = useState(false)
   const [tourStepIndex, setTourStepIndex] = useState(0)
+  const [overlayHidden, setOverlayHidden] = useState(false)
   const promptIndexRef = useRef(0)
   const closeTimerRef = useRef(null)
   const greetedRef = useRef(false)
@@ -201,12 +202,26 @@ export default function JarvisOrb({ avatar, profileName, progress, assistantOver
   }, [closeBubble, primeSpeech, speakNextPrompt, speaking, stopSpeaking])
 
   useEffect(() => {
+    const handleOverlay = event => {
+      const hidden = event.detail?.hidden === true
+      setOverlayHidden(hidden)
+      if (hidden) {
+        setOpen(false)
+        setTourOpen(false)
+        stopSpeaking()
+      }
+    }
+    window.addEventListener('bloom:fullscreen-overlay', handleOverlay)
+    return () => window.removeEventListener('bloom:fullscreen-overlay', handleOverlay)
+  }, [stopSpeaking])
+
+  useEffect(() => {
     const timer = setTimeout(() => setShowHint(false), 6500)
     return () => clearTimeout(timer)
   }, [])
 
   useEffect(() => {
-    if (!hasTour || !tourId) return undefined
+    if (!hasTour || !tourId || overlayHidden) return undefined
     if (tourSeenKey && localStorage.getItem(tourSeenKey)) return undefined
 
     const timer = setTimeout(() => {
@@ -218,7 +233,7 @@ export default function JarvisOrb({ avatar, profileName, progress, assistantOver
     }, 900)
 
     return () => clearTimeout(timer)
-  }, [hasTour, tourId, tourSeenKey, tourVideo, markTourSeen])
+  }, [hasTour, tourId, tourSeenKey, tourVideo, markTourSeen, overlayHidden])
 
   useEffect(() => {
     if (tourOpen) closeBubble()
@@ -232,7 +247,7 @@ export default function JarvisOrb({ avatar, profileName, progress, assistantOver
   }, [stopSpeaking, tourOpen, tourVideo, videoStarted])
 
   useEffect(() => {
-    if (greetedRef.current) return undefined
+    if (greetedRef.current || overlayHidden) return undefined
     if (tourOpen || hasTour) return undefined
 
     const timer = setTimeout(() => {
@@ -241,11 +256,13 @@ export default function JarvisOrb({ avatar, profileName, progress, assistantOver
     }, 1800)
 
     return () => clearTimeout(timer)
-  }, [hasTour, speakNextPrompt, tourOpen])
+  }, [hasTour, speakNextPrompt, tourOpen, overlayHidden])
 
   useEffect(() => () => {
     clearTimeout(closeTimerRef.current)
   }, [])
+
+  if (overlayHidden) return null
 
   return (
     <>

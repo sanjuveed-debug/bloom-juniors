@@ -1,12 +1,25 @@
+import { normalizeFloatDiscovery } from '../utils/floatDiscovery.js'
+import { normalizeMarket } from '../utils/marketMission.js'
+import { mergeCollections } from '../utils/collectionAdventure.js'
+import { createProgressSyncQueue } from '../utils/progressSyncQueue.js'
+import { normalizePicnicProgress } from '../utils/picnicProgress.js'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { isSupabaseConfigured } from '../lib/supabase.js'
-import { loadCloudProgress, saveCloudProgress } from '../services/cloudStore.js'
+import { loadCloudProgress, mergeProgress, saveCloudProgress } from '../services/cloudStore.js'
 import { formatLocalDate, formatYesterdayLocalDate } from '../utils/date.js'
 import { reportSyncError, reportSyncSuccess } from '../utils/syncStatus.js'
 import { normalizeWonderWorld } from '../utils/wonderWorld.js'
 import { normalizeCompanionPowers } from '../utils/companionPowers.js'
 import { normalizeAdventureDirector } from '../utils/adventureDirector.js'
 import { normalizeDreamProject } from '../utils/dreamProject.js'
+import { normalizeChildInterest } from '../utils/childInterest.js'
+import { normalizeWeeklyBloomAdventure } from '../utils/weeklyBloomAdventure.js'
+import { normalizeFoundationProfile } from '../utils/foundationProfile.js'
+import { normalizeScienceInvestigations } from '../utils/scienceInvestigations.js'
+import { normalizeRetentionTelemetry } from '../utils/retentionTelemetry.js'
+import { normalizeRetentionFeedback } from '../utils/retentionFeedback.js'
+import { normalizeHomeToWorld } from '../utils/homeToWorld.js'
+import { normalizeAvatarWorkshop } from '../utils/avatarWorkshop.js'
 
 function getStorageKey(profileId) {
   if (profileId) return `eduapp_progress_${profileId}`
@@ -18,10 +31,12 @@ function loadOutbox(profileId) {
   try { return JSON.parse(localStorage.getItem(getOutboxKey(profileId)) || 'null') } catch { return null }
 }
 function saveOutbox(profileId, data) {
-  try { localStorage.setItem(getOutboxKey(profileId), JSON.stringify(data)) } catch {}
+  try { localStorage.setItem(getOutboxKey(profileId), JSON.stringify(data)) } catch { reportSyncError('This device could not retain the pending backup. Keep this tab open until your connection returns.') }
 }
-function clearOutbox(profileId) {
-  try { localStorage.removeItem(getOutboxKey(profileId)) } catch {}
+function clearOutbox(profileId, acknowledged) {
+  const stored = loadOutbox(profileId)
+  if (stored && JSON.stringify(stored) !== JSON.stringify(acknowledged)) return false
+  try { localStorage.removeItem(getOutboxKey(profileId)); return true } catch { return false }
 }
 
 // ── Daily challenge pool ─────────────────────────────────────────────────────
@@ -94,7 +109,15 @@ export const defaultProgress = {
   companionPowers: normalizeCompanionPowers(),
   adventureDirector: normalizeAdventureDirector(),
   dreamProject: normalizeDreamProject(),
-  treasureCollection: { items: [], claims: {}, equipped: {}, history: [], eggHatches: [], sparkleDust: 0, claimStreak: 0, lastClaimDate: '' },
+  childInterest: normalizeChildInterest(),
+  weeklyBloomAdventure: normalizeWeeklyBloomAdventure(),
+  foundationProfile: normalizeFoundationProfile(),
+  scienceInvestigations: normalizeScienceInvestigations(),
+  retentionTelemetry: normalizeRetentionTelemetry(),
+  retentionFeedback: normalizeRetentionFeedback(),
+  homeToWorld: normalizeHomeToWorld(),
+  avatarWorkshop: normalizeAvatarWorkshop(),
+  treasureCollection: { items: [], claims: {}, equipped: {}, history: [], eggHatches: [], sparkleDust: 0, claimStreak: 0, lastClaimDate: '', roomLayout: {}, roomLayoutUpdatedAt: 0, treasureInteractions: {}, secretGames: {} },
 }
 
 export function hydrateProgressData(parsed = {}) {
@@ -129,6 +152,18 @@ export function hydrateProgressData(parsed = {}) {
     companionPowers: normalizeCompanionPowers(source.companionPowers),
     adventureDirector: normalizeAdventureDirector(source.adventureDirector),
     dreamProject: normalizeDreamProject(source.dreamProject),
+    floatDiscovery: normalizeFloatDiscovery(source.floatDiscovery),
+    picnic: normalizePicnicProgress(source.picnic),
+    collectionAdventures: mergeCollections(source.collectionAdventures),
+    marketMission: normalizeMarket(source.marketMission),
+    childInterest: normalizeChildInterest(source.childInterest),
+    weeklyBloomAdventure: normalizeWeeklyBloomAdventure(source.weeklyBloomAdventure, source.weeklyBloomAdventure?.ageGroup),
+    foundationProfile: normalizeFoundationProfile(source.foundationProfile),
+    scienceInvestigations: normalizeScienceInvestigations(source.scienceInvestigations),
+    retentionTelemetry: normalizeRetentionTelemetry(source.retentionTelemetry),
+    retentionFeedback: normalizeRetentionFeedback(source.retentionFeedback),
+    homeToWorld: normalizeHomeToWorld(source.homeToWorld),
+    avatarWorkshop: normalizeAvatarWorkshop(source.avatarWorkshop),
     treasureCollection: {
       ...defaultProgress.treasureCollection,
       ...(source.treasureCollection || {}),
@@ -137,6 +172,9 @@ export function hydrateProgressData(parsed = {}) {
       equipped: source.treasureCollection?.equipped || {},
       history: Array.isArray(source.treasureCollection?.history) ? source.treasureCollection.history : [],
       eggHatches: Array.isArray(source.treasureCollection?.eggHatches) ? source.treasureCollection.eggHatches : [],
+      roomLayout: source.treasureCollection?.roomLayout || {},
+      treasureInteractions: source.treasureCollection?.treasureInteractions || {},
+      secretGames: source.treasureCollection?.secretGames || {},
     },
   }
 }
@@ -150,62 +188,57 @@ function loadForProfile(profileId) {
   } catch { return hydrateProgressData() }
 }
 
+function loadStoredForProfile(profileId) {
+  try {
+    const raw = localStorage.getItem(getStorageKey(profileId))
+    return raw ? hydrateProgressData(JSON.parse(raw)) : null
+  } catch { return null }
+}
+
 function saveForProfile(profileId, data) {
-  try { localStorage.setItem(getStorageKey(profileId), JSON.stringify(data)) } catch {}
+  try { localStorage.setItem(getStorageKey(profileId), JSON.stringify(data)) } catch { reportSyncError('This device could not save progress. Keep this tab open while we try the cloud backup.') }
 }
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
 export function useProgress(profileId) {
-  const [progress, setProgress] = useState(() => loadForProfile(profileId))
-  const syncTimerRef      = useRef(null)
-  const pendingSyncRef    = useRef(null)   // latest data waiting to be flushed
+  const initialLocalRef = useRef(undefined)
+  if (initialLocalRef.current === undefined) initialLocalRef.current = loadStoredForProfile(profileId)
+  const [progress, setProgress] = useState(() => initialLocalRef.current || hydrateProgressData())
+  const syncQueueRef = useRef(null)
+  const hydratedRef       = useRef(!isSupabaseConfigured || !profileId)
+  const queuedUpdatesRef  = useRef([])
 
-  // Cancel any pending cloud sync on unmount so it doesn't fire into the void
-  useEffect(() => () => clearTimeout(syncTimerRef.current), [])
+  const getSyncQueue = useCallback(() => {
+    if (!syncQueueRef.current) syncQueueRef.current = createProgressSyncQueue({
+      save: data => saveCloudProgress(profileId, data),
+      persist: data => saveOutbox(profileId, data),
+      clear: data => clearOutbox(profileId, data),
+      onSuccess: reportSyncSuccess,
+      onError: reportSyncError,
+    })
+    return syncQueueRef.current
+  }, [profileId])
 
-  // Flush pending sync immediately on pagehide / beforeunload so progress
-  // isn't lost when the user closes the tab before the 2s debounce fires.
-  // Local storage is always current; this closes the cloud-lag window.
   useEffect(() => {
     if (!isSupabaseConfigured || !profileId) return
-    const flush = () => {
-      if (!pendingSyncRef.current) return
-      clearTimeout(syncTimerRef.current)
-      syncTimerRef.current = null
-      const data = pendingSyncRef.current
-      pendingSyncRef.current = null
-      saveCloudProgress(profileId, data).catch(() => {})
-    }
+    const queue = getSyncQueue()
+    const flush = () => { if (hydratedRef.current) void queue.flush() }
     window.addEventListener('pagehide', flush)
     window.addEventListener('beforeunload', flush)
+    window.addEventListener('online', flush)
     return () => {
       window.removeEventListener('pagehide', flush)
       window.removeEventListener('beforeunload', flush)
+      window.removeEventListener('online', flush)
+      void queue.dispose()
+      if (syncQueueRef.current === queue) syncQueueRef.current = null
     }
-  }, [profileId])
+  }, [profileId, getSyncQueue])
 
-  // Debounced cloud sync: waits 2s after last update, retries 3× before persisting to outbox
-  const scheduleSync = useCallback((data) => {
-    if (!isSupabaseConfigured || !profileId) return
-    pendingSyncRef.current = data
-    clearTimeout(syncTimerRef.current)
-    syncTimerRef.current = setTimeout(async () => {
-      pendingSyncRef.current = null
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          await saveCloudProgress(profileId, data)
-          reportSyncSuccess()
-          clearOutbox(profileId)
-          return
-        } catch {
-          if (attempt < 2) await new Promise(r => setTimeout(r, 1500))
-        }
-      }
-      // All retries exhausted — persist to local outbox so it is not lost permanently
-      saveOutbox(profileId, data)
-      reportSyncError()
-    }, 2000)
-  }, [profileId])
+  const scheduleSync = useCallback(data => {
+    if (!isSupabaseConfigured || !profileId || !hydratedRef.current) return
+    getSyncQueue().schedule(data)
+  }, [profileId, getSyncQueue])
 
   useEffect(() => {
     if (!isSupabaseConfigured || !profileId) return
@@ -213,37 +246,55 @@ export function useProgress(profileId) {
 
     // Drain any payload that failed all retries in a previous session
     const outbox = loadOutbox(profileId)
-    if (outbox) {
-      saveCloudProgress(profileId, outbox)
-        .then(() => { if (active) clearOutbox(profileId) })
-        .catch(() => {})
-    }
 
-    loadCloudProgress(profileId).then(cloudProgress => {
+    async function hydrateFromCloudFirst() {
+      let cloudProgress = null
+      let cloudReadSucceeded = false
+      try {
+        cloudProgress = await loadCloudProgress(profileId)
+        cloudReadSucceeded = true
+      } catch {
+        reportSyncError()
+      }
       if (!active) return
-      if (cloudProgress) {
-        const hydrated = hydrateProgressData(cloudProgress)
-        // Only apply cloud data if it's strictly newer than what's in localStorage.
-        // Prevents a stale cloud snapshot from overwriting fresh local progress
-        // when the user refreshes before the 2s debounce fires.
-        const localData = loadForProfile(profileId)
-        const cloudIsNewer =
-          (hydrated.revision || 0) > (localData.revision || 0) ||
-          ((hydrated.revision || 0) === (localData.revision || 0) &&
-           (hydrated.updatedAt || 0) > (localData.updatedAt || 0))
-        if (cloudIsNewer) {
-          saveForProfile(profileId, hydrated)
-          setProgress(hydrated)
-        } else {
-          // Local is newer — push it to cloud to catch it up
-          scheduleSync(localData)
+
+      const storedLocal = initialLocalRef.current
+      let reconciled = cloudProgress
+        ? (storedLocal ? mergeProgress(storedLocal, cloudProgress) : cloudProgress)
+        : (storedLocal || hydrateProgressData())
+      if (outbox) reconciled = mergeProgress(outbox, reconciled)
+      reconciled = hydrateProgressData(reconciled)
+
+      const queued = queuedUpdatesRef.current.splice(0)
+      for (const updater of queued) {
+        const patch = typeof updater === 'function'
+          ? updater(reconciled)
+          : { ...reconciled, ...updater }
+        reconciled = {
+          ...patch,
+          updatedAt: Date.now(),
+          revision: (reconciled.revision || 0) + 1,
         }
       }
-    }).catch(() => {})
+
+      saveForProfile(profileId, reconciled)
+      hydratedRef.current = true
+      setProgress(reconciled)
+
+      if (storedLocal || outbox || queued.length || (cloudReadSucceeded && !cloudProgress)) {
+        scheduleSync(reconciled)
+      }
+    }
+
+    hydrateFromCloudFirst()
     return () => { active = false }
   }, [profileId, scheduleSync])
 
   const update = useCallback((updater) => {
+    if (!hydratedRef.current && isSupabaseConfigured && profileId) {
+      queuedUpdatesRef.current.push(updater)
+      return
+    }
     setProgress(prev => {
       const patch = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater }
       const next = {

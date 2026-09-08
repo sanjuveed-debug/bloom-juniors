@@ -1,7 +1,7 @@
 const REACTIONS = {
   ready: {
     state: 'wave',
-    speech: 'Pick a number adventure. I will play with you!',
+    speech: 'Choose an adventure. I will explore with you!',
     duration: 3600,
   },
   start: {
@@ -41,7 +41,7 @@ const REACTIONS = {
   },
   streak: {
     state: 'celebrate',
-    speech: 'Wow! Your number power is growing!',
+    speech: 'You are finding your way. Well done!',
     duration: 2800,
   },
   wrong: {

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { sessionSeedFor, seededShuffle } from '../../utils/seededRandom'
+import InteractiveYaagvi, { useYaagviReactions } from '../../components/InteractiveYaagvi'
 
 const TYPE_COLORS = {
   noun:      { bg: '#3B82F6', label: 'Noun',      def: 'a person, place, or thing'        },
@@ -63,30 +64,51 @@ export default function GrammarModule({ theme, onDone, onBack, played = 0 }) {
   const [q, setQ] = useState(0)
   const [score, setScore] = useState(0)
   const [feedback, setFeedback] = useState(null)
+  const [wordExplored, setWordExplored] = useState(false)
   const [opts] = useState(() => questions.map(qq => shuffleTypes(qq.type, harder)))
   const typeColors = harder ? HARDER_TYPE_COLORS : TYPE_COLORS
   const curr = questions[q]
   const lockedRef = useRef(false)
   const completedRef = useRef(false)
+  const missedRef = useRef(false)
   const timersRef = useRef([])
 
+  const { reaction: yaagviReaction, react: reactYaagvi } = useYaagviReactions({
+    activityKey: q,
+    active: !feedback && q < questions.length,
+  })
+
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
+
+  useEffect(() => {
+    reactYaagvi('question')
+    setWordExplored(false)
+  }, [q, reactYaagvi])
 
   const handle = (type) => {
     if (lockedRef.current || completedRef.current) return
     lockedRef.current = true
     const correct = type === curr.type
-    const ns = score + (correct ? 1 : 0)
+    const ns = score + (correct && !missedRef.current ? 1 : 0)
+    setScore(ns)
+    if (!correct) missedRef.current = true
     if (correct) confetti({ particleCount: 45, spread: 65, origin: { x: 0.5, y: 0.4 } })
-    setFeedback({ correct, type: curr.type })
+    reactYaagvi(correct ? 'correct' : 'wrong', correct ? { streak: ns % 3 === 0 ? 3 : 1 } : { attempt: 1 })
+    setFeedback({ correct, type: correct ? curr.type : null })
     const id = window.setTimeout(() => {
       timersRef.current = timersRef.current.filter(t => t !== id)
       setFeedback(null)
+      if (!correct) {
+        lockedRef.current = false
+        return
+      }
       if (q + 1 >= questions.length) {
         completedRef.current = true
-        onDone(ns, questions.length)
+        reactYaagvi('complete')
+        onDone(ns, questions.length, { questions })
       } else {
         setQ(q + 1)
+        missedRef.current = false
         lockedRef.current = false
       }
     }, 1300)
@@ -104,23 +126,36 @@ export default function GrammarModule({ theme, onDone, onBack, played = 0 }) {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-5 gap-6">
-        <p className="font-round text-white/50 text-sm text-center">What type of word is highlighted?</p>
+        <InteractiveYaagvi reaction={yaagviReaction} placement="strip" className="max-w-sm" />
+        <p className="font-round text-white/60 text-sm text-center">Move the glowing word, then choose the job it does.</p>
 
         {/* Sentence with highlighted target word */}
-        <div className="w-full max-w-sm p-5 rounded-3xl" style={{ background: theme.card, border: `1px solid ${theme.primary}40` }}>
-          <p className="font-round text-white text-lg leading-relaxed text-center flex flex-wrap justify-center gap-x-2 gap-y-1">
+        <div data-testid="grammar-word-lab" className="w-full max-w-sm rounded-3xl p-4 [perspective:900px]" style={{ background: theme.card, border: `1px solid ${theme.primary}40`, boxShadow: 'inset 0 -10px 24px rgba(0,0,0,.18), 0 16px 30px rgba(0,0,0,.16)' }}>
+          <p className="font-round text-white text-lg leading-relaxed text-center flex flex-wrap justify-center gap-2">
             {curr.sentence.map((word, i) => (
               i === curr.target
                 ? <motion.span key={i}
-                    animate={{ scale: [1, 1.12, 1] }}
-                    transition={{ duration: 1, repeat: Infinity }}
-                    className="font-bubble px-2 py-0.5 rounded-lg text-white"
-                    style={{ background: feedback ? typeColors[curr.type].bg : theme.primary, fontSize: '1.15rem' }}>
+                    data-testid="grammar-target-block"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Move the highlighted word ${word}`}
+                    drag={!feedback}
+                    dragSnapToOrigin
+                    dragElastic={.28}
+                    onClick={() => setWordExplored(true)}
+                    onDragStart={() => setWordExplored(true)}
+                    initial={{ opacity: 0, y: 8, rotateX: 12 }}
+                    animate={feedback ? { opacity: 1, scale: 1, y: feedback.correct ? -7 : 0, rotateX: 0 } : wordExplored ? { opacity: 1, y: -5, rotateX: -7, scale: 1.06 } : { opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+                    transition={{ duration: .28, type: 'spring', stiffness: 340, damping: 24 }}
+                    whileDrag={{ scale: 1.14, rotateZ: 3, zIndex: 20 }}
+                    className="cursor-grab rounded-lg px-2.5 py-1 font-bubble text-white active:cursor-grabbing"
+                    style={{ background: feedback?.correct ? typeColors[curr.type].bg : theme.primary, fontSize: '1.15rem', boxShadow: `0 6px 0 ${feedback?.correct ? typeColors[curr.type].bg : theme.primary}99, 0 10px 18px rgba(0,0,0,.22)`, transformStyle: 'preserve-3d' }}>
                     {word}
                   </motion.span>
-                : <span key={i} className="text-white/80">{word}</span>
+                : <motion.span key={i} className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-white/80" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * .035 }}>{word}</motion.span>
             ))}
           </p>
+          <p className="mt-3 text-center font-round text-[11px] font-black text-white/45">{wordExplored ? 'Now match the word to its job below.' : 'Drag or tap the glowing tile.'}</p>
         </div>
 
         {/* Reference legend */}
@@ -137,7 +172,7 @@ export default function GrammarModule({ theme, onDone, onBack, played = 0 }) {
           {feedback && (
             <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
               className={`px-6 py-3 rounded-2xl font-bubble text-lg text-white ${feedback.correct ? 'bg-green-500/80' : 'bg-orange-500/70'}`}>
-              {feedback.correct ? `✓ Yes — it's a ${typeColors[feedback.type].label}!` : `✗ It's a ${typeColors[feedback.type].label}`}
+              {feedback.correct ? `✓ Yes — it's a ${typeColors[feedback.type].label}!` : '✗ Read the meaning chips and try again'}
             </motion.div>
           )}
         </AnimatePresence>
@@ -147,10 +182,10 @@ export default function GrammarModule({ theme, onDone, onBack, played = 0 }) {
             <motion.button key={type} data-companion-answer={type === curr.type ? 'correct' : 'wrong'} whileTap={{ scale: 0.88 }} onClick={() => handle(type)}
               className="py-4 px-3 rounded-2xl flex flex-col items-center gap-1"
               style={{
-                background: feedback && type === curr.type
+                background: feedback?.correct && type === curr.type
                   ? `${typeColors[type].bg}60`
                   : `${typeColors[type].bg}25`,
-                border: feedback && type === curr.type
+                border: feedback?.correct && type === curr.type
                   ? `2px solid ${typeColors[type].bg}`
                   : `2px solid ${typeColors[type].bg}40`,
               }}>

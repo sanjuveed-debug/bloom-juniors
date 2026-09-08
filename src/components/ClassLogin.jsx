@@ -1,3 +1,4 @@
+import YaagviCharacter from './YaagviCharacter'
 import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { CLASS_SESSION_KEY } from '../services/cloudStore.js'
@@ -76,14 +77,7 @@ export default function ClassLogin({ onStart }) {
       style={{ background: 'linear-gradient(160deg, #13052c 0%, #24115e 52%, #071b39 100%)' }}>
       <div className="w-full max-w-3xl">
         <div className="text-center mb-7">
-          <motion.img
-            src="/yaagvi-mascot.webp"
-            alt="Bloom Juniors guide"
-            className="mx-auto h-28 w-auto object-contain drop-shadow-2xl"
-            animate={{ y: [0, -6, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            draggable={false}
-          />
+          <div className="mx-auto h-28 aspect-square"><YaagviCharacter state="wave" size="100%"/></div>
           <h1 className="font-bubble text-4xl text-white mt-3">Find your class</h1>
           <p className="font-round text-white/55 text-sm mt-2">Type the code your teacher gives you.</p>
         </div>

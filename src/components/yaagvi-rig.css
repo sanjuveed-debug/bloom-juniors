@@ -1,0 +1,44 @@
+.yaagvi-wrap{position:relative;display:inline-block;user-select:none}
+.yaagvi-speech{position:absolute;top:0;left:85%;width:max-content;max-width:180px;padding:10px 14px;border:2px solid #805c9d;border-radius:16px 16px 16px 4px;background:#fff;color:#352346;font:700 14px/1.4 Nunito,sans-serif;box-shadow:0 4px 16px #35234615;pointer-events:none}
+.yaagvi-rig{width:100%;height:100%;overflow:visible;display:block;contain:layout style}
+.yaagvi-rig g{transform-box:view-box}
+.yr-body{transform-origin:120px 275px;animation:yr-breathe 4s ease-in-out infinite}
+.yr-head{transform-origin:120px 143px;transition:transform .45s ease}
+.yr-arm{transition:transform .5s cubic-bezier(.3,.8,.3,1)}
+.yr-arm-left{transform-origin:88px 154px}.yr-arm-right{transform-origin:152px 154px}
+.yr-tail-left{transform-origin:65px 80px}.yr-tail-right{transform-origin:175px 80px}
+.yr-tail{animation:yr-hair 4s ease-in-out infinite}
+.yr-eyes{transform-origin:120px 96px;animation:yr-blink 5.7s infinite}
+.yr-gaze{transition:transform .4s}.yr-mouth{opacity:0;transform-origin:120px 129px}
+.yr-leg-left{transform-origin:99px 216px}.yr-leg-right{transform-origin:141px 216px}
+.yaagvi-rig[data-pose=wave] .yr-arm-right{animation:yr-wave 1.1s ease-in-out 3;transform:rotate(-95deg)}
+.yaagvi-rig[data-pose=point] .yr-arm-right{transform:rotate(-65deg)}
+.yaagvi-rig[data-pose=point] .yr-gaze{transform:translateX(3px)}
+.yaagvi-rig[data-pose=think] .yr-head,.yaagvi-rig[data-pose=think-alt] .yr-head{transform:rotate(-9deg)}
+.yaagvi-rig[data-pose=think] .yr-arm-left,.yaagvi-rig[data-pose=think-alt] .yr-arm-left{transform:rotate(145deg) scale(.65)}
+.yaagvi-rig[data-pose=think] .yr-gaze,.yaagvi-rig[data-pose=think-alt] .yr-gaze{transform:translateY(-3px)}
+.yaagvi-rig[data-pose=read] .yr-head{transform:rotate(5deg) translateY(2px)}
+.yaagvi-rig[data-pose=read] .yr-gaze{transform:translateY(3px)}
+.yaagvi-rig[data-pose=clap] .yr-arm-left{animation:yr-clap-left .5s ease-in-out 4;transform:rotate(-55deg)}
+.yaagvi-rig[data-pose=clap] .yr-arm-right{animation:yr-clap-right .5s ease-in-out 4;transform:rotate(55deg)}
+.yaagvi-rig[data-pose=celebrate] .yr-arm-left,.yaagvi-rig[data-pose=dance] .yr-arm-left{transform:rotate(95deg)}
+.yaagvi-rig[data-pose=celebrate] .yr-arm-right,.yaagvi-rig[data-pose=dance] .yr-arm-right{transform:rotate(-95deg)}
+.yaagvi-rig[data-pose=celebrate] .yr-body{animation:yr-hop .7s ease-in-out 3}
+.yaagvi-rig[data-pose=dance] .yr-body{animation:yr-dance .8s ease-in-out 4}
+.yaagvi-rig[data-pose=dance] .yr-leg-left{animation:yr-step .8s ease-in-out 4}
+.yaagvi-rig[data-pose=dance] .yr-leg-right{animation:yr-step .8s ease-in-out -.4s 4}
+.yaagvi-rig[data-pose=celebrate] .yr-mouth,.yaagvi-rig[data-pose=clap] .yr-mouth,.yaagvi-rig[data-pose=dance] .yr-mouth,.yaagvi-rig[data-speaking=true] .yr-mouth{opacity:1}
+.yaagvi-rig[data-speaking=true] .yr-mouth{animation:yr-talk .32s ease-in-out infinite}
+.yaagvi-rig[data-pose=celebrate] .yr-smile,.yaagvi-rig[data-pose=clap] .yr-smile,.yaagvi-rig[data-pose=dance] .yr-smile,.yaagvi-rig[data-speaking=true] .yr-smile{opacity:0}
+@keyframes yr-breathe{50%{transform:translateY(-2px) scaleY(1.008)}}
+@keyframes yr-hair{50%{transform:rotate(4deg)}}
+@keyframes yr-blink{0%,43%,47%,100%{transform:scaleY(1)}45%{transform:scaleY(.06)}}
+@keyframes yr-wave{0%,100%{transform:rotate(-95deg)}50%{transform:rotate(-120deg)}}
+@keyframes yr-clap-left{0%,100%{transform:rotate(-55deg)}50%{transform:rotate(-72deg)}}
+@keyframes yr-clap-right{0%,100%{transform:rotate(55deg)}50%{transform:rotate(72deg)}}
+@keyframes yr-hop{0%,100%{transform:translateY(0)}45%{transform:translateY(-12px)}}
+@keyframes yr-dance{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg) translateY(-7px)}}
+@keyframes yr-step{50%{transform:rotate(12deg)}}
+@keyframes yr-talk{50%{transform:scaleY(.35)}}
+.yaagvi-rig[data-paused=true] *{animation-play-state:paused!important}
+@media(prefers-reduced-motion:reduce){.yaagvi-rig *{animation:none!important;transition:none!important}}

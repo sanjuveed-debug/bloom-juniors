@@ -1,3 +1,5 @@
+import { authenticateBilling } from './_billing-auth.js'
+
 // Creates a Stripe Customer Portal session so parents can manage/cancel
 // their subscription. Env vars: STRIPE_SECRET_KEY, SUPABASE_URL,
 // SUPABASE_SERVICE_ROLE_KEY.
@@ -18,7 +20,7 @@ function isAllowedOrigin(origin) {
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
   })
 }
 
@@ -35,8 +37,12 @@ export async function onRequestPost(context) {
 
   let body
   try { body = await request.json() } catch { return json({ error: 'Invalid request' }, 400) }
-  const userId = String(body.userId || '').trim()
-  if (!/^[0-9a-f-]{36}$/i.test(userId)) return json({ error: 'Sign in required' }, 401)
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ error: 'Invalid request' }, 400)
+  const auth = await authenticateBilling(request, env)
+  if (!auth.user) return json({ error: auth.error }, auth.status)
+  const userId = auth.user.id
+  if (body.userId && body.userId !== userId) return json({ error: 'Account mismatch' }, 403)
+
 
   // Look up the guardian's Stripe customer id
   const resp = await fetch(
@@ -61,7 +67,7 @@ export async function onRequestPost(context) {
   })
   const session = await portal.json()
   if (!portal.ok || !session.url) {
-    console.error('[stripe-portal]', portal.status, JSON.stringify(session).slice(0, 200))
+    console.error('[stripe-portal]', portal.status, 'Session creation failed')
     return json({ error: 'Could not open billing portal' }, 502)
   }
   return json({ url: session.url })

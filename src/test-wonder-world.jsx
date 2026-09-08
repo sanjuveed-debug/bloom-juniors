@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import WonderWorld from './components/WonderWorld.jsx'
+import SessionTimer from './components/SessionTimer.jsx'
+import JarvisOrb from './components/JarvisOrb.jsx'
 import './index.css'
 
 const initialProgress = {
@@ -26,17 +28,33 @@ const initialProgress = {
 }
 
 function WonderWorldHarness() {
-  const ageGroup = new URLSearchParams(window.location.search).get('age') || 'early'
+  const params = new URLSearchParams(window.location.search)
+  const ageGroup = params.get('age') || 'early'
+  const richScenario = params.get('scenario') === 'build-ready'
+  const storageKey = richScenario ? `wonder-world-review-build-${ageGroup}` : 'wonder-world-uat-progress'
+  const [updates, setUpdates] = useState(0)
   const [progress, setProgress] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('wonder-world-uat-progress')) || initialProgress } catch { return initialProgress }
+    const fixture = richScenario ? { ...initialProgress, totalStars: 180 } : initialProgress
+    try { return JSON.parse(localStorage.getItem(storageKey)) || fixture } catch { return fixture }
   })
-  const updateProgress = patch => setProgress(current => {
+  const updateProgress = patch => {
+    setUpdates(count => count + 1)
+    setProgress(current => {
     const resolved = typeof patch === 'function' ? patch(current) : patch
     const next = { ...current, ...resolved }
-    localStorage.setItem('wonder-world-uat-progress', JSON.stringify(next))
+    localStorage.setItem(storageKey, JSON.stringify(next))
     return next
   })
-  return <WonderWorld ageGroup={ageGroup} progress={progress} profileName="Yaagvi" onBack={()=>{}} onUpdateProgress={updateProgress}/>
+  }
+  return <>
+    <WonderWorld ageGroup={ageGroup} progress={progress} profileName="Yaagvi" onBack={()=>{}} onUpdateProgress={updateProgress}/>
+    <SessionTimer sessionMinutes={30} profileName="Yaagvi" theme={{ secondary: '#7a3bad' }} />
+    <JarvisOrb avatar="rumi" profileName="Yaagvi" progress={progress} ageGroup={ageGroup} />
+    <aside aria-label="Local world review result" style={{ background: 'white', color: '#111', padding: 16 }}>
+      <p>Synthetic local fixture: {richScenario ? 'build-ready' : 'garden'}. Progress updates: {updates}.</p>
+      <pre>{JSON.stringify({ dreamProject: progress.dreamProject, equipped: progress.treasureCollection?.equipped }, null, 2)}</pre>
+    </aside>
+  </>
 }
 
 createRoot(document.getElementById('root')).render(<WonderWorldHarness/>)

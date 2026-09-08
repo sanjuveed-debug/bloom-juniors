@@ -19,7 +19,7 @@ async function verifyStripeSignature(payload, header, secret) {
   )
   const t = parts.t
   const v1 = parts.v1
-  if (!t || !v1) return false
+  if (!t || !v1 || !/^\d+$/.test(t) || !/^[a-f0-9]{64}$/i.test(v1)) return false
   // Reject stale events (>10 min) to limit replay
   if (Math.abs(Date.now() / 1000 - Number(t)) > 600) return false
 
@@ -40,18 +40,19 @@ async function patchGuardian(env, filter, fields) {
   const serviceKey = (env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
   if (!supabaseUrl || !serviceKey) return false
 
-  const resp = await fetch(`${supabaseUrl}/rest/v1/guardian_profiles?${filter}`, {
+  const resp = await fetch(`${supabaseUrl}/rest/v1/guardian_profiles?${filter}&select=user_id`, {
     method: 'PATCH',
     headers: {
       Authorization: `Bearer ${serviceKey}`,
       apikey: serviceKey,
       'Content-Type': 'application/json',
-      Prefer: 'return=minimal',
+      Prefer: 'return=representation',
     },
     body: JSON.stringify(fields),
   })
-  if (!resp.ok) console.error('[stripe-webhook] supabase patch failed', resp.status, filter)
-  return resp.ok
+  if (!resp.ok) return false
+  const rows = await resp.json().catch(() => null)
+  return Array.isArray(rows) && rows.length > 0
 }
 
 export async function onRequestPost(context) {
@@ -68,11 +69,13 @@ export async function onRequestPost(context) {
 
   const obj = event.data?.object || {}
 
+  let updated = true
+  try {
   switch (event.type) {
     case 'checkout.session.completed': {
       const userId = obj.client_reference_id
       if (userId) {
-        await patchGuardian(env, `user_id=eq.${encodeURIComponent(userId)}`, {
+        updated = await patchGuardian(env, `user_id=eq.${encodeURIComponent(userId)}`, {
           premium_status: 'active',
           stripe_customer_id: obj.customer || null,
           stripe_subscription_id: obj.subscription || null,
@@ -86,7 +89,7 @@ export async function onRequestPost(context) {
         : obj.status === 'past_due' ? 'past_due'
         : 'canceled'
       if (obj.customer) {
-        await patchGuardian(env, `stripe_customer_id=eq.${encodeURIComponent(obj.customer)}`, {
+        updated = await patchGuardian(env, `stripe_customer_id=eq.${encodeURIComponent(obj.customer)}`, {
           premium_status: status,
         })
       }
@@ -94,7 +97,7 @@ export async function onRequestPost(context) {
     }
     case 'customer.subscription.deleted': {
       if (obj.customer) {
-        await patchGuardian(env, `stripe_customer_id=eq.${encodeURIComponent(obj.customer)}`, {
+        updated = await patchGuardian(env, `stripe_customer_id=eq.${encodeURIComponent(obj.customer)}`, {
           premium_status: 'canceled',
         })
       }
@@ -102,7 +105,7 @@ export async function onRequestPost(context) {
     }
     case 'invoice.payment_failed': {
       if (obj.customer) {
-        await patchGuardian(env, `stripe_customer_id=eq.${encodeURIComponent(obj.customer)}`, {
+        updated = await patchGuardian(env, `stripe_customer_id=eq.${encodeURIComponent(obj.customer)}`, {
           premium_status: 'past_due',
         })
       }
@@ -112,5 +115,7 @@ export async function onRequestPost(context) {
       break
   }
 
+  } catch { updated = false }
+  if (!updated) return json({ error: 'Entitlement update failed; retry required' }, 503)
   return json({ received: true })
 }

@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { preservesGuidedDestination } from '../utils/guidedNavigation.js'
 import { motion, AnimatePresence } from 'framer-motion'
 import { THEMES } from '../themes'
 import { getAssistant } from '../assistants'
 import { MONSTERS, MonsterCollection } from './MonsterReward'
-import { STUDY_MODULES, getArcadeUnlockStatus, getTodayStudySessions, getTodayAdventureModules } from '../utils/arcadeUnlock'
+import { STUDY_MODULES, getArcadeUnlockStatus, getTodayStudySessions, getTodayAdventureModules, getTodayLearningSessions } from '../utils/arcadeUnlock'
 import { PREMIUM_GATING_ENABLED } from '../config/premiumContent.js'
 import { usePremium } from '../hooks/usePremium'
 import { getTodayWorldEvent, isEventBonusCollected, WORLD_EVENT_BONUS } from '../utils/worldEvent.js'
@@ -25,6 +26,9 @@ import NeverFinishedAdventure from './NeverFinishedAdventure'
 import { formatLocalDate } from '../utils/date.js'
 import { grantWonderSeed } from '../utils/wonderWorld.js'
 import { claimTreasureReward, equipTreasureReward } from '../utils/treasureRewards.js'
+import HighFiveDelivery from './HighFiveDelivery.jsx'
+import BloomAdventureHome from './BloomAdventureHome.jsx'
+import AvatarWorkshop, { AvatarWorkshopButton } from './AvatarWorkshop.jsx'
 
 // ── Module registry ───────────────────────────────────────────────────────────
 const PREMIUM_IDS = new Set(['worldgk','science','planets','anatomy','sacred','shapes','shop','logic'])
@@ -36,7 +40,7 @@ const MODULES = [
   { id:'tricky',   label:'Star Catch!',     emoji:'⭐', desc:'Tricky Words & Spelling',  bg:'linear-gradient(145deg,#6D28D9,#7C3AED,#A78BFA)', section:'learn'   },
   { id:'story',    label:'Story Room',      emoji:'📖', desc:'Read & Listen',            bg:'linear-gradient(145deg,#047857,#059669,#34D399)', section:'learn'   },
   // Explore
-  { id:'worldgk',  label:'World Explorer',  emoji:'🌍', desc:'Flags, Capitals & History', bg:'linear-gradient(145deg,#0369A1,#0EA5E9,#7DD3FC)', section:'explore', premium:true },
+  { id:'worldgk',  label:'Home to World',  emoji:'🌍', desc:'Maps, Places & Family Stories', bg:'linear-gradient(145deg,#0369A1,#0EA5E9,#7DD3FC)', section:'explore', premium:true },
   { id:'science',  label:'Wonder Lab',      emoji:'🔬', desc:'Science Experiments',      bg:'linear-gradient(145deg,#5B21B6,#7C3AED,#C4B5FD)', section:'explore', premium:true },
   { id:'planets',  label:'Planet World',    emoji:'🪐', desc:'Solar System Adventure',   bg:'linear-gradient(145deg,#0F172A,#1E3A5F,#3B82F6)', section:'explore', premium:true },
   { id:'anatomy',  label:'My Body',         emoji:'🫀', desc:'Human Anatomy',            bg:'linear-gradient(145deg,#9F1239,#E11D48,#FB7185)', section:'explore', premium:true },
@@ -79,7 +83,7 @@ function timeGreeting() {
 }
 
 // ── CountUp ───────────────────────────────────────────────────────────────────
-function CountUp({ target, duration = 1000 }) {
+export function CountUp({ target, duration = 1000 }) {
   const [v, setV] = useState(0)
   useEffect(() => {
     if (!target) return
@@ -579,22 +583,33 @@ function PlayPassBanner({ theme, status, onNavigate }) {
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
-        {STUDY_MODULES.map(module => {
+        {(status.assignedModules || STUDY_MODULES.slice(0, status.target)).map((module, i) => {
           const done = status.completedModules.some(item => item.id === module.id)
           return (
-            <div
+            <motion.div
               key={module.id}
               className="flex items-center gap-2 rounded-2xl px-3 py-2"
+              initial={{ opacity: 0, y: 10, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: i * 0.06, type: 'spring', stiffness: 260, damping: 20 }}
               style={{
                 background: done ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.42)',
                 border: `1px solid ${done ? '#10B98144' : 'rgba(255,255,255,0.45)'}`,
               }}
             >
-              <span style={{ fontSize: 18 }}>{done ? '✅' : module.emoji}</span>
+              <motion.span
+                key={done ? 'done' : 'pending'}
+                initial={done ? { scale: 0.3, rotate: -30 } : false}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 12 }}
+                style={{ fontSize: 18 }}
+              >
+                {done ? '✅' : module.emoji}
+              </motion.span>
               <span className="font-round text-sm font-bold" style={{ color: theme.text }}>
                 {module.label}
               </span>
-            </div>
+            </motion.div>
           )
         })}
       </div>
@@ -606,7 +621,7 @@ function PlayPassBanner({ theme, status, onNavigate }) {
             : `${status.target - status.completedCount} more to unlock.`}
         </span>
         <span className="font-bubble text-sm" style={{ color: status.unlocked ? '#059669' : theme.primary }}>
-          {status.unlocked ? 'Open Arcade' : `Play ${nextModule?.shortLabel || 'Next Study'}`}
+          {status.unlocked ? 'Open Arcade' : `Play ${nextModule?.shortLabel || nextModule?.label || 'Next Study'}`}
         </span>
       </div>
     </motion.button>
@@ -650,7 +665,7 @@ const FS2_MAP_LOCATIONS = [
   { id: 'story',    name: 'Story Cave',     emoji: '📖', color: '#059669' },
   { id: 'science',  name: 'Wonder Lab',     emoji: '🔬', color: '#5B21B6' },
   { id: 'planets',  name: 'Space Station',  emoji: '🚀', color: '#1E40AF' },
-  { id: 'worldgk',  name: 'World Map',      emoji: '🌍', color: '#0EA5E9' },
+  { id: 'worldgk',  name: 'Place Story',    emoji: '🌍', color: '#0EA5E9' },
   { id: 'anatomy',  name: 'Body Museum',    emoji: '🫀', color: '#E11D48' },
   { id: 'sacred',   name: 'Temple Isle',    emoji: '🕉️', color: '#C2410C' },
   { id: 'shapes',   name: 'Shape Land',     emoji: '🔷', color: '#0D9488' },
@@ -681,7 +696,8 @@ function FS2AdventureMap({ progress, dailyAdventure, onNavigate }) {
 
   const enriched = FS2_MAP_LOCATIONS.map(loc => {
     const inPath = pathById.has(loc.id)
-    const locked = !availableIds.has(loc.id)
+    // The daily trail recommends a route; it must never hide the rest of the library.
+    const locked = false
     const playedToday = completedIds.has(loc.id)
     const stars = progress[loc.id]?.score || 0
     return { ...loc, locked, playedToday, stars, inPath, pathStep: pathById.get(loc.id) }
@@ -747,7 +763,7 @@ function FS2AdventureMap({ progress, dailyAdventure, onNavigate }) {
                 </div>
 
                 <p style={{ fontFamily: 'Fredoka One, cursive', color: isActive ? 'white' : 'rgba(255,255,255,0.55)', fontSize: 11, textAlign: 'center', maxWidth: 90, marginTop: isActive ? 18 : 10, lineHeight: 1.2 }}>
-                  {loc.locked ? 'Locked Today' : loc.name}
+                  {loc.name}
                 </p>
               </motion.button>
             </div>
@@ -796,7 +812,7 @@ function WorldEventCard({ progress, profileId, fullAccess, theme, onNavigate }) 
               {done ? `${event.title.replace('!', '')} — done!` : event.title}
             </p>
             <p className="font-round mt-0.5 text-xs font-bold leading-4" style={{ color: `${theme.text}66` }}>
-              {done ? `Bonus stars collected. New event tomorrow!` : event.desc}
+              {done ? `Bonus stars collected. Every adventure remains open.` : event.desc}
             </p>
           </div>
           {!done && (
@@ -820,7 +836,7 @@ function getTodayIndex(count) {
 }
 
 function buildDailyAdventure(progress, challenges, arcadeStatus, fullAccess = true) {
-  const todayIds = new Set(getTodayStudySessions(progress.sessions || []).map(s => s.module))
+  const todayIds = new Set(getTodayLearningSessions(progress, Date.now(), fullAccess).map(s => s.module))
   const [focusId, secondId] = getTodayAdventureModules(progress, null, fullAccess)
   const focusModule = MODULE_MAP[focusId]
   const secondModule = MODULE_MAP[secondId]
@@ -1110,8 +1126,10 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
   const [showFeedback, setShowFeedback] = useState(() => shouldShowFeedback(progress))
   const [rewardTreasure, setRewardTreasure] = useState(null)
   const [showTreasureShelf, setShowTreasureShelf] = useState(false)
+  const [showAvatarWorkshop, setShowAvatarWorkshop] = useState(false)
   const [showJourneyExplore, setShowJourneyExplore] = useState(false)
-  const arcadeStatus = getArcadeUnlockStatus(progress)
+  const [exploreTab, setExploreTab] = useState('daily')
+  const arcadeStatus = getArcadeUnlockStatus(progress, Date.now(), fullAccess)
 
   // Yaagvi greeting: wave on arrival → settle into mood-based state
   const [yaagviState, setYaagviState] = useState('wave')
@@ -1186,17 +1204,18 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
     setRewardTreasure(reward)
   }
   const equipTreasure = item => onUpdateProgress?.({ treasureCollection: equipTreasureReward(treasureCollection, item) })
-  const handleGatedNavigate = (to) => {
+  const updateTreasureCollection = nextCollection => onUpdateProgress?.({ treasureCollection: nextCollection })
+  const handleGatedNavigate = (to, interestSource = 'choice') => {
     const mod = MODULE_MAP[to]
     if (mod?.premium && !fullAccess) {
       setPremiumMod(mod)
       return
     }
-    if (!mod || isDailyPathDone || dailyAccess.availableIds.has(to)) {
-      onNavigate(to)
+    if (!mod || preservesGuidedDestination(interestSource) || isDailyPathDone || dailyAccess.availableIds.has(to)) {
+      onNavigate(to, interestSource)
       return
     }
-    onNavigate(dailyAccess.nextId || 'phonics')
+    onNavigate(dailyAccess.nextId || 'phonics', interestSource)
   }
 
   const showCelebration = isDailyPathDone && !celebrationSeen
@@ -1213,6 +1232,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
       className="min-h-screen pb-36 overflow-hidden"
       style={{ background: `linear-gradient(160deg, ${theme.bg} 0%, ${theme.card} 60%, ${theme.bg} 100%)` }}
     >
+      <HighFiveDelivery progress={progress} profileName={profileName} ageGroup="early" onUpdateProgress={onUpdateProgress} />
 
       {/* ── HERO SECTION ───────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden" style={{ background: HERO_BG }}>
@@ -1255,29 +1275,32 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
               >
                 {profileName || 'Superstar'}! ✨
               </motion.h1>
-              {profiles && profiles.length > 1 && onQuickSwitch ? (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {profiles.filter(p => p.id !== activeProfileId).map(p => (
-                    <motion.button key={p.id} whileTap={{ scale: 0.88 }}
-                      onClick={() => onQuickSwitch(p.id)}
-                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-round text-xs text-white/80"
-                      style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}>
-                      <span>{p.emoji || '👤'}</span>
-                      <span>{p.name}</span>
-                    </motion.button>
-                  ))}
-                </div>
-              ) : onSwitchProfiles && (
+              {onSwitchProfiles && (
                 <motion.button
                   whileTap={{ scale: 0.88 }}
                   onClick={onSwitchProfiles}
-                  className="mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-round text-xs text-white/70"
+                  className="mt-2 inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 py-1.5 font-round text-xs font-black text-white"
                   style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.22)' }}
+                  aria-label={`Switch from ${profileName || 'current profile'} to another child`}
                 >
-                  ↩ Switch
+                  ⇄ Switch child
                 </motion.button>
               )}
             </div>
+
+            {onLongPress && (
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.92 }}
+                onClick={onLongPress}
+                aria-label="Open Parent Zone"
+                className="mt-1 inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl px-3 font-round text-xs font-black text-white"
+                style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.28)' }}
+              >
+                <span aria-hidden="true">🔒</span>
+                <span>Parents</span>
+              </motion.button>
+            )}
 
           </div>
 
@@ -1307,16 +1330,41 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
                 <span className="font-round text-white/50 text-xs">day streak</span>
               </motion.div>
             )}
+            <AvatarWorkshopButton
+              progress={progress}
+              onClick={() => setShowAvatarWorkshop(true)}
+            />
           </div>
 
         </div>
       </div>
 
-      <OneDailyJourney ageGroup="early" profileName={profileName} steps={dailyJourneySteps} nextAdventure={arcadeStatus.unlocked ? MODULE_MAP.arcade : dailyJourneyNext?.module} doneCount={dailyJourneyDoneCount} required={2} claimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} onPlayNext={() => handleGatedNavigate((treasureClaimed && arcadeStatus.unlocked ? MODULE_MAP.arcade : dailyJourneyNext?.module)?.id || 'phonics')} onClaimTreasure={claimTreasure} onOpenTreasureRoom={() => setShowTreasureShelf(true)} onOpenWorld={() => onNavigate('wonderworld')} exploreOpen={showJourneyExplore} onToggleExplore={() => setShowJourneyExplore(value => !value)}/>
-      {showJourneyExplore && <ForYouFeed theme={theme} progress={progress} challenges={challenges} arcadeStatus={arcadeStatus} dailyAdventure={dailyAdventure} onNavigate={handleGatedNavigate} />}
-      {!showJourneyExplore && <><LivingAdventure ageGroup="early" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress} onOpenWonderWorld={() => onNavigate('wonderworld')}/><NeverFinishedAdventure ageGroup="early" progress={progress} active={treasureClaimed} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress}/></>}
+      <BloomAdventureHome ageGroup="early" profileName={profileName} progress={progress} dailyNext={(treasureClaimed && arcadeStatus.unlocked ? MODULE_MAP.arcade : dailyJourneyNext?.module)} dailySteps={dailyJourneySteps} dailyDone={dailyJourneyDoneCount} dailyRequired={2} dailyClaimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} libraryOpen={showJourneyExplore} onNavigate={handleGatedNavigate} onUpdateProgress={onUpdateProgress} onClaimTreasure={claimTreasure} onToggleLibrary={() => setShowJourneyExplore(value => !value)} onOpenWorld={() => onNavigate('wonderworld')} onOpenWonder={() => onNavigate('wonderwhy', 'wonder-of-day')} onOpenTreasureRoom={() => setShowTreasureShelf(true)}/>
+      {showJourneyExplore && (
+        <div className="mx-auto mt-4 flex max-w-6xl gap-2 overflow-x-auto px-4 md:px-6 xl:px-8">
+          {[
+            { id: 'daily', label: "📍 Today's path" },
+            { id: 'recommended', label: '✨ Recommended' },
+            { id: 'story', label: '📖 Story adventure' },
+            { id: 'endless', label: '🧭 Endless mode' },
+            ...(skyshipEnabled && !livingAdventureActive ? [{ id: 'skyship', label: '🚀 Skyship' }] : []),
+          ].map(t => (
+            <button key={t.id} onClick={() => setExploreTab(t.id)}
+              className="shrink-0 rounded-full px-4 py-2 font-round text-xs font-black uppercase tracking-wide transition-colors"
+              style={exploreTab === t.id
+                ? { background: theme.primary, color: '#fff' }
+                : { background: '#fff', color: theme.primary, border: `1.5px solid ${theme.primary}40` }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {showJourneyExplore && exploreTab === 'daily' && <OneDailyJourney ageGroup="early" profileName={profileName} steps={dailyJourneySteps} nextAdventure={arcadeStatus.unlocked ? MODULE_MAP.arcade : dailyJourneyNext?.module} doneCount={dailyJourneyDoneCount} required={2} claimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} onPlayNext={() => handleGatedNavigate((treasureClaimed && arcadeStatus.unlocked ? MODULE_MAP.arcade : dailyJourneyNext?.module)?.id || 'phonics')} onClaimTreasure={claimTreasure} onOpenTreasureRoom={() => setShowTreasureShelf(true)} onOpenWorld={() => onNavigate('wonderworld')} exploreOpen={showJourneyExplore} onToggleExplore={() => setShowJourneyExplore(value => !value)}/>}
+      {showJourneyExplore && exploreTab === 'recommended' && <ForYouFeed theme={theme} progress={progress} challenges={challenges} arcadeStatus={arcadeStatus} dailyAdventure={dailyAdventure} onNavigate={handleGatedNavigate} />}
+      {showJourneyExplore && exploreTab === 'story' && <LivingAdventure ageGroup="early" profileName={profileName} progress={progress} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress} onOpenWonderWorld={() => onNavigate('wonderworld')}/>}
+      {showJourneyExplore && exploreTab === 'endless' && <NeverFinishedAdventure ageGroup="early" progress={progress} active={treasureClaimed} onNavigate={onNavigate} onUpdateProgress={onUpdateProgress}/>}
 
-      {showJourneyExplore && skyshipEnabled && !livingAdventureActive && (
+      {showJourneyExplore && exploreTab === 'skyship' && skyshipEnabled && !livingAdventureActive && (
         <SkyshipAdventure
           progress={progress}
           profileName={profileName}
@@ -1328,7 +1376,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
       {/* ── PHASE 1: DAILY BLOOM PATH (path not done) ────────────────────────── */}
       {/* ── PHASE 2: CELEBRATION SCREEN ───────────────────────────────────────── */}
       <AnimatePresence>
-        {showCelebration && (
+        {showJourneyExplore && showCelebration && (
           <CelebrationScreen
             profileName={profileName}
             onPlayArcade={() => handleCelebrationDismiss('arcade')}
@@ -1338,7 +1386,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
       </AnimatePresence>
 
       {/* ── PHASE 3: TABS (path done, celebration seen) ───────────────────────── */}
-      {isDailyPathDone && !showCelebration && (
+      {showJourneyExplore && isDailyPathDone && !showCelebration && (
         <>
           {/* Tab bar */}
           <div className="mx-auto mt-4 max-w-6xl px-4 md:px-6 xl:px-8">
@@ -1472,7 +1520,7 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
         </>
       )}
 
-      {!livingAdventureActive && <>
+      {showJourneyExplore && !livingAdventureActive && <>
         <WorldEventCard
           progress={progress}
           profileId={activeProfileId}
@@ -1519,8 +1567,9 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
 
       {/* Monster collection overlay */}
       <AnimatePresence>
-        {rewardTreasure && <TreasureChestReward item={rewardTreasure.item} duplicate={rewardTreasure.duplicate} weekly={rewardTreasure.weekly} onClose={() => setRewardTreasure(null)}/>}
-        {showTreasureShelf && <TreasureShelf collection={treasureCollection} profileName={profileName} onEquip={equipTreasure} onClose={() => setShowTreasureShelf(false)}/>}
+        {rewardTreasure && <TreasureChestReward item={rewardTreasure.item} duplicate={rewardTreasure.duplicate} weekly={rewardTreasure.weekly} ageGroup="early" onClose={() => setRewardTreasure(null)}/>}
+        {showTreasureShelf && <TreasureShelf collection={treasureCollection} profileName={profileName} ageGroup="early" onEquip={equipTreasure} onCollectionChange={updateTreasureCollection} onClose={() => setShowTreasureShelf(false)}/>}
+        {showAvatarWorkshop && <AvatarWorkshop progress={progress} profileName={profileName} ageGroup="early" onUpdateProgress={onUpdateProgress} onClose={() => setShowAvatarWorkshop(false)}/>}
         {showMonsters && (
           <MonsterCollection totalStars={totalStars} onClose={() => setShowMonsters(false)} />
         )}

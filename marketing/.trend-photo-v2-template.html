@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1080px; height: 1350px; overflow: hidden; background: #1a1a1a; position: relative; }
+
+  /* the "photographed screen" background, tilted like an accidental shot */
+  .bg-wrap {
+    position: absolute; inset: 0; overflow: hidden;
+    filter: brightness(1.05) contrast(0.97) saturate(1.05);
+  }
+  .bg {
+    position: absolute;
+    width: 145%; height: 145%;
+    left: -25%; top: -18%;
+    background-image: url('__BG__');
+    background-size: cover;
+    background-position: top center;
+    transform: rotate(-6deg) scale(1.05);
+    transform-origin: center;
+    filter: blur(0.5px);
+  }
+  .vignette {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 65% 45%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.4) 100%);
+  }
+  .glare {
+    position: absolute;
+    top: -100px; right: -80px;
+    width: 460px; height: 460px;
+    background: radial-gradient(circle, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 70%);
+  }
+  .grain {
+    position: absolute; inset: 0;
+    opacity: 0.045;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Yaagvi's face leaning into frame from the left edge, half cut off, sharp + close */
+  .yaagvi-wrap {
+    position: absolute;
+    left: -230px; top: 260px;
+    width: 780px; height: 780px;
+    overflow: hidden;
+  }
+  .yaagvi {
+    position: absolute;
+    width: 100%; height: 100%;
+    background-image: url('__FG__');
+    background-size: 165% auto;
+    background-position: 38% 18%;
+    transform: rotate(4deg);
+    filter: drop-shadow(0 12px 24px rgba(0,0,0,0.35));
+  }
+  /* soft edge falloff where her face is cut by the "lens" */
+  .yaagvi-fade {
+    position: absolute; inset: 0;
+    background: linear-gradient(100deg, rgba(26,26,26,0) 55%, rgba(26,26,26,0.0) 100%);
+  }
+
+  /* blurry finger over the bottom-right corner of the lens */
+  .finger {
+    position: absolute;
+    right: -60px; bottom: -90px;
+    width: 420px; height: 480px;
+    background: radial-gradient(ellipse at 30% 30%, rgba(214,163,124,0.9) 0%, rgba(180,130,95,0.82) 55%, rgba(120,85,60,0.55) 100%);
+    border-radius: 48% 52% 45% 55% / 55% 48% 52% 45%;
+    filter: blur(20px);
+  }
+
+  .timestamp {
+    position: absolute; left: 32px; bottom: 28px;
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: rgba(255,255,255,0.7);
+    font-size: 22px; letter-spacing: 0.5px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    z-index: 10;
+  }
+</style>
+</head>
+<body>
+  <div class="bg-wrap">
+    <div class="bg"></div>
+    <div class="vignette"></div>
+    <div class="glare"></div>
+    <div class="grain"></div>
+  </div>
+
+  <div class="yaagvi-wrap">
+    <div class="yaagvi"></div>
+    <div class="yaagvi-fade"></div>
+  </div>
+
+  <div class="finger"></div>
+  <div class="timestamp">IMG_0483.jpg</div>
+</body>
+</html>

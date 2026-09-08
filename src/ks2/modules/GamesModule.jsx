@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
+import BloomQuizShow from '../../components/BloomQuizShow.jsx'
+import YaagviCharacter from '../../components/YaagviCharacter.jsx'
 import { dailySeedFor, seededShuffle } from '../../utils/seededRandom'
 
 const pick = (items) => items[Math.floor(Math.random() * items.length)]
@@ -15,11 +17,11 @@ const QUEST_QUESTIONS = [
   { q: '12 x 4', a: 48, wrong: [36, 44, 52] },
 ]
 
-function FinishScreen({ theme, title, score, onDone }) {
+function FinishScreen({ theme, title, score, total = score, onDone }) {
   const lockedRef = useRef(false)
   return (
     <div className="flex flex-col items-center justify-center gap-5 py-10 text-center">
-      <div className="text-6xl">WIN</div>
+      <YaagviCharacter state="celebrate" size={130} />
       <p className="font-bubble text-white text-2xl">{title}</p>
       <p className="font-round text-white/60">Score: {score}</p>
       <motion.button
@@ -27,7 +29,7 @@ function FinishScreen({ theme, title, score, onDone }) {
         onClick={() => {
           if (lockedRef.current) return
           lockedRef.current = true
-          onDone(score)
+          onDone(score, total)
         }}
         className="px-8 py-3 rounded-2xl font-bubble text-white"
         style={{ background: theme.primary }}
@@ -140,7 +142,7 @@ function QuestDashGame({ theme, onDone }) {
     }
   }, [finished, health])
 
-  if (finished) return <FinishScreen theme={theme} title="Quest Dash Complete" score={score} onDone={onDone} />
+  if (finished) return <FinishScreen theme={theme} title="Quest Dash Complete" score={score} total={QUEST_QUESTIONS.length * 25} onDone={onDone} />
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -217,6 +219,7 @@ function TowerBuilderGame({ theme, onDone }) {
   const [step, setStep] = useState(0)
   const [blocks, setBlocks] = useState([])
   const [score, setScore] = useState(0)
+  const [penalty, setPenalty] = useState(0)
   const [feedback, setFeedback] = useState(null)
   const current = questions[step]
   const options = useMemo(() => [current.a, ...current.wrong].sort(() => Math.random() - 0.5), [current])
@@ -237,7 +240,8 @@ function TowerBuilderGame({ theme, onDone }) {
       setFeedback('Tower block added')
       confetti({ particleCount: 25, spread: 45 })
     } else {
-      setFeedback(`Try ${current.a}`)
+      setFeedback('Not that block — solve it one more time')
+      setPenalty((value) => value + 5)
     }
 
     const id = window.setTimeout(() => {
@@ -250,7 +254,7 @@ function TowerBuilderGame({ theme, onDone }) {
       if (step + 1 >= questions.length) {
         completedRef.current = true
         confetti({ particleCount: 90, spread: 120 })
-        onDone(newScore)
+        onDone(Math.max(0, newScore - penalty), questions.length * 20)
       } else {
         setStep((v) => v + 1)
         lockedRef.current = false
@@ -333,6 +337,7 @@ function WordForgeGame({ theme, onDone }) {
   const [built, setBuilt] = useState('')
   const [selectedIndices, setSelectedIndices] = useState([])
   const [score, setScore] = useState(0)
+  const [penalty, setPenalty] = useState(0)
   const [feedback, setFeedback] = useState(null)
   const word = words[wordIndex]
   const letters = useMemo(() => word.split('').sort(() => Math.random() - 0.5), [word])
@@ -352,16 +357,18 @@ function WordForgeGame({ theme, onDone }) {
       wordLockedRef.current = true
       const correct = next === word
       const newScore = score + (correct ? 25 : 0)
-      setFeedback(correct ? 'Word built!' : `Try again: ${word}`)
+      setFeedback(correct ? 'Word built!' : 'Listen to the word in your head and rebuild it')
       if (correct) {
         setScore(newScore)
         confetti({ particleCount: 30, spread: 50 })
+      } else {
+        setPenalty((value) => value + 5)
       }
       const id = window.setTimeout(() => {
         timersRef.current = timersRef.current.filter(t => t !== id)
         if (correct && wordIndex + 1 >= words.length) {
           completedRef.current = true
-          onDone(newScore)
+          onDone(Math.max(0, newScore - penalty), words.length * 25)
         } else if (correct) {
           setBuilt('')
           setSelectedIndices([])
@@ -519,7 +526,7 @@ function MemoryGame({ theme, onDone }) {
     }
   }
 
-  if (done) return <FinishScreen theme={theme} title="Memory Vault Opened" score={Math.max(10, 200 - moves * 5)} onDone={onDone} />
+  if (done) return <FinishScreen theme={theme} title="Memory Vault Opened" score={Math.max(10, 200 - moves * 5)} total={200} onDone={onDone} />
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -568,6 +575,7 @@ const MAZE_LAYOUT = [
 
 const MAZE_SIZE = MAZE_LAYOUT.length
 const MAZE_TARGET_GEMS = 24
+const MAZE_MAX_SCORE = MAZE_TARGET_GEMS * 10 + 100
 const START_POS = { row: 7, col: 7 }
 const START_BLOCKERS = [
   { row: 1, col: 1 },
@@ -626,7 +634,7 @@ function MazeMunchGame({ theme, onDone }) {
     confetti({ particleCount: 120, spread: 130 })
     const id = window.setTimeout(() => {
       timersRef.current = timersRef.current.filter(t => t !== id)
-      onDone(finalScore)
+      onDone(finalScore, MAZE_MAX_SCORE)
     }, 850)
     timersRef.current.push(id)
   }, [onDone])
@@ -726,7 +734,7 @@ function MazeMunchGame({ theme, onDone }) {
   }, [finished, suspended, hitBlocker, lives, loseLife, player])
 
   if (finished) {
-    return <FinishScreen theme={theme} title="Maze Munch Complete" score={score} onDone={onDone} />
+    return <FinishScreen theme={theme} title="Maze Munch Complete" score={score} total={MAZE_MAX_SCORE} onDone={onDone} />
   }
 
   const controls = [
@@ -816,6 +824,7 @@ function MazeMunchGame({ theme, onDone }) {
 }
 
 const GAMES = [
+  { id: 'quiz', label: 'Bloom Brain Championship', badge: 'LIVE', desc: 'Contestant seat, lifelines, adaptive questions, and prizes' },
   { id: 'maze', label: 'Maze Munch', badge: 'MAZE', desc: 'Collect 24 gems and avoid blockers' },
   { id: 'quest', label: 'Quest Dash', badge: 'RUN', desc: 'Move lanes and catch the correct answer' },
   { id: 'tower', label: 'Sky Tower', badge: 'BUILD', desc: 'Build a tower with maths blocks' },
@@ -823,7 +832,7 @@ const GAMES = [
   { id: 'memory', label: 'Memory Vault', badge: 'BRAIN', desc: 'Match maths questions with answers' },
 ]
 
-export default function GamesModule({ theme, onBack, gamesUnlocked }) {
+export default function GamesModule({ theme, onBack, gamesUnlocked, played = 0, onComplete }) {
   const [game, setGame] = useState(null)
   const [result, setResult] = useState(null)
   const gameCompleteCalledRef = useRef(false)
@@ -837,7 +846,7 @@ export default function GamesModule({ theme, onBack, gamesUnlocked }) {
           Back
         </motion.button>
         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }} className="text-center">
-          <div className="text-7xl mb-5">LOCK</div>
+          <div className="text-7xl mb-5">🔒</div>
           <h2 className="font-bubble text-white text-2xl mb-3">Games Locked</h2>
           <p className="font-round text-white/60 text-sm mb-2 max-w-xs mx-auto">
             Complete <span style={{ color: theme.accent }} className="font-bold">2 learning modules</span> today to unlock the Game Arena.
@@ -849,11 +858,12 @@ export default function GamesModule({ theme, onBack, gamesUnlocked }) {
   }
 
   if (game && !result) {
-    const handleDone = (score) => {
+    const handleDone = (score, total = 1) => {
       if (gameCompleteCalledRef.current) return
       gameCompleteCalledRef.current = true
       setResult({ game, score })
       confetti({ particleCount: 100, spread: 130 })
+      onComplete?.({ game, score, correct: score, total })
     }
 
     return (
@@ -870,6 +880,7 @@ export default function GamesModule({ theme, onBack, gamesUnlocked }) {
           {game === 'tower' && <TowerBuilderGame theme={theme} onDone={handleDone} />}
           {game === 'forge' && <WordForgeGame theme={theme} onDone={handleDone} />}
           {game === 'memory' && <MemoryGame theme={theme} onDone={handleDone} />}
+          {game === 'quiz' && <BloomQuizShow ageGroup="junior" played={played} onBack={() => setGame(null)} onComplete={({ correct, total }) => handleDone(correct, total)} />}
         </div>
       </div>
     )
@@ -879,7 +890,7 @@ export default function GamesModule({ theme, onBack, gamesUnlocked }) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: theme.bg }}>
         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }} className="text-center">
-          <div className="text-6xl mb-4">GAME</div>
+          <YaagviCharacter state="celebrate" size={130} className="mx-auto mb-4" />
           <h2 className="font-bubble text-white text-2xl mb-2">Game Complete</h2>
           <p className="font-round text-white/60 mb-6">Score: {result.score}</p>
           <div className="flex gap-3 justify-center">

@@ -4,6 +4,7 @@ import confetti from 'canvas-confetti'
 import { sessionSeedFor, seededShuffle } from '../../utils/seededRandom'
 import { useSpeech } from '../../hooks/useSpeech'
 import MatchingActivity from '../../components/MatchingActivity'
+import InteractiveYaagvi, { useYaagviReactions } from '../../components/InteractiveYaagvi'
 
 const STARTER_TABLES = [2,3,4,5,10]
 const ALL_TABLES = [2,3,4,5,6,7,8,9,10,11,12]
@@ -48,14 +49,23 @@ export default function TimesTablesModule({ theme, onDone, onBack, played = 0 })
   const [options, setOptions] = useState([])
   const lockedRef = useRef(false)
   const completedRef = useRef(false)
+  const missedRef = useRef(false)
   const timersRef = useRef([])
 
+  const { reaction: yaagviReaction, react: reactYaagvi } = useYaagviReactions({
+    activityKey: `${table}-${q}`,
+    active: phase === 'quiz' && !feedback,
+  })
+
   useEffect(() => () => { timersRef.current.forEach(clearTimeout); timersRef.current = [] }, [])
+
+  useEffect(() => { if (phase === 'quiz') reactYaagvi('question') }, [phase, table, q, reactYaagvi])
 
   const startTable = (t) => {
     const qs = buildQuestions(t)
     lockedRef.current = false
     completedRef.current = false
+    missedRef.current = false
     timersRef.current.forEach(clearTimeout)
     timersRef.current = []
     setTable(t)
@@ -74,47 +84,60 @@ export default function TimesTablesModule({ theme, onDone, onBack, played = 0 })
     const next = qi + 1
     if (next >= qs.length) {
       completedRef.current = true
+      reactYaagvi('complete')
       setPhase('result')
-      onDone(sc, qs.length)
+      onDone(sc, qs.length, { questions: qs })
     } else {
       setQ(next)
       setOptions(wrongOptions(qs[next].ans))
       setTimeLeft(timerMax)
       setFeedback(null)
+      missedRef.current = false
       lockedRef.current = false
     }
-  }, [onDone, timerMax])
+  }, [onDone, timerMax, reactYaagvi])
 
   useEffect(() => {
     if (phase !== 'quiz' || feedback) return
     if (timeLeft <= 0) {
       if (lockedRef.current) return
       lockedRef.current = true
-      setFeedback({ correct: false, label: `Time's up! Answer: ${questions[q].ans}` })
+      missedRef.current = true
+      reactYaagvi('wrong', { attempt: 1 })
+      setFeedback({ correct: false, label: 'Time’s up — take another go at the same fact' })
       const id = window.setTimeout(() => {
         timersRef.current = timersRef.current.filter(t => t !== id)
-        advance(false, questions, q, score)
+        setFeedback(null)
+        setTimeLeft(timerMax)
+        lockedRef.current = false
       }, 1300)
       timersRef.current.push(id)
       return
     }
     const t = setTimeout(() => setTimeLeft(s => s - 1), 1000)
     return () => clearTimeout(t)
-  }, [phase, timeLeft, feedback, q, questions, score, advance, timerMax])
+  }, [phase, timeLeft, feedback, q, questions, score, advance, timerMax, reactYaagvi])
 
   const handleAnswer = (ans) => {
     if (lockedRef.current || completedRef.current) return
     lockedRef.current = true
     const correct = ans === questions[q].ans
-    const newScore = score + (correct ? 1 : 0)
+    const newScore = score + (correct && !missedRef.current ? 1 : 0)
+    if (!correct) missedRef.current = true
     if (correct) {
       setScore(newScore)
       confetti({ particleCount: 40, spread: 60, origin: { x: 0.5, y: 0.4 } })
     }
-    setFeedback({ correct, label: correct ? `✓ ${questions[q].ans}` : `✗ Answer: ${questions[q].ans}` })
+    reactYaagvi(correct ? 'correct' : 'wrong', correct ? { streak: newScore % 3 === 0 ? 3 : 1 } : { attempt: 1 })
+    setFeedback({ correct, label: correct ? `✓ ${questions[q].ans}` : '✗ Slow it down and try the same fact again' })
     const id = window.setTimeout(() => {
       timersRef.current = timersRef.current.filter(t => t !== id)
-      advance(correct, questions, q, newScore)
+      if (correct) advance(true, questions, q, newScore)
+      else {
+        setFeedback(null)
+        setTimeLeft(timerMax)
+        lockedRef.current = false
+      }
     }, 1100)
     timersRef.current.push(id)
   }
@@ -138,7 +161,7 @@ export default function TimesTablesModule({ theme, onDone, onBack, played = 0 })
     setScore(correct)
     setQuestions(Array.from({ length: total }, () => ({})))
     setPhase('result')
-    onDone(correct, total)
+    onDone(correct, total, { questions: matchPairs })
   }
 
   if (phase === 'match') return (
@@ -271,6 +294,7 @@ export default function TimesTablesModule({ theme, onDone, onBack, played = 0 })
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6">
+        <InteractiveYaagvi reaction={yaagviReaction} placement="strip" className="max-w-sm" />
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-full flex items-center justify-center font-bubble text-sm"
             style={{ background: timerColor, color: 'white' }}>
@@ -307,8 +331,8 @@ export default function TimesTablesModule({ theme, onDone, onBack, played = 0 })
             <motion.button key={opt} data-companion-answer={opt === current.ans ? 'correct' : 'wrong'} whileTap={{ scale: 0.88 }} onClick={() => handleAnswer(opt)}
               className="py-5 rounded-2xl font-bubble text-white text-2xl"
               style={{
-                background: feedback && opt === current.ans ? '#22C55E40' : theme.card,
-                border: feedback && opt === current.ans ? '2px solid #22C55E' : `2px solid ${theme.primary}30`,
+                background: feedback?.correct && opt === current.ans ? '#22C55E40' : theme.card,
+                border: feedback?.correct && opt === current.ans ? '2px solid #22C55E' : `2px solid ${theme.primary}30`,
               }}>
               {opt}
             </motion.button>

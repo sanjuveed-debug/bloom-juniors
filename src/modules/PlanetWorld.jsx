@@ -444,6 +444,8 @@ function PlanetQuiz({ onBack, onDone, speak, onAddStars }) {
   const [done, setDone] = useState(false)
   const awardedRef = useRef(false)
   const lockedRef = useRef(false)
+  const missedRef = useRef(false)
+  const strugglesRef = useRef([])
   const { track } = useVisibilityTimers()
 
   useEffect(() => {
@@ -452,7 +454,7 @@ function PlanetQuiz({ onBack, onDone, speak, onAddStars }) {
     const pct = score / questions.length
     const stars = pct === 1 ? 3 : pct >= 0.75 ? 2 : pct >= 0.5 ? 1 : 0
     if (stars > 0) {
-      onAddStars?.('planets', stars, { total: questions.length, correct: score, struggles: [] })
+      onAddStars?.('planets', stars, { total: questions.length, correct: score, struggles: strugglesRef.current, stayOnModule: true })
     }
   }, [done, score, questions.length, onAddStars])
 
@@ -464,17 +466,20 @@ function PlanetQuiz({ onBack, onDone, speak, onAddStars }) {
     setSelected(opt)
     const correct = opt === q.a
     if (correct) {
-      setScore(s => s + 1)
+      if (!missedRef.current) setScore(s => s + 1)
       triggerHaptic('correct')
       speak('Amazing! That\'s correct! You\'re a space genius! ⭐', { mood: 'celebrate' })
       confetti({ particleCount: 60, spread: 80, origin: { y: 0.5 } })
     } else {
+      if (!missedRef.current) strugglesRef.current.push(q.q)
+      missedRef.current = true
       triggerHaptic('wrong')
-      speak(`Oops! The answer is ${q.a}. You'll get it next time!`, { mood: 'instruct' })
+      speak('Good try. Use the planet clue and try this question again.', { mood: 'instruct' })
     }
     track(() => {
+      if (!correct) { setSelected(null); lockedRef.current = false; return }
       if (qIdx + 1 >= questions.length) { setDone(true) }
-      else { setQIdx(i => i + 1); setSelected(null); lockedRef.current = false }
+      else { setQIdx(i => i + 1); setSelected(null); missedRef.current = false; lockedRef.current = false }
     }, 1600)
   }, [q, qIdx, questions.length, speak, track])
 
@@ -541,9 +546,9 @@ function PlanetQuiz({ onBack, onDone, speak, onAddStars }) {
       {/* Options */}
       <div className="grid grid-cols-2 gap-3">
         {q.opts.map((opt, i) => {
-          const isCorrect  = selected && opt === q.a
+          const isCorrect  = selected === q.a && opt === q.a
           const isWrong    = selected === opt && opt !== q.a
-          const isNeutral  = selected && opt !== q.a && opt !== selected
+          const isNeutral  = selected === q.a && opt !== q.a && opt !== selected
           return (
             <motion.button key={`${qIdx}-${i}`} data-companion-answer={opt === q.a ? 'correct' : 'wrong'}
               initial={{ scale: 0.8, opacity: 0 }}

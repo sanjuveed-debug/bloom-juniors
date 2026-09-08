@@ -51,7 +51,7 @@ export default function InstallNudge({ profileName }) {
           style={{ background: '#FFFFFF', border: '1.5px solid rgba(66,32,6,0.12)' }}
         >
           <div className="flex items-start gap-3">
-            <img src="/yaagvi-mascot-single.webp" alt="" width={48} height={48}
+            <img src="/bumi/avatar-v1.webp" alt="" width={48} height={48}
               className="w-12 h-12 rounded-2xl object-cover shrink-0"
               onError={(e) => { e.currentTarget.style.display = 'none' }} />
             <div className="flex-1 min-w-0">

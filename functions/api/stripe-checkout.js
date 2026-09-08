@@ -1,3 +1,5 @@
+import { authenticateBilling } from './_billing-auth.js'
+
 // Creates a Stripe Checkout Session (subscription) for the signed-in guardian.
 // Env vars (Cloudflare Pages → Settings → Environment variables):
 //   STRIPE_SECRET_KEY  — sk_live_... / sk_test_...
@@ -19,7 +21,7 @@ function isAllowedOrigin(origin) {
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
   })
 }
 
@@ -36,10 +38,14 @@ export async function onRequestPost(context) {
   let body
   try { body = await request.json() } catch { return json({ error: 'Invalid request' }, 400) }
 
-  const userId = String(body.userId || '').trim()
-  const email = String(body.email || '').trim()
-  if (!/^[0-9a-f-]{36}$/i.test(userId)) return json({ error: 'Sign in required' }, 401)
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'Valid email required' }, 400)
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ error: 'Invalid request' }, 400)
+  const auth = await authenticateBilling(request, env)
+  if (!auth.user) return json({ error: auth.error }, auth.status)
+  const userId = auth.user.id
+  if (body.userId && body.userId !== userId) return json({ error: 'Account mismatch' }, 403)
+  const email = String(auth.user.email || '').trim()
+  if (!email) return json({ error: 'Account email required' }, 400)
+
 
   const site = 'https://bloomjuniors.com'
   const params = new URLSearchParams({
@@ -64,7 +70,7 @@ export async function onRequestPost(context) {
 
   const session = await resp.json()
   if (!resp.ok || !session.url) {
-    console.error('[stripe-checkout]', resp.status, JSON.stringify(session).slice(0, 300))
+    console.error('[stripe-checkout]', resp.status, 'Session creation failed')
     return json({ error: 'Could not start checkout. Try again shortly.' }, 502)
   }
 

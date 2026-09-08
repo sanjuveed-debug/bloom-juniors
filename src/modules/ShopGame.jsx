@@ -33,6 +33,8 @@ export default function ShopGame({ avatar, progress, onAddStars, onBack, onUpdat
   const [mode, setMode] = useState('shop') // 'shop' | 'pay' | 'success'
   const [coinPile, setCoinPile] = useState([])
   const [change, setChange] = useState(0)
+  const [coinBonusesUsed, setCoinBonusesUsed] = useState(0)
+  const MAX_COIN_BONUSES = 2
   const shopperName = profileName || 'Superstar'
 
   const totalBasket = basket.reduce((sum, item) => sum + item.price, 0)
@@ -107,11 +109,16 @@ export default function ShopGame({ avatar, progress, onAddStars, onBack, onUpdat
   }, [coinPile, totalBasket, coins, basket, purchased, shopperName, speak, onAddStars, onUpdateProgress])
 
   const earnCoins = useCallback(() => {
+    if (coinBonusesUsed >= MAX_COIN_BONUSES) {
+      speak('You have plenty of pennies — try paying for something!', { mood: 'instruct' })
+      return
+    }
     const earned = 5 + Math.floor(Math.random() * 10)
     setCoins(c => c + earned)
+    setCoinBonusesUsed(c => c + 1)
     speak(`You found ${earned} pennies. Great job`, { mood: 'celebrate' })
     confetti({ particleCount: 30, spread: 60 })
-  }, [speak])
+  }, [speak, coinBonusesUsed])
 
   // SUCCESS screen
   if (mode === 'success') {
