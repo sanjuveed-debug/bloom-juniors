@@ -9,10 +9,10 @@ export default function ParentLearningSnapshot({ progress, ageGroup, profileName
     <dl className="my-5 grid gap-4 sm:grid-cols-3">
       <div><dt className="font-bold">{recap.active ? 'What they tried' : 'A place to begin'}</dt><dd className="text-sm mt-1"><strong>{recap.title}</strong><br/>{recap.idea}</dd></div>
       <div><dt className="font-bold">What is completed</dt><dd className="text-sm mt-1">{recap.completed}</dd></div>
-      <div><dt className="font-bold">Help in the activity</dt><dd className="text-sm mt-1">{recap.help}</dd></div>
+      <div><dt className="font-bold">{recap.evidenceTitle || 'Help in the activity'}</dt><dd className="text-sm mt-1">{recap.help}{recap.observations?.length > 0 && <ul className="mt-2 space-y-2">{recap.observations.map(observation => <li key={observation}>{observation}</li>)}</ul>}</dd></div>
     </dl>
     <div className="rounded-2xl bg-amber-50 p-4"><h3 className="font-bold">Try together away from the screen</h3><p className="text-sm mt-1">{recap.prompt}</p></div>
     <div className="mt-4"><h3 className="font-bold">Suggested next: {recap.nextTitle}</h3><p className="text-sm mt-1">{recap.nextReason}</p><button onClick={onBack} className="mt-3 min-h-12 rounded-2xl bg-green-800 text-white px-5 py-3 font-bold">Back to your child's adventures</button></div>
-    <p className="text-xs mt-4 text-green-800">This overview covers the picnic adventures for this age group. Activity records describe what happened here; they do not establish mastery or show help given away from the screen. More detail is in Weekly Story below.</p>
+    <p className="text-xs mt-4 text-green-800">This overview covers the picnic adventures{ageGroup === 'early' ? ', floating and sinking, and shadow discoveries' : ''} for this age group. Activity records describe what happened here; they do not establish mastery or show help given away from the screen.</p>
   </section>
 }

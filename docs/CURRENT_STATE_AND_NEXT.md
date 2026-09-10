@@ -1,9 +1,149 @@
 # Bloom Juniors: Current State and Next
 
-Last updated: 2026-09-08
+Last updated: 2026-09-10
 
 This is the canonical handoff for the next Bloom Juniors work session. Read this
 before planning or changing the product.
+
+## Shadow discovery shipped - 2026-09-10
+
+Founder authorized continuing to build and publish while asleep. Built one
+complete next lesson: How can we change a shadow? Little Stars > Explore >
+Change a shadow, plus public /play/shadow and the optional continuation from
+the floating/sinking recap. Three narrated prediction/experiment/observation
+rounds: move a torch closer, farther, then switch it off. Touch buttons and a
+keyboard-accessible range input control a geometric side-view model; the card
+and wall remain fixed. Includes Bumi, shared voice controls, optional free
+exploration after completion, an offscreen family prompt, replay and finish.
+Scientific model and primary educational references: docs/SHADOW_DISCOVERY.md.
+
+Profile progress is normalized and merged through existing storage; one first
+completion is preserved across replay and cloud merge. Guest data stays in its
+own local key. Parent Learning at a glance includes original shadow predictions
+and model outcomes without scores or mastery claims. Module is lazy loaded.
+
+391/391 unit tests pass. Shadow browser test passed prediction gates, keyboard
+range movement, touch button alternatives, geometry change, narration calls,
+three rounds, guest reload/replay, profile Explore/finish/PIN parent recap/reload,
+mobile fit and reduced motion. Existing float and parent snapshot checks pass;
+float regression now verifies its continuation to shadow and return. Mobile and
+desktop screenshots visually reviewed. Tests use synthetic records; no physical
+device audio or real account cloud-save verification. Production build passes
+with existing bundle/Browserslist warnings.
+
+Published https://e7741a2d.bloom-juniors.pages.dev, then polished the water-to-shadow
+button label in https://d33f5626.bloom-juniors.pages.dev (bloom-juniors/main).
+Final main asset main-EP1W4Yv8.js. Final custom-domain main/guest/service-worker
+hashes matched 4/4; the final live guest walkthrough passed again. Local review
+HTML fixtures excluded. Rollback https://6519e4e5.bloom-juniors.pages.dev.
+Live Chrome guest walkthrough completed all three experiments and verified
+reload plus one saved local session without runtime errors. Voice was muted in
+the live check. Source publication branch: feature/shadow-discovery-20260910;
+includes the earlier parent recap and reviewed Node 24/local setup fixes so the
+published source captures this laptop's tested state. No private migration files.
+This is a completed bounded release, not an ongoing scheduled overnight job.
+
+## Parent science overview deployed - 2026-09-10
+
+User explicitly requested production publication. Cloudflare OAuth restored on
+the new laptop after correcting the terminal working directory. Retrieved the
+existing Pages production public frontend configuration and rebuilt successfully;
+no backend secrets or production settings changed. Deployment to the existing
+bloom-juniors/main project completed at https://6519e4e5.bloom-juniors.pages.dev.
+https://bloomjuniors.com and the immutable release each matched 4/4 main/guest/
+service-worker asset hashes; local review HTML fixtures excluded. Main bundle
+main-DNRA8jIG.js. Rollback: https://53a18dce.bloom-juniors.pages.dev.
+
+Live Chrome mobile home rendered without runtime errors; served bundle contains
+the expected production Supabase public configuration and new parent science
+recap. No real account sign-in or cloud-save test performed. Earlier feature
+verification remains 387/387 unit tests and successful mobile/desktop parent
+flow checks. Existing bundle-size/Browserslist warnings remain. Production is
+updated; source changes are still uncommitted locally, including earlier laptop
+setup fixes. OAuth configuration and recovered build settings remain only in
+ignored .migration paths. No credentials belong in this handoff or Git.
+
+To review: sign in at bloomjuniors.com, select Little Stars, try Explore > Will
+it float?, then open Parents > Learning at a glance with the actual parent PIN.
+The review-fixture PIN is not a production account password. The proposed next
+child activity is the shadow discovery; it is not implemented or running as a
+background task.
+
+## Discover with Bumi parent overview built locally - 2026-09-10
+
+Production publication was subsequently explicitly requested. Preflight found no
+Wrangler authentication and no local frontend environment configuration. Started
+interactive Cloudflare OAuth login with configuration/logs under ignored
+.migration paths; user sign-in is required. No deployment attempted: the current
+local build lacks production Supabase configuration and must not replace the live
+authenticated app. After login, retrieve existing Pages production settings,
+rebuild with the correct public frontend configuration, deploy to the existing
+bloom-juniors project, and verify live asset hashes and fixture exclusion.
+
+Founder requested implementation of the proposed next feature. Little Stars'
+PIN-gated Learning at a glance now includes Will it float? alongside picnic
+adventures, selecting the most recently updated supported activity. Shows partial
+experiment count, recorded predictions and scripted observed outcomes without
+scoring guesses, and a grown-up clay-boat conversation/experiment prompt.
+Unfinished discovery gives its Explore location for continuing. First completed
+session evidence survives replay/reload, including when only the session remains.
+Other age groups retain their own summaries. Uses existing progress/session data;
+no storage schema or cloud configuration changes.
+
+Verification: 387/387 unit tests pass; production build passes with existing
+bundle-size/Browserslist warnings. Extended verify-parent-snapshot.mjs passed
+PIN access, existing picnic regression, partial science progress, completed recap
+after replay/reload, four prediction records, mobile fit and return navigation.
+Mobile/desktop screenshots visually inspected at tmp/parent-science-mobile.png
+and tmp/parent-science-desktop.png. Used installed Chrome through the existing
+migration helper because agent-browser CLI is unavailable. Browser fixtures use
+synthetic local records and block external requests; real cloud saving and
+physical-device checks remain outstanding. Local preview running on port 5173.
+No commit, push or production deployment this turn. Earlier laptop setup edits
+remain intact. Next: review this feature locally, then publish when requested;
+next child-content candidate remains the proposed shadow discovery, not built.
+
+## New laptop local development restored - 2026-09-08
+
+Restored C:\Sanju_Projects\EduApp from current bloom-juniors main f5899a4,
+which is newer than the private morning migration archive and includes narrated
+floating/sinking and the activity voice guidance. Git history and GitHub access
+are available. Local setup branch: setup/new-laptop-20260908; fixes are uncommitted.
+No push, deployment or production data changes were performed.
+
+Downloaded the private EduApp-20260908.zip release and verified its expected
+SHA256 and every one of the 1,545 manifest file hashes. The archive also contains
+two restore metadata files. Full immutable source is preserved in .migration/
+snapshot; ZIP, remote handoff, manifest and verification evidence remain under
+.migration/. Copied 863 missing assets/review/source-support files to their
+original locations without overwriting current source. Git-local exclusions
+protect the private migration files from accidental public commits. Do not
+replace the newer canonical handoff with the archive's earlier state.
+
+Node 24.19.0/npm 11.17.0 installed; npm ci completed. Fixed Node 24 test discovery
+and the webhook test's read-only global crypto assignment. Fixed an actual blank
+page without environment files by guarding the Node process.env fallback in the
+browser. Excluded backup directories from Vite watching after Windows EBUSY
+interrupted the server during extraction. All 384 unit tests pass; production
+build passes with existing bundle-size/Browserslist warnings. npm audit records
+22 vulnerabilities (2 low, 5 moderate, 15 high); no forced dependency updates.
+
+Installed Google Chrome verified the home page without runtime errors and passed
+float-discovery, connected-adventures, parent-snapshot, adventure-finish,
+guest-drag, activity-voice and PIN keyboard checks. PIN recovery passed on mobile
+and desktop using the recovered isolated review server on port 5174, required
+for its test-only account configuration transform. All these are synthetic local
+checks, with external calls blocked or speech replaced. Browser package downloads
+repeatedly disconnected; use .migration/browser-use-chrome.mjs with installed
+Chrome for now. Physical-device sound/touch and real cloud saving remain untested.
+
+Local frontend left running at http://127.0.0.1:5173; startup/log details and daily
+commands are in docs/LOCAL_DEVELOPMENT.md. Environment files, private keys, account
+sessions, database/storage backups and browser-only progress were omitted from
+the archive and remain outstanding. Asked whether the old .env.local is available;
+no configuration transfer confirmed yet. Next concrete step: securely restore
+local frontend/backend configuration and verify real account sign-in and persisted
+cloud progress. Then resume product work from the Discover with Bumi state below.
 
 ## Discover with Bumi implemented - 2026-09-08
 

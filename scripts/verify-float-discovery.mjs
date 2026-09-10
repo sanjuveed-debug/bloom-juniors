@@ -39,6 +39,10 @@ try {
  }
  await expect(page.getByRole('heading',{name:'You guessed. You tested. You noticed.'})).toBeVisible()
  await page.reload();await expect(page.locator('.float-journal>div')).toHaveCount(4)
+ await page.getByRole('button',{name:'Change a shadow with Bumi'}).click()
+ await expect(page.getByRole('heading',{name:'How can we change a shadow?'})).toBeVisible()
+ await page.getByRole('button',{name:'Adventures',exact:false}).click()
+ await expect(page.locator('.float-journal>div')).toHaveCount(4)
  await page.getByRole('button',{name:'Play again',exact:true}).click();await expect(float).toBeVisible()
  await page.emulateMedia({reducedMotion:'reduce'});await float.click();await water.click()
  await expect(page.getByRole('button',{name:'Try the next object'})).toBeEnabled()

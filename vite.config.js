@@ -7,6 +7,7 @@ const devApiTarget = resolveDevApiTarget(process.env.BLOOM_DEV_API_TARGET || '')
 
 export default defineConfig({
   server: {
+    watch: { ignored: ['**/.migration/**', '**/.laptop-migration/**'] },
     proxy: devApiTarget ? { '/api': { target: devApiTarget, changeOrigin: true } } : {},
   },
   build: {

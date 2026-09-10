@@ -4,6 +4,7 @@ import { ADVENTURE_PATH, nextAdventure } from './utils/collectionAdventure.js'
 import SimpleChildHome from './components/SimpleChildHome.jsx'
 import ProfilePicnic from './components/ProfilePicnic.jsx'
 import React, { useState, useEffect, useCallback, useRef } from 'react'
+const ShadowDiscovery = React.lazy(() => import('./modules/ShadowDiscovery.jsx'))
 import { preservesGuidedDestination } from './utils/guidedNavigation.js'
 import { AnimatePresence, motion } from 'framer-motion'
 
@@ -83,7 +84,7 @@ const SacredStories     = React.lazy(() => import('./modules/SacredStories'))
 const WonderWhy         = React.lazy(() => import('./modules/WonderWhy'))
 
 const GAME_SCREENS = [
-  'float-discovery', 'basket', 'snacks', 'picnic', 'phonics', 'math', 'tricky', 'story', 'logic', 'shop', 'shapes',
+  'shadow-discovery', 'float-discovery', 'basket', 'snacks', 'picnic', 'phonics', 'math', 'tricky', 'story', 'logic', 'shop', 'shapes',
   'davinci', 'anatomy', 'science', 'worldgk', 'exercise', 'planets', 'arcade', 'sacred', 'piggybank',
 ]
 
@@ -140,7 +141,7 @@ function Screen({ id, current, children, onMap, progress, onUpdateProgress }) {
           exit={{ opacity: 0, scale: 1.02, y: -10, transition: { duration: 0.15, ease: 'easeIn' } }}
           className="relative z-10 min-h-screen"
         >
-          {GAME_SCREENS.includes(id) && id !== 'float-discovery' && !ADVENTURE_PATH.includes(id)
+          {GAME_SCREENS.includes(id) && !['float-discovery','shadow-discovery'].includes(id) && !ADVENTURE_PATH.includes(id)
             ? <AdventureModuleFrame moduleId={id} ageGroup="early" progress={progress} onUpdateProgress={onUpdateProgress} onMap={onMap}>{children}</AdventureModuleFrame>
             : children}
         </motion.div>
@@ -467,7 +468,7 @@ export function AppWithProfile({ profileId, profileName, profileAgeGroup, parent
   }, [setAvatar, speak, resume, moodLoggedToday, defer])
 
   // Core tabs are always accessible — only adventure shortcut modules go through the gate
-  const GATE_FREE_SCREENS = new Set(['float-discovery', 'basket', 'snacks', 'picnic', 'phonics', 'math', 'story', 'tricky', 'shapes', 'logic'])
+  const GATE_FREE_SCREENS = new Set(['shadow-discovery', 'float-discovery', 'basket', 'snacks', 'picnic', 'phonics', 'math', 'story', 'tricky', 'shapes', 'logic'])
 
   const navigate = useCallback((to, interestSource = 'choice') => {
     stopAllSpeech('navigation')
@@ -495,7 +496,7 @@ export function AppWithProfile({ profileId, profileName, profileAgeGroup, parent
       update(p => ({ ...p, childInterest: recordInterestStart(p.childInterest, to, { source: interestSource }) }))
       let skipArrival = false
       try { skipArrival = sessionStorage.getItem('bloom_living_launch') === to; if (skipArrival) sessionStorage.removeItem('bloom_living_launch') } catch {}
-      setModuleArrival(ADVENTURE_PATH.includes(to) || to === 'float-discovery' || skipArrival || ['first-mission', 'starter-path'].includes(interestSource) ? null : to)
+      setModuleArrival(ADVENTURE_PATH.includes(to) || ['float-discovery','shadow-discovery'].includes(to) || skipArrival || ['first-mission', 'starter-path'].includes(interestSource) ? null : to)
     } else {
       setModuleArrival(null)
     }
@@ -781,7 +782,8 @@ export function AppWithProfile({ profileId, profileName, profileAgeGroup, parent
             onLaunch={id => navigate(id)} onParents={() => navigate('parent')}
             onSwitchProfiles={onSwitchProfiles} onMoreActivities={() => navigate('library')} />}
       </Screen>
-      <Screen id="float-discovery" current={screen}><FloatDiscovery progress={progress} update={update} onBack={() => navigate('home')} /></Screen>
+      <Screen id="float-discovery" current={screen}><FloatDiscovery progress={progress} update={update} onNext={() => navigate('shadow-discovery')} onBack={() => navigate('home')} /></Screen>
+      <Screen id="shadow-discovery" current={screen}><React.Suspense fallback={<LoadingSpinner/>}><ShadowDiscovery progress={progress} update={update} onBack={() => navigate('home')} /></React.Suspense></Screen>
       <Screen id="picnic" current={screen}>
         <ProfilePicnic progress={progress} update={update} onBack={() => navigate('home')} onNext={() => navigate('basket')} />
       </Screen>
@@ -1019,7 +1021,7 @@ export function AppWithProfile({ profileId, profileName, profileAgeGroup, parent
 
       {showTimer && (
         <SessionTimer
-          hidePill={!classroomMode && ['home', 'float-discovery', 'picnic', 'basket', 'snacks', 'parent'].includes(screen)}
+          hidePill={!classroomMode && ['home', 'shadow-discovery', 'float-discovery', 'picnic', 'basket', 'snacks', 'parent'].includes(screen)}
           key={sessionTimerKey}
           sessionMinutes={progress.sessionMinutes || 30}
           profileName={profileName}

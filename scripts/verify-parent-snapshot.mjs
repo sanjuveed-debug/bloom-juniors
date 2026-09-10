@@ -1,6 +1,7 @@
 import { chromium, expect } from '@playwright/test'
 import assert from 'node:assert/strict'
 import { applyCollectionAction } from '../src/utils/collectionAdventure.js'
+import { applyFloatDiscovery } from '../src/utils/floatDiscovery.js'
 const browser=await chromium.launch({headless:true})
 try{
  const page=await browser.newPage({viewport:{width:390,height:844},reducedMotion:'reduce'})
@@ -28,6 +29,29 @@ try{
  await page.screenshot({path:'tmp/parent-at-a-glance-desktop.png',fullPage:true})
  await recap.getByRole('button').click()
  await expect(page.getByRole('region',{name:'Your next activity'})).toContainText('Pack the Basket')
+ let science=applyFloatDiscovery({}, {type:'PREDICT',floats:false},Date.now())
+ science=applyFloatDiscovery(science,{type:'DROP'},Date.now())
+ await page.evaluate(p=>localStorage.setItem('yaagvi_progress_v1',JSON.stringify(p)),science)
+ await page.reload();await open()
+ await expect(recap).toContainText('1 of 4 experiments observed')
+ await expect(recap).toContainText('Cork: predicted sink; observed floating.')
+ await expect(recap).toContainText('Suggested next: Will it float?')
+ science=applyFloatDiscovery(science,{type:'NEXT'},Date.now())
+ for(let i=1;i<4;i++)for(const action of [{type:'PREDICT',floats:false},{type:'DROP'},{type:'NEXT'}])science=applyFloatDiscovery(science,action,Date.now())
+ science=applyFloatDiscovery(science,{type:'REPLAY'},Date.now())
+ await page.evaluate(p=>localStorage.setItem('yaagvi_progress_v1',JSON.stringify(p)),science)
+ await page.reload();await open()
+ await expect(recap).toContainText('First completed visit')
+ await expect(recap).toContainText('Completed all 4 experiments')
+ await expect(recap.getByRole('listitem')).toHaveCount(4)
+ await expect(recap).toContainText('Predictions are not scored')
+ await page.setViewportSize({width:390,height:844})
+ await recap.screenshot({path:'tmp/parent-science-mobile.png'})
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth))
+ await page.setViewportSize({width:1440,height:900})
+ await recap.screenshot({path:'tmp/parent-science-desktop.png'})
+ await recap.getByRole('button').click()
+ await expect(page.getByRole('region',{name:'Your next activity'})).toBeVisible()
  assert.deepEqual(errors,[])
- console.log('PASS: PIN-gated empty/partial parent overview, evidence, recommended saved activity, mobile fit and return to child home; synthetic local progress only.')
+ console.log('PASS: PIN-gated picnic and science overview, partial experiments, first-completion predictions after replay/reload, mobile fit and return to child home; synthetic local progress only.')
 }finally{await browser.close()}

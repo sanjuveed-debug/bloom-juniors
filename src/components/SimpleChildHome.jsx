@@ -8,6 +8,7 @@ import './simple-child-home.css'
 
 export const CHILD_ACTIVITIES = [
   { id: 'float-discovery', category: 'Discovery', name: 'Will it float?', symbol: '\u2248', color: 'blue', image: '/yaagvi-secret-world.webp', note: 'Guess. Drop. Discover with Bumi.', prompt: 'Can the same clay sink and float?' },
+  { id: 'shadow-discovery', category: 'Discovery', name: 'Change a shadow', symbol: '◐', color: 'blue', image: '/yaagvi-secret-world.webp', note: 'Move the torch. Watch the wall.', prompt: 'Can you make a tiny card cast a big shadow?' },
   ...Object.entries(COLLECTION_ADVENTURES).filter(([, config]) => !config.ageGroup).map(([id, config]) => ({ id, category: 'Numbers', name: config.title, symbol: id === 'basket' ? '2' : '3', color: 'green', image: '/yaagvi-secret-world.webp', note: config.idea, prompt: config.prompt })),
   { id: 'picnic', category: 'Numbers', name: 'The Picnic', symbol: '123', color: 'ochre', image: '/yaagvi-secret-world.webp', note: 'One friend. One plate. A place for everyone.', prompt: 'Can you put out one spoon for each person at dinner?' },
   { id: 'phonics', category: 'Sounds', name: 'Sound Pop', symbol: 'Aa', color: 'rose', image: '/sound-pop-map-3d-v1.webp', note: 'Listen. Find the sound.', prompt: 'What else starts with a sound you heard?' },

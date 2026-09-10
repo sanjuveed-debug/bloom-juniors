@@ -1,4 +1,5 @@
 import { normalizeFloatDiscovery } from '../utils/floatDiscovery.js'
+import { normalizeShadowDiscovery } from '../utils/shadowDiscovery.js'
 import { normalizeMarket } from '../utils/marketMission.js'
 import { mergeCollections } from '../utils/collectionAdventure.js'
 import { createProgressSyncQueue } from '../utils/progressSyncQueue.js'
@@ -153,6 +154,7 @@ export function hydrateProgressData(parsed = {}) {
     adventureDirector: normalizeAdventureDirector(source.adventureDirector),
     dreamProject: normalizeDreamProject(source.dreamProject),
     floatDiscovery: normalizeFloatDiscovery(source.floatDiscovery),
+    shadowDiscovery: normalizeShadowDiscovery(source.shadowDiscovery),
     picnic: normalizePicnicProgress(source.picnic),
     collectionAdventures: mergeCollections(source.collectionAdventures),
     marketMission: normalizeMarket(source.marketMission),

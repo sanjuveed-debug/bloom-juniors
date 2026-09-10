@@ -12,6 +12,8 @@ import { LearningCompanionContext } from './components/LearningCompanionContext.
 
 const PlayFloat = React.lazy(() => import('./pages/PlayFloat.jsx'))
 const guestFloat = window.location.pathname.replace(/\/$/, '') === '/play/float'
+const PlayShadow = React.lazy(() => import('./pages/PlayShadow.jsx'))
+const guestShadow = window.location.pathname.replace(/\/$/, '') === '/play/shadow'
 const PlayPicnic = React.lazy(() => import('./pages/PlayPicnic.jsx'))
 const guestPlay = window.location.pathname.replace(/\/$/, '') === '/play'
 
@@ -32,7 +34,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <MotionConfig reducedMotion="user">
       <LearningCompanionContext.Provider value="bumi">
       <ErrorBoundary>
-        {guestFloat ? <React.Suspense fallback={<p className="p-8 text-center">Getting the water lab ready...</p>}><PlayFloat /></React.Suspense> : guestPlay ? <React.Suspense fallback={<p className="p-8 text-center">Getting your picnic ready...</p>}><PlayPicnic /></React.Suspense> : <App />}
+        {guestShadow ? <React.Suspense fallback={<p className="p-8 text-center">Getting the light theatre ready...</p>}><PlayShadow /></React.Suspense> : guestFloat ? <React.Suspense fallback={<p className="p-8 text-center">Getting the water lab ready...</p>}><PlayFloat /></React.Suspense> : guestPlay ? <React.Suspense fallback={<p className="p-8 text-center">Getting your picnic ready...</p>}><PlayPicnic /></React.Suspense> : <App />}
       </ErrorBoundary>
       <VoiceStatusToast />
       </LearningCompanionContext.Provider>

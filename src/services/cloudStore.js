@@ -1,4 +1,5 @@
 import { mergeFloatDiscovery } from '../utils/floatDiscovery.js'
+import { mergeShadowDiscovery } from '../utils/shadowDiscovery.js'
 import { mergeMarket } from '../utils/marketMission.js'
 import { mergeCollections } from '../utils/collectionAdventure.js'
 import { mergePicnicProgress } from '../utils/picnicProgress.js'
@@ -109,7 +110,7 @@ export function mergeProgress(local = {}, cloud = {}) {
   const firstVisits = new Set()
   for (let i = 0; i < merged.length; i++) {
     const activity = merged[i].activityId
-    if (!['picnic-first', 'basket-first', 'snacks-first', 'tiny-first', 'market-first', 'float-discovery-first'].includes(activity)) continue
+    if (!['picnic-first', 'basket-first', 'snacks-first', 'tiny-first', 'market-first', 'float-discovery-first', 'shadow-discovery-first'].includes(activity)) continue
     if (firstVisits.has(activity)) { merged.splice(i, 1); i-- } else firstVisits.add(activity)
   }
 
@@ -302,6 +303,7 @@ export function mergeProgress(local = {}, cloud = {}) {
     collectionAdventures: mergeCollections(local.collectionAdventures, cloud.collectionAdventures),
     marketMission: mergeMarket(local.marketMission, cloud.marketMission),
     floatDiscovery: mergeFloatDiscovery(local.floatDiscovery, cloud.floatDiscovery),
+    shadowDiscovery: mergeShadowDiscovery(local.shadowDiscovery, cloud.shadowDiscovery),
     picnic: mergePicnicProgress(local.picnic, cloud.picnic),
     childInterest: mergeChildInterest(local.childInterest, cloud.childInterest),
     weeklyBloomAdventure: mergeWeeklyBloomAdventure(local.weeklyBloomAdventure, cloud.weeklyBloomAdventure),
