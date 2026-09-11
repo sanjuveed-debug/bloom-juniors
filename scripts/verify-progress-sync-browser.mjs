@@ -11,6 +11,8 @@ async function createDevice() {
   await context.route('**/*', async route => {
     const u = new URL(route.request().url())
     if (u.hostname !== '127.0.0.1') return route.abort()
+    // Exercise the cloud branch without requiring production credentials.
+    if (u.pathname === '/src/lib/supabase.js') return route.fulfill({ contentType: 'text/javascript', body: 'export const isSupabaseConfigured = true; export const supabase = null;' })
     if (u.pathname === '/src/services/cloudStore.js' && !u.search.includes('passthrough')) return route.fulfill({ contentType: 'text/javascript', body: mock })
     if (u.pathname.startsWith('/__sync-review/')) {
       const id = u.pathname.split('/').pop()

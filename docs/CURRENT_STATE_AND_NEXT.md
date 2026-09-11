@@ -5,6 +5,41 @@ Last updated: 2026-09-11
 This is the canonical handoff for the next Bloom Juniors work session. Read this
 before planning or changing the product.
 
+## Continue your discovery - 2026-09-11
+
+User approved checking sign-in, saved progress and the return journey and asked
+whether more is being added. Found a concrete return gap: Little Stars home
+only chose from the picnic path, ignoring unfinished water/shadow experiments.
+SimpleChildHome now selects the most recently updated unfinished activity among
+picnic, basket, sharing, water and shadow. The main card says Continue your
+discovery and shows the saved experiment number for science. It resumes existing
+state without new storage or schema, excludes completed activities, and supports
+intentional replay. Tiny and Junior already have resume actions for their main
+missions. Guest samples remain browser-local and are not imported into accounts.
+
+395/395 unit tests pass. New verify-resume-discovery browser check passes exact
+water/shadow round resume, latest activity, reload, completion removal, fallback
+to another unfinished activity, 200% text layout and single completion record.
+Connected-adventures regression passes. verify-progress-sync-browser now enables
+its test-only cloud branch explicitly rather than depending on a local .env;
+passes actual hook outbox persistence, profile switching, offline reload,
+reconnection and a fresh browser context against an isolated synthetic backend.
+Production build passes with existing bundle-size/Browserslist warnings.
+Deployed https://090387a5.bloom-juniors.pages.dev to bloom-juniors/main.
+Live bloomjuniors.com main-DwyA82C_.js and main/guest/service-worker assets match
+4/4; local fixtures excluded. Public shadow completes all three experiments,
+reloads with one local record and has no runtime errors (voice muted).
+Rollback: https://ecdd0324.bloom-juniors.pages.dev. No auth/backend changes.
+
+Real account sign-in/cross-device cloud save is NOT verified this session.
+Supabase connector twice returned an authorization-accepted/retry message but
+did not expose projects. The user said they logged in, but CUA twice returned
+zero connected browsers/tabs. This laptop has no .env.local or saved test-account
+credentials. Do not confuse user login with agent access, claim synthetic checks
+are live Supabase verification, or copy a real child's progress into test data.
+Next verification needs a connected signed-in browser or dedicated test account.
+Family-pilot observation remains outstanding; no outreach messages were sent.
+
 ## Site-wide design follow-through deployed - 2026-09-11
 
 User reported the old appearance on the public homepage and then clarified

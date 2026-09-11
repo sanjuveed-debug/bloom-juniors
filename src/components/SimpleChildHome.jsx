@@ -6,6 +6,7 @@ import ActivityArtwork from './ActivityArtwork.jsx'
 import YaagviCharacter from './YaagviCharacter.jsx'
 import { useSpeech } from '../hooks/useSpeech.js'
 import './simple-child-home.css'
+import { resumeDiscovery } from '../utils/resumeDiscovery.js'
 
 export const CHILD_ACTIVITIES = [
   { id: 'float-discovery', category: 'Discovery', name: 'Will it float?', symbol: '\u2248', color: 'blue', image: '/yaagvi-secret-world.webp', note: 'Guess. Drop. Discover with Bumi.', prompt: 'Can the same clay sink and float?' },
@@ -31,8 +32,9 @@ export default function SimpleChildHome({ profileName = 'Explorer', nextId = 'ph
   const { speak, stopSpeaking, speaking } = useSpeech()
   const activities = CHILD_ACTIVITIES.filter(item => connected || !COLLECTION_ADVENTURES[item.id])
   const path = getAdventurePath(progress)
-  const next = activities.find(item => item.id === nextId) || activities[0]
-  const resuming = path.find(step => step.id === next.id)?.inProgress || (next.id === 'picnic' && progress.picnic?.updatedAt > 0 && !hasPicnic)
+  const resume = connected ? resumeDiscovery(progress) : null
+  const next = activities.find(item => item.id === (resume?.id || nextId)) || activities[0]
+  const resuming = Boolean(resume) || path.find(step => step.id === next.id)?.inProgress || (next.id === 'picnic' && progress.picnic?.updatedAt > 0 && !hasPicnic)
   const discoveries = activities.filter(item => COLLECTION_ADVENTURES[item.id] ? Boolean(progress.collectionAdventures?.[item.id]?.state?.report) : item.id === 'picnic' ? hasPicnic : sessions.some(session => session.module === item.id && !['picnic-first', 'basket-first', 'snacks-first'].includes(session.activityId)))
   const changeTab = value => { stopSpeaking(); setTab(value); window.scrollTo({ top: 0, behavior: 'instant' }) }
   const launch = (id, guided) => { stopSpeaking(); onLaunch(id, guided) }
@@ -49,9 +51,9 @@ export default function SimpleChildHome({ profileName = 'Explorer', nextId = 'ph
         <section className="child-adventure" aria-label="Your next activity">
           <img className="child-landscape" src="/yaagvi-secret-world.webp" alt=""/>
           <div className="child-mission">
-            <span className="child-kicker">{sessions.length ? 'LET’S KEEP EXPLORING' : 'A GOOD PLACE TO BEGIN'}</span>
+            <span className="child-kicker">{resume ? 'CONTINUE YOUR DISCOVERY' : sessions.length ? 'LET’S KEEP EXPLORING' : 'A GOOD PLACE TO BEGIN'}</span>
             <span className={`child-subject ${next.color}`} aria-hidden="true">{next.symbol}</span>
-            <h2>{next.name}</h2><p>{next.note}</p>
+            <h2>{next.name}</h2><p>{resume?.note || next.note}</p>
             <button className="child-start" onClick={() => launch(next.id, true)}>{resuming ? 'Continue adventure' : next.id === 'picnic' ? 'Play with Bumi' : sessions.length ? 'Continue adventure' : 'Let’s play'} <span aria-hidden="true">→</span></button>
             <button className="child-listen" onClick={() => speaking ? stopSpeaking() : speak(`Hello ${profileName}. Let's try ${next.name}. ${next.note} Tap the big green button to begin.`)}>{speaking ? '■ Stop listening' : '♫ Hear Bumi'}</button>
           </div>
