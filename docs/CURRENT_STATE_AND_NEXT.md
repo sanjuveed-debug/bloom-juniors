@@ -5,6 +5,47 @@ Last updated: 2026-09-11
 This is the canonical handoff for the next Bloom Juniors work session. Read this
 before planning or changing the product.
 
+## Site-wide design follow-through deployed - 2026-09-11
+
+User reported the old appearance on the public homepage and then clarified
+"all the places". The earlier release had changed Explore and lesson controls,
+not the public homepage; this was a scope gap, not a stale custom-domain cache.
+
+Production now uses PublicLanding: "Little discoveries. Growing minds.", Bumi
+on a calm illustrated surface, three direct real sample links (/play,
+/play/float, /play/shadow), age-group explanations and parent/account entry.
+The previous WorldLanding remains available to its existing preview routes.
+No new marketing claims, account requirements or lesson completion rules.
+
+Shared bloom-design.css refreshes all three family home surfaces, library
+cards/navigation, account setup/sign-in, age/profile selectors and ParentZone.
+Parent text is larger and clearer, tabs wrap, and tab transitions fade without
+horizontal overflow. Tiny/Junior ScreenEnter now fades. Little Stars home uses
+a solid layout with Bumi and speech in normal flow, including enlarged text.
+Focused controls are visible; shared navigation uses 48px targets. Age-specific
+colours, game geometry and gameplay remain. This is a shared design-foundation
+pass across the app, not a bespoke redesign or accessibility audit of every
+legacy activity, founder/admin page or static blog article.
+
+Verification: 391/391 unit tests; production build; verify-site-design (public
+mobile/desktop, 320px at 200% root text, signup/sign-in entry, all three homes,
+libraries and parent PIN navigation); design-polish; tiny-picnic;
+market-mission; connected-adventures. Screenshots visually reviewed. Existing
+bundle-size and Browserslist warnings remain. Tests use synthetic local
+profiles; no real family-account authentication/cloud-save or physical-device
+audio testing performed.
+
+Published https://ecdd0324.bloom-juniors.pages.dev to bloom-juniors/main.
+Live bloomjuniors.com main-xhe2ENG1.js; main/guest/service-worker hashes match
+4/4 and local review fixtures are excluded. Live Chrome homepage, sign-in and
+registration entry plus mobile/desktop/enlarged layout checks pass. Live guest
+shadow also passes all three experiments, completion, reload and one locally
+saved session with voice muted and no runtime errors. Rollback:
+https://cbecaad0.bloom-juniors.pages.dev. No backend configuration changes.
+Source remains on feature/design-principles-20260911. GitHub push has not been
+retried: an earlier automatic approval review rejected source export, and the
+subsequent user authorization was specifically for production deployment.
+
 ## Design principles pass deployed - 2026-09-11
 
 User requested implementation after reviewing the Emil Kowalski and Dickwu

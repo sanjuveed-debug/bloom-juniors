@@ -25,7 +25,12 @@ The Bloom Learning Constitution remains the product authority.
   Activity-description text must meet WCAG's 4.5:1 contrast requirement.
 
 Implemented first in Little Stars Explore and the plate, basket/sharing, water
-and shadow lessons. This is not a complete accessibility audit of all modules.
+and shadow lessons. Extended to the public homepage, three family homes,
+library navigation, account/profile entry and parent surfaces in the next
+release. Public activity cards link to real samples. Adult screens use clear
+type and solid surfaces; parent tabs wrap instead of hiding offscreen.
+Keep Bumi speech and content in normal document flow so text can grow.
+This is not a complete accessibility audit of all modules.
 
 References:
 - https://developer.apple.com/design/human-interface-guidelines/design-principles
@@ -39,3 +44,6 @@ Verification: scripts/verify-design-polish.mjs checks unique artwork, compact
 and desktop layouts, 200% root text sizing, description contrast, keyboard focus,
 header target sizes, and off-centre drag anchoring/cancellation. Existing lesson
 and touch-drag scripts verify functional regressions.
+scripts/verify-site-design.mjs checks the actual public homepage, account entry,
+three age-group homes/libraries and parent PIN navigation. Pass a live origin to
+check the deployed homepage and account entry without creating an account.

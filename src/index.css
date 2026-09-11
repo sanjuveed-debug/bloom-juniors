@@ -3,6 +3,7 @@
 @import '@fontsource/nunito/700.css';
 @import '@fontsource/nunito/800.css';
 @import '@fontsource/nunito/900.css';
+@import './bloom-design.css';
 
 /* Inline font-face instead of the package import — the package's 400.css
    references fredoka-one-all-400-normal.woff which doesn't exist in the

@@ -477,9 +477,9 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
   // PIN screen
   if (!unlocked) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6"
+      <div className="bloom-parent min-h-screen flex flex-col items-center justify-center p-6"
         style={{ background: `linear-gradient(160deg, ${theme.bg}, ${theme.card})` }}>
-        <motion.button whileTap={{ scale: 0.9 }} onClick={onBack}
+        <motion.button whileTap={{ scale: 0.9 }} onClick={onBack} aria-label="Back to adventures"
           className="absolute top-12 left-4 w-10 h-10 rounded-full flex items-center justify-center shadow"
           style={{ background: theme.card, color: theme.text }}>←</motion.button>
 
@@ -551,10 +551,10 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
   ]
 
   return (
-    <div className="min-h-screen pb-8" style={{ background: `linear-gradient(160deg, ${theme.bg}, ${theme.card})` }}>
+    <div className="bloom-parent min-h-screen pb-8" style={{ background: `linear-gradient(160deg, ${theme.bg}, ${theme.card})` }}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-safe pb-3">
-        <motion.button whileTap={{ scale: 0.9 }} onClick={onBack}
+        <motion.button whileTap={{ scale: 0.9 }} onClick={onBack} aria-label="Back to adventures"
           className="w-10 h-10 rounded-full flex items-center justify-center shadow"
           style={{ background: theme.card, color: theme.text }}>←</motion.button>
         <h1 className="font-bubble text-2xl shimmer-text">Parent Zone 🔓</h1>
@@ -681,7 +681,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
 
         {/* ── WEEKLY PARENT STORY ── */}
         {tab === 'story' && (
-          <motion.div key="story" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+          <motion.div key="story" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
             <RetentionFeedbackPrompt
               progress={progress}
               onUpdateProgress={onUpdateProgress}
@@ -707,7 +707,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
         )}
 
         {tab === 'foundation' && (
-          <motion.div key="foundation" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+          <motion.div key="foundation" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
             <FoundationSeasonSummary
               progress={progress}
               profileName={profileName || 'Your child'}
@@ -737,7 +737,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
 
         {/* ── ANALYTICS TAB ── */}
         {tab === 'analytics' && (
-          <motion.div key="analytics" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+          <motion.div key="analytics" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}
             className="px-4 flex flex-col gap-4">
 
             {/* Today's Story — human-readable narrative */}
@@ -1206,7 +1206,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
 
         {/* ── PROGRESS TAB ── */}
         {tab === 'map' && (
-          <motion.div key="map" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+          <motion.div key="map" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}
             className="px-4 flex flex-col gap-3">
             {(profileAgeGroup === 'toddler' ? TODDLER_MODULES_INFO
               : profileAgeGroup === 'junior' ? KS2_MODULES_INFO
@@ -1266,7 +1266,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
 
         {/* ── CHALLENGE TAB ── */}
         {tab === 'quiz' && (
-          <motion.div key="quiz" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+          <motion.div key="quiz" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}
             className="px-4">
             <div className="p-4 rounded-3xl shadow mb-4" style={{ background: theme.card }}>
               <p className="font-bubble text-lg mb-1" style={{ color: theme.text }}>🎯 Set Daily Challenge</p>
@@ -1499,7 +1499,7 @@ export default function ParentZone({ avatar, progress, profileId, onBack, onSetC
 
         {/* ── STICKERS TAB ── */}
         {tab === 'stickers' && (
-          <motion.div key="stickers" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+          <motion.div key="stickers" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}
             className="px-4">
             <div className="p-4 rounded-3xl shadow mb-4" style={{ background: theme.card }}>
               <p className="font-bubble text-lg mb-3" style={{ color: theme.text }}>🌟 Give a Sticker</p>

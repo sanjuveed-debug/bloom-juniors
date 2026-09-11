@@ -3,10 +3,10 @@ import { motion } from 'framer-motion'
 import { isValidEmail } from '../utils/guardian'
 import { isSupabaseConfigured } from '../lib/supabase.js'
 
-const TEXT = '#422006'
-const TEXT_MUTED = 'rgba(66,32,6,0.62)'
-const TEXT_FAINT = 'rgba(66,32,6,0.42)'
-const PRIMARY = '#C2410C'
+const TEXT = '#233e35'
+const TEXT_MUTED = '#53645b'
+const TEXT_FAINT = '#596a60'
+const PRIMARY = '#285541'
 const TEAL = '#0F766E'
 const PAGE_BG = 'linear-gradient(160deg, #FFF7ED 0%, #FFEDD5 50%, #FFF7ED 100%)'
 const INPUT_STYLE = { background: '#FFFFFF', border: '1.5px solid rgba(66,32,6,0.16)', color: TEXT }
@@ -136,7 +136,7 @@ export default function GuardianSetup({ onComplete, authError, onLogin, onTeache
   }
 
   if (done) return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: PAGE_BG }}>
+    <div className="bloom-account min-h-screen flex flex-col items-center justify-center px-6" style={{ background: PAGE_BG }}>
       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }}
         className="text-center max-w-sm">
         <div className="text-7xl mb-5">✅</div>
@@ -156,7 +156,7 @@ export default function GuardianSetup({ onComplete, authError, onLogin, onTeache
 
   return (
     <div
-      className="min-h-screen overflow-y-auto px-4 py-8"
+      className="bloom-account min-h-screen overflow-y-auto px-4 py-8"
       style={{ background: PAGE_BG }}
     >
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-xl items-center justify-center">
@@ -170,8 +170,8 @@ export default function GuardianSetup({ onComplete, authError, onLogin, onTeache
             <div className="text-5xl">🛡️</div>
             <h1 className="mt-3 font-bubble text-3xl" style={{ color: TEXT }}>Parent Setup</h1>
             <p className="mt-2 font-round text-sm" style={{ color: TEXT_MUTED }}>
-              Before a child starts playing, a parent or guardian must register.
-              This keeps child progress private and lets support contact the household if needed.
+              Create a parent account to save your child’s progress and choose their starting point.
+              You can try the free sample adventures before registering.
             </p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               {onLogin && (

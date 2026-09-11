@@ -2,10 +2,10 @@ import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { isSupabaseConfigured } from '../lib/supabase.js'
 
-const TEXT = '#422006'
-const TEXT_MUTED = 'rgba(66,32,6,0.62)'
-const TEXT_FAINT = 'rgba(66,32,6,0.42)'
-const PRIMARY = '#C2410C'
+const TEXT = '#233e35'
+const TEXT_MUTED = '#53645b'
+const TEXT_FAINT = '#596a60'
+const PRIMARY = '#285541'
 const BG = 'linear-gradient(160deg, #FFF7ED 0%, #FFEDD5 50%, #FFF7ED 100%)'
 const CARD_STYLE = { background: '#FFFFFF', border: '1px solid rgba(66,32,6,0.10)', boxShadow: '0 8px 30px rgba(66,32,6,0.08)' }
 const INPUT_STYLE = { background: '#FFF7ED', border: '1.5px solid rgba(66,32,6,0.16)', color: TEXT, fontSize: '1rem' }
@@ -121,7 +121,7 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
   if (pinResetMode) {
     return (
       <div
-        className="min-h-screen overflow-y-auto flex flex-col items-center justify-center px-4 py-10"
+        className="bloom-account min-h-screen overflow-y-auto flex flex-col items-center justify-center px-4 py-10"
         style={{ background: BG }}
       >
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
@@ -225,7 +225,7 @@ export default function GuardianLogin({ guardianName, guardianEmail = '', authEr
 
   return (
     <div
-      className="min-h-screen overflow-y-auto flex flex-col items-center justify-center px-4 py-10"
+      className="bloom-account min-h-screen overflow-y-auto flex flex-col items-center justify-center px-4 py-10"
       style={{ background: BG }}
     >
       <motion.div

@@ -1,0 +1,50 @@
+/* Shared navigation and adult surfaces. Game-board geometry stays local. */
+:root{--bloom-paper:#fcfcf7;--bloom-ink:#233e35;--bloom-border:#dce3d8;--bloom-focus:#7e4898}
+body :is(button,a,input,select,textarea):focus-visible{outline:3px solid var(--bloom-focus);outline-offset:4px}
+body :is(.tiny-nav,.market-nav,.child-header){border-bottom:1px solid var(--bloom-border);padding-bottom:18px;flex-wrap:wrap}
+body :is(.tiny-nav,.market-nav,.child-header) button{min-height:48px;border-radius:14px}
+body :is(.tiny-nav,.market-nav) button:active{background:#e5eddf}
+body .tiny-page,body .market-page,body .child-home{background:var(--bloom-paper)}
+body :is(.tiny-page,.market-page,.child-home) :is(h1,h2,p,button){overflow-wrap:anywhere}
+body :is(.tiny-bottom,.tiny-nav,.market-nav,.market-home-links,.child-greeting)>*{min-width:0}
+body :is(.tiny-nav,.market-nav)>div{flex-wrap:wrap}
+body .tiny-brand span,body .market-nav strong span{font-size:.75rem;letter-spacing:.08em}
+body :is(.tiny-eyebrow,.market-kicker){font-size:.75rem;letter-spacing:.1em}
+body .tiny-home{background:#f0f4e8;border:1px solid var(--bloom-border);border-radius:28px;margin-top:26px;padding:30px 20px 24px}
+body .tiny-home-scene{border-radius:28px;margin-block:24px;background:linear-gradient(#e1ead6 65%,#c5d8b4 65%)}
+body .tiny-home h2{font-size:1.875rem}body .tiny-home p{font-size:1.125rem;line-height:1.6}body .tiny-home .tiny-eyebrow{font-size:.75rem}
+body .tiny-primary{border-bottom-width:2px;border-radius:18px;box-shadow:none;min-width:min(240px,100%);max-width:100%}
+body .tiny-bottom{max-width:none;margin-top:20px;gap:18px}body .tiny-bottom button{border-radius:20px;background:#fff;min-height:96px;display:flex;align-items:center;justify-content:center;gap:16px;padding:18px;font-size:1.125rem}body .tiny-bottom span{color:#44643c}
+body .market-home h1{font-size:clamp(2rem,4vw,3rem);letter-spacing:-.04em}body .market-home-copy h2{font-size:clamp(2rem,4vw,3rem)}
+body .market-mission-card{border-radius:28px;box-shadow:none;background:#fff}body .market-stall{background:#e5ecde}body .market-tags{flex-wrap:wrap}body .market-tags span{font-size:.875rem}
+body .market-home-links{gap:18px}body .market-home-links button{flex:1;border:1px solid var(--bloom-border);background:#f1f4ec;border-radius:18px;min-height:80px;text-align:left;padding:18px 22px;font-size:1rem}
+body .market-primary{border-bottom-width:2px;border-radius:14px}body .market-note{font-size:.875rem!important}body .market-quantity button{min-width:48px;min-height:48px}
+body .child-home .child-adventure{background:#e5ecdc;border:1px solid var(--bloom-border);box-shadow:none;border-radius:28px}
+body .child-home .child-landscape{display:none}body .child-home .child-mission{background:#fff;border:1px solid var(--bloom-border);box-shadow:none;border-radius:22px}
+body .child-home :is(.child-subtitle,.child-below,.child-footnote){color:#52634f;font-size:1rem;line-height:1.6}body .child-home .child-start{box-shadow:none;transform:none}body .child-home .child-start:active{background:#193e2e}
+body .child-home .child-activity:hover{transform:none}body .child-home .child-greeting h1{font-family:'Nunito',sans-serif;font-weight:900;letter-spacing:-.035em}
+body .child-home .child-adventure{display:grid;grid-template-columns:1fr 1fr;align-items:center;min-height:0;padding:26px;gap:26px}
+body .child-home .child-mission{position:relative;width:auto;margin:0;padding:28px}
+body .child-home .child-guide{position:relative;top:auto;right:auto;bottom:auto;width:100%;max-width:280px;height:auto;justify-self:center;margin:0;display:flex;flex-direction:column;align-items:center;gap:12px}
+body .child-home .child-speech{position:static;transform:none;width:100%;font-size:1rem;line-height:1.4;border-radius:16px;padding:10px 14px}
+body .child-home .child-bumi-hello{height:240px;width:240px;max-width:100%}
+body :is(.bloom-account,.bloom-parent){background:var(--bloom-paper)!important;color:var(--bloom-ink)}
+body .bloom-parent{max-width:1000px;margin-inline:auto;padding-top:20px}body:has(.bloom-parent){background:var(--bloom-paper)}
+body :is(.bloom-account,.bloom-parent) .font-bubble{font-family:'Nunito',sans-serif;font-weight:800;letter-spacing:-.025em}
+body :is(.bloom-account,.bloom-parent) .shimmer-text{background:none;-webkit-text-fill-color:currentColor;color:var(--bloom-ink);animation:none}
+body :is(.bloom-account,.bloom-parent) :is(.text-xs,.text-\[10px\],.text-\[11px\]){font-size:.875rem;line-height:1.5}
+body :is(.bloom-account,.bloom-parent) :is(button,input,select){min-height:48px}
+body :is(.bloom-account,.bloom-parent) button{white-space:normal}
+body :is(.bloom-account,.bloom-parent) :is(.shadow-lg,.shadow-xl,.shadow-2xl){box-shadow:0 4px 18px #233e350a;border:1px solid var(--bloom-border)}
+body .bloom-account>.fixed.pointer-events-none{display:none}
+body .bloom-parent>div:first-child{flex-wrap:wrap;gap:12px;padding-bottom:24px}
+body .bloom-parent>div:first-child button{min-width:48px}
+body .bloom-parent>.overflow-x-auto{flex-wrap:wrap;overflow:visible;gap:8px}
+body .bloom-parent :is(.opacity-50,.opacity-60,.opacity-65,.opacity-70){opacity:1}
+body [data-testid^="adventure-home-"]{padding-top:24px}body [data-testid^="adventure-home-"]>div{border-radius:24px;box-shadow:none}
+body [data-testid^="adventure-home-"] :is(.text-xs,.text-\[10px\],.text-\[11px\]){font-size:.875rem;line-height:1.5}
+body [data-testid^="adventure-home-"] button{min-height:48px;border-radius:16px}
+@media(max-width:600px){body .tiny-shell,body .market-shell{padding-inline:18px}body .tiny-home{padding-inline:14px}body .tiny-home-scene{height:240px}body .tiny-home-scene .tiny-companion{width:160px}body .tiny-home-scene .tiny-still-life{width:150px}body .tiny-bottom{gap:12px}body .tiny-bottom button{padding:14px;flex-direction:column;gap:4px}body .market-home-links{flex-direction:column;gap:12px}body .market-home-links button{min-height:64px}body .child-home .child-mission{margin:16px}body .bloom-parent{padding-top:10px}body .bloom-parent input{min-width:0;max-width:100%}}
+@media(max-width:850px){body .child-home .child-adventure{grid-template-columns:1fr;padding:18px;gap:16px}body .child-home .child-guide{grid-row:1;max-width:240px}body .child-home .child-bumi-hello{height:180px;width:180px}body .child-home .child-mission{margin:0;width:100%;padding:22px}}
+@media(prefers-reduced-motion:reduce){body *,body *:before,body *:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+@media(prefers-contrast:more){body :is(.tiny-nav,.market-nav,.child-header,.tiny-bottom,.market-home-links) button{border:2px solid currentColor}body :is(.bloom-account,.bloom-parent) input{border:2px solid currentColor}}

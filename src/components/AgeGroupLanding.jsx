@@ -78,7 +78,7 @@ export default function AgeGroupLanding({ onSelect, onLogout, profiles = [], adm
 
   return (
     <div
-      className="min-h-screen overflow-y-auto"
+      className="bloom-account min-h-screen overflow-y-auto"
       style={{ background: 'linear-gradient(160deg, #FFF7ED 0%, #FFEDD5 50%, #FFF7ED 100%)' }}
     >
       {Array.from({ length: 10 }).map((_, i) => (
