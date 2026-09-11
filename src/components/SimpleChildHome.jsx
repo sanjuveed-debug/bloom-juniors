@@ -2,6 +2,7 @@ import { COLLECTION_ADVENTURES, getAdventurePath } from '../utils/collectionAdve
 import '../modules/collection-adventure.css'
 import React, { useState } from 'react'
 import BloomLogo from './BloomLogo.jsx'
+import ActivityArtwork from './ActivityArtwork.jsx'
 import YaagviCharacter from './YaagviCharacter.jsx'
 import { useSpeech } from '../hooks/useSpeech.js'
 import './simple-child-home.css'
@@ -63,7 +64,7 @@ export default function SimpleChildHome({ profileName = 'Explorer', nextId = 'ph
         <div className="child-greeting"><div><p className="child-eyebrow">FOLLOW YOUR CURIOSITY</p><h1>What shall we try?</h1><p className="child-subtitle">Pick a picture. Let’s see what happens.</p></div></div>
         {onMoreActivities && <button className="child-parent" onClick={onMoreActivities}>All Bloom activities ↗</button>}
         <div className="child-filters" aria-label="Activity categories">{['All', 'Sounds', 'Numbers', 'Stories', 'Discovery'].map(value => <button key={value} aria-pressed={category === value} onClick={() => setCategory(value)}>{value}</button>)}</div>
-        <div className="child-library">{activities.filter(item => category === 'All' || item.category === category).map(item => <button key={item.id} className={`child-activity ${item.color}`} onClick={() => launch(item.id, false)}><div className="child-tile-art"><img src={item.image} alt="" loading="lazy"/><span>{item.symbol}</span></div><div className="child-tile-label"><p>{item.category}</p><h2>{item.name}</h2><span>{item.note}</span><b aria-hidden="true">↗</b></div></button>)}</div>
+        <div className="child-library">{activities.filter(item => category === 'All' || item.category === category).map(item => <button key={item.id} className={`child-activity ${item.color}`} onClick={() => launch(item.id, false)}><div className="child-tile-art"><ActivityArtwork id={item.id}/></div><div className="child-tile-label"><p>{item.category}</p><h2>{item.name}</h2><span>{item.note}</span><b aria-hidden="true">↗</b></div></button>)}</div>
       </>}
       {tab === 'discoveries' && <>
         <div className="child-greeting"><div><p className="child-eyebrow">THINGS WE’VE EXPLORED</p><h1>My discoveries</h1><p className="child-subtitle">Little moments worth remembering.</p></div></div>

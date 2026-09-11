@@ -1,4 +1,4 @@
-import ActivityVoiceControls from '../components/ActivityVoiceControls.jsx'
+import LessonHeader from '../components/LessonHeader.jsx'
 import { useActivityNarration } from '../hooks/useActivityNarration.js'
 import AdventureFinishChoices from '../components/AdventureFinishChoices.jsx'
 import { usePlayDrag } from '../hooks/usePlayDrag.js'
@@ -13,7 +13,7 @@ import MeetBumi from '../components/MeetBumi'
 const artCells = { Pip: 0, Wren: 1, Momo: 2, Bo: 3, plate: 4, basket: 5 }
 function Art({ name, className = '' }) {
   const cell = artCells[name]
-  return <span aria-hidden="true" className={`picnic-art ${className}`} style={{ backgroundPosition: `${cell % 3 * 50}% ${Math.floor(cell / 3) * 100}%` }} />
+  return <span aria-hidden="true" data-drag-art className={`picnic-art ${className}`} style={{ backgroundPosition: `${cell % 3 * 50}% ${Math.floor(cell / 3) * 100}%` }} />
 }
 function load() {
   try { return restorePicnic(localStorage.getItem(PICNIC_STORAGE_KEY)) } catch { return newPicnic() }
@@ -97,10 +97,10 @@ export default function PicnicAdventure({ currentState, onAction, onBack, onNext
 
 
   return <main className="picnic-app">
-    <header className="picnic-header">{onBack ? <button className="picnic-brand" onClick={onBack} aria-label="Back to home">bloom<span>juniors</span></button> : <a href="https://child-home-preview.bloom-juniors.pages.dev" className="picnic-brand">bloom<span>juniors</span></a>}<span className="picnic-chapter">YAAGVI'S ADVENTURES <span>/ THE PICNIC</span></span><button onClick={() => setRecap(true)} className="picnic-quiet">For grown-ups ↗</button></header>
+    <LessonHeader onBack={onBack || (() => { window.location.href = "/" })} voice={voice}/><button onClick={() => setRecap(true)} className="picnic-quiet">For grown-ups</button>
     <section className="picnic-world">
       <div className="picnic-topline"><span>THE WILLOW CLEARING</span><span>{state.practice ? 'Play again' : complete ? 'Adventure complete' : `${state.round + 1} of 2 little moments`}</span></div>
-      <div className="picnic-title"><div><p className="picnic-eyebrow">{complete ? 'TAKE THE IDEA WITH YOU' : celebrating ? 'LOOK WHAT YOU MADE HAPPEN' : 'THE PICNIC'}</p><h1 ref={heading} tabIndex={-1}>{complete ? 'A place for everyone.' : celebrating ? 'You brought us together!' : round.title}</h1><p>{complete ? 'One friend. One plate. You can do this at home, too.' : celebrating ? 'A little care makes room for every friend.' : round.prompt}</p></div><ActivityVoiceControls voice={voice} /></div>
+      <div className="picnic-title"><div><p className="picnic-eyebrow">{complete ? 'TAKE THE IDEA WITH YOU' : celebrating ? 'LOOK WHAT YOU MADE HAPPEN' : 'THE PICNIC'}</p><h1 ref={heading} tabIndex={-1}>{complete ? 'A place for everyone.' : celebrating ? 'You brought us together!' : round.title}</h1><p>{complete ? 'One friend. One plate. You can do this at home, too.' : celebrating ? 'A little care makes room for every friend.' : round.prompt}</p></div></div>
       {complete ? <div className="picnic-finish"><div className="picnic-finish-friends">{['Pip', 'Wren', 'Momo', 'Bo'].map(name => <Art name={name} key={name} />)}</div><p className="picnic-eyebrow">YOUR NEXT ADVENTURE IS AT HOME</p><h2>Who’s coming to dinner?</h2><p>Find a spoon for each person.<br />Check together: does everyone have one?</p><YaagviCharacter size={130} state="celebrate" autoIdle={1600}/><AdventureFinishChoices nextLabel="Next: Pack the Basket →" onContinue={onNext} onFinish={onBack} onReplay={() => dispatch({type:'REPLAY'})}/><div className="picnic-finish-actions"><button className="picnic-secondary" onClick={() => setRecap(true)}>See our picnic recap ↗</button></div></div> : <div className="picnic-play-layout">
         <div className={`picnic-blanket ${celebrating ? 'is-celebrating' : ''}`} ref={board} role="group" aria-label="Picnic places">
           {round.guests.map((name, i) => <div key={`${state.round}-${i}`} data-play-drop={i} data-drop-active={dragPlay.over === String(i) ? 'true' : undefined} className={`picnic-seat ${!name ? 'is-spare' : ''} ${hint === i ? 'is-hint' : ''} ${feedback?.missing?.includes(i) || feedback?.extra?.includes(i) ? 'needs-look' : ''}`}>
@@ -119,7 +119,7 @@ export default function PicnicAdventure({ currentState, onAction, onBack, onNext
       <footer className="picnic-footer"><span>No hurry. There’s time to work it out.</span><span>{connected ? 'Progress follows this child profile' : saved ? 'Saved in this browser' : 'Saving unavailable — keep this tab open'}</span></footer>
     </section>
     <p className="picnic-preview-note">The Picnic · {connected ? 'A learning adventure' : 'playable preview'} · ages 4–6</p>
-    {ghost && <div className="picnic-drag-ghost" style={{ left: ghost.x, top: ghost.y }}><Art name="plate" /></div>}
+    {ghost && <div className="picnic-drag-ghost" style={ghost.style}><Art name="plate" /></div>}
     {recap && <Recap connected={connected} report={state.report} close={() => setRecap(false)} />}
   </main>
 }

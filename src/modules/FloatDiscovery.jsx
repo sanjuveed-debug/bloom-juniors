@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import BumiCharacter from '../components/BumiCharacter.jsx'
-import ActivityVoiceControls from '../components/ActivityVoiceControls.jsx'
+import LessonHeader from '../components/LessonHeader.jsx'
 import AdventureFinishChoices from '../components/AdventureFinishChoices.jsx'
 import { useSpeech } from '../hooks/useSpeech.js'
 import { useActivityNarration } from '../hooks/useActivityNarration.js'
@@ -9,7 +9,7 @@ import { usePlayDrag } from '../hooks/usePlayDrag.js'
 import { FLOAT_OBJECTS, normalizeFloatDiscovery, applyFloatDiscovery } from '../utils/floatDiscovery.js'
 import './float-discovery.css'
 
-function ObjectArt({ id }) { return <span aria-hidden="true" className={`float-object float-object-${id}`}><i/><b/></span> }
+function ObjectArt({ id }) { return <span aria-hidden="true" data-drag-art className={`float-object float-object-${id}`}><i/><b/></span> }
 const HOME_PROMPT = 'With a grown-up, try a cork and a large stone in a shallow bowl of water. Guess first, then test. Ask: what changed when we made the clay into a boat?'
 
 export default function FloatDiscovery({ progress = {}, update, onBack, onNext, guest = false }) {
@@ -36,7 +36,7 @@ export default function FloatDiscovery({ progress = {}, update, onBack, onNext, 
   const voice = useActivityNarration({ ...speech, cue: `${state.round}-${state.phase}-${settled}`, text: narration })
   const next = () => { setSelected(false); dispatch({ type: 'NEXT' }) }
   return <main className="float-page">
-    <header className="float-header"><button onClick={onBack} aria-label="Back to adventures">&#8592; Adventures</button><span>DISCOVER WITH BUMI</span><ActivityVoiceControls voice={voice}/></header>
+    <LessonHeader onBack={onBack} voice={voice}/>
     <section className="float-lab">
       <div className="float-heading"><p>THE LITTLE WATER LAB <span>AGES 4–6</span></p><h1>{complete ? 'A little shape. A big discovery.' : 'Will it float?'}</h1><div className="float-progress" aria-label={`${complete ? 4 : state.round + 1} of 4 experiments`}>{FLOAT_OBJECTS.map((o,i) => <span key={o.id} className={i <= state.round ? 'is-current' : ''}>{i+1}</span>)}</div></div>
       {complete ? <div className="float-finish"><BumiCharacter size={150} state="celebrate" autoIdle={1800} talking={speech.speaking}/><h2>You guessed. You tested. You noticed.</h2><div className="float-journal">{FLOAT_OBJECTS.map(o => <div key={o.id}><ObjectArt id={o.id}/><strong>{o.label}</strong><span>{o.floats ? 'Floated on top' : 'Sank down'}</span></div>)}</div><p>Water pushes up on things. The same clay can sink as a ball and float as a hollow boat.</p><div className="float-home"><strong>Try a little water wonder at home</strong><p>{HOME_PROMPT}</p></div><p className="float-small">{guest ? 'This discovery is saved in this browser.' : 'Your first set of observations is saved with this child profile.'} This visit records exploration, not mastery.</p><AdventureFinishChoices nextLabel="Change a shadow with Bumi" onContinue={onNext} onFinish={onBack} onReplay={()=>dispatch({type:'REPLAY'})}/><details><summary>For grown-ups: the science</summary><p>These are four illustrated examples, not a physics simulator. Floating depends on an object’s overall density and the water it displaces. The hollow clay boat shown stays upright and keeps water out; flooding or changing the shape may make it sink.</p><a href="https://www.teachengineering.org/activities/duk_boat_mary_act" target="_blank" rel="noreferrer">Science background: TeachEngineering</a></details></div>
@@ -58,6 +58,6 @@ export default function FloatDiscovery({ progress = {}, update, onBack, onNext, 
         </div>
       </>}
     </section>
-    {drag.ghost && <div className="float-drag-ghost" style={{left:drag.ghost.x,top:drag.ghost.y}}><ObjectArt id={item.id}/></div>}
+    {drag.ghost && <div className="float-drag-ghost" style={drag.ghost.style}><ObjectArt id={item.id}/></div>}
   </main>
 }

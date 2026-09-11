@@ -24,14 +24,16 @@ export function usePlayDrag({enabled=true,onDrop,scope}) {
   onPointerDown:e=>{
    if(!latest.current.enabled||e.button!==0||!e.isPrimary||drag.current)return
    suppress.current=false
-   drag.current={payload,startX:e.clientX,startY:e.clientY,x:e.clientX,y:e.clientY,pointerId:e.pointerId,moved:false}
+   const art=e.currentTarget.querySelector('[data-drag-art]')||e.currentTarget
+   const rect=art.getBoundingClientRect()
+   drag.current={payload,startX:e.clientX,startY:e.clientY,x:e.clientX,y:e.clientY,pointerId:e.pointerId,moved:false,offsetX:e.clientX-rect.left,offsetY:e.clientY-rect.top,width:rect.width,height:rect.height}
    e.currentTarget.setPointerCapture(e.pointerId)
   },
   onPointerMove:e=>{
    const d=drag.current;if(!d||d.pointerId!==e.pointerId)return
    d.x=e.clientX;d.y=e.clientY
    if(!d.moved&&Math.hypot(d.x-d.startX,d.y-d.startY)>8){d.moved=true;frame.current=requestAnimationFrame(tick)}
-   if(d.moved){e.preventDefault();setGhost({x:d.x,y:d.y,payload:d.payload})}
+   if(d.moved){e.preventDefault();setGhost({x:d.x,y:d.y,payload:d.payload,style:{left:d.x-d.offsetX,top:d.y-d.offsetY,width:d.width,height:d.height}})}
   },
   onPointerUp:e=>{
    const d=drag.current;if(!d||d.pointerId!==e.pointerId)return

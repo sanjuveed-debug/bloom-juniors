@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import BumiCharacter from '../components/BumiCharacter.jsx'
-import ActivityVoiceControls from '../components/ActivityVoiceControls.jsx'
+import LessonHeader from '../components/LessonHeader.jsx'
 import AdventureFinishChoices from '../components/AdventureFinishChoices.jsx'
 import { useSpeech } from '../hooks/useSpeech.js'
 import { useActivityNarration } from '../hooks/useActivityNarration.js'
@@ -32,7 +32,7 @@ export default function ShadowDiscovery({ progress = {}, update, onBack, guest =
   const cue=complete ? 'You changed a shadow! Light travels from the torch. The card blocks some of it. Move the torch and look again, or finish for now.' : state.phase==='predict' ? `${item.question} ${item.choices.join(', or ')}? Every guess is worth testing.` : state.phase==='test' ? item.id==='off' ? 'Tap the switch to turn off the torch. Watch the wall.' : `Slide the torch all the way ${item.id==='closer' ? 'towards the card' : 'away from the card'}. Or tap ${item.action}. The card stays still.` : item.explanation
   const voice=useActivityNarration({...speech,cue:`${state.round}-${state.phase}`,text:cue})
   return <main className="shadow-page">
-    <header className="shadow-header"><button onClick={onBack}>← Adventures</button><span>DISCOVER WITH BUMI</span><ActivityVoiceControls voice={voice}/></header>
+    <LessonHeader onBack={onBack} voice={voice}/>
     <section className="shadow-lab">
       <div className="shadow-title"><p>THE LITTLE LIGHT THEATRE · AGES 4–6</p><h1>{complete ? 'Small torch. Big discovery.' : 'How can we change a shadow?'}</h1><p>{complete ? 'Your shadow journal' : `Experiment ${state.round+1} of 3 · ${state.phase==='predict' ? 'Make a prediction' : state.phase==='test' ? 'Try it yourself' : 'Look what changed'}`}</p></div>
       <div className="shadow-guide"><BumiCharacter size={110} state={state.phase==='observe'||complete ? 'nod' : 'think'} talking={speech.speaking}/><p role="status">{cue}</p></div>

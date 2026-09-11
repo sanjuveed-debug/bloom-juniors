@@ -43,7 +43,7 @@ try {
   await b('Let’s check together ✓').click();await b('Take the idea home →').click()
   await b('Play again').click()
   await expect(page.getByRole('heading',{name:'One for each friend'})).toBeVisible()
-  await b('← My adventures').click();await b('My discoveries').click()
+  await b('Back to adventures').click();await b('My discoveries').click()
   await expect(page.getByRole('heading',{name:'Pack the Basket',exact:true})).toBeVisible()
   await expect(page.getByRole('heading',{name:'Share the Snacks',exact:true})).toBeVisible()
   await b('Parents').click()

@@ -1,4 +1,4 @@
-import ActivityVoiceControls from '../components/ActivityVoiceControls.jsx'
+import LessonHeader from '../components/LessonHeader.jsx'
 import { useActivityNarration } from '../hooks/useActivityNarration.js'
 import AdventureFinishChoices from '../components/AdventureFinishChoices.jsx'
 import { usePlayDrag } from '../hooks/usePlayDrag.js'
@@ -8,7 +8,7 @@ import { useSpeech } from '../hooks/useSpeech.js'
 import { COLLECTION_ADVENTURES, normalizeCollection, applyCollectionAction, checkCollection } from '../utils/collectionAdventure.js'
 import './collection-adventure.css'
 
-function Fruit({ pear = false }) { return <span aria-hidden="true" className={`collection-fruit ${pear ? 'is-pear' : ''}`} /> }
+function Fruit({ pear = false }) { return <span aria-hidden="true" data-drag-art className={`collection-fruit ${pear ? 'is-pear' : ''}`} /> }
 function Friend({ name }) {
   const i = ['Pip', 'Wren', 'Momo', 'Bo'].indexOf(name)
   return <span aria-hidden="true" className="collection-friend" style={{ backgroundPosition: `${i % 3 * 50}% ${Math.floor(i / 3) * 100}%` }} />
@@ -51,7 +51,7 @@ export default function CollectionAdventure({ id, progress, update, onBack, onNe
   useEffect(() => { setDemonstrating(false); setSelectedFruit(null); setPlacement(null); drag.cancel(); stopSpeaking() }, [id, state.round, state.phase, stopSpeaking])
   const voice = useActivityNarration({ cue: `${id}-${state.round}-${state.phase}-${state.attempts}-${state.feedback}-${demonstrating}`, text: spokenInstruction, speak, stopSpeaking, primeSpeech })
   return <main className="collection-page">
-    <header className="collection-header"><button onClick={onBack}>← My adventures</button><span>YAAGVI’S ADVENTURES</span><ActivityVoiceControls voice={voice} /></header>
+    <LessonHeader onBack={onBack} voice={voice}/>
     <section ref={scene} className={`collection-scene ${success ? 'collection-success' : ''}`}>
       <div className="collection-heading"><p>THE WILLOW CLEARING · {complete ? 'DISCOVERED' : `${state.round + 1} OF 2`}</p><h1>{complete ? config.title : round.title}</h1><p>{complete ? config.idea : round.instruction}</p></div>
       <aside className="collection-guide"><button aria-label="Say hello to Bumi" onClick={() => setGreeting(n => n + 1)}><YaagviCharacter size={115} attentionTarget={drag.ghost ? { x: drag.ghost.x, y: drag.ghost.y } : null} state={reaction} reactionKey={`${state.round}-${state.attempts}-${state.feedback}-${demonstrating}-${greeting}-${placement?.key}`} talking={speaking} /></button><p role="status" aria-live="polite">{message}</p></aside>
@@ -75,6 +75,6 @@ export default function CollectionAdventure({ id, progress, update, onBack, onNe
       </>}
       <footer>{guest ? 'Take your time. This sample stays in this browser.' : 'Your adventure belongs to this child profile.'}</footer>
     </section>
-    {drag.ghost && <div className="collection-drag-ghost" style={{left:drag.ghost.x,top:drag.ghost.y}}><Fruit pear={drag.ghost.payload===1}/></div>}
+    {drag.ghost && <div className="collection-drag-ghost" style={drag.ghost.style}><Fruit pear={drag.ghost.payload===1}/></div>}
   </main>
 }

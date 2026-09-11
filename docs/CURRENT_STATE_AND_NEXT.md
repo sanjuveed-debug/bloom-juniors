@@ -1,9 +1,42 @@
 # Bloom Juniors: Current State and Next
 
-Last updated: 2026-09-10
+Last updated: 2026-09-11
 
 This is the canonical handoff for the next Bloom Juniors work session. Read this
 before planning or changing the product.
+
+## Design principles pass deployed - 2026-09-11
+
+User requested implementation after reviewing the Emil Kowalski and Dickwu
+apple-design guides against Apple/WCAG guidance. Applied the selected principles
+to Bloom's existing visual identity; no third-party skill installation or native
+Apple compliance claim. Future rules are in docs/DESIGN_PRINCIPLES.md.
+
+Little Stars Explore now has ten subject-specific vector illustrations instead
+of reused scenery, aligned card artwork and larger/darker descriptions. Shared
+LessonHeader gives plate picnic, basket/sharing, water and shadow the same Back,
+Hear again and voice control order with 48px targets and keyboard focus. Screen
+transitions use short fades instead of full-screen spring zoom. Drag previews
+retain the original art size and grab offset; pointer hit testing, cancel, tap
+and keyboard alternatives remain. Added pressed feedback, reduced-transparency/
+increased-contrast treatments, and mobile water layout that grows with text.
+
+391/391 unit tests pass. verify-design-polish passed 320px, 390px and desktop,
+200% root text sizing in tested views, card-description contrast >=4.5:1,
+keyboard focus, header sizes and off-centre drag/cancel. Browser regressions
+passed: connected-adventures, activity-voice, play-drag, guest-drag,
+float-discovery and shadow-discovery. Mobile/desktop and enlarged-text screenshots
+visually reviewed. Production build passes with existing bundle/Browserslist
+warnings. These are synthetic browser checks, not a whole-app accessibility audit
+or physical-device sound/touch/cloud-save verification.
+
+Deployed https://cbecaad0.bloom-juniors.pages.dev to bloom-juniors/main.
+Live bloomjuniors.com main-DY674YTn.js and main/guest/service-worker hashes match
+4/4; local review HTML excluded. Live guest shadow flow completed all three
+experiments and reload with one saved record, no runtime errors (voice muted).
+Rollback: https://d33f5626.bloom-juniors.pages.dev. Cloudflare OAuth refreshed via
+Wrangler automatically. Source branch: feature/design-principles-20260911.
+Private configuration remains ignored. Local preview running at 127.0.0.1:5173.
 
 ## Shadow discovery shipped - 2026-09-10
 

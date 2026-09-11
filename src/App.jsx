@@ -136,9 +136,9 @@ function Screen({ id, current, children, onMap, progress, onUpdateProgress }) {
       {current === id && (
         <motion.div
           key={id}
-          initial={{ opacity: 0, scale: 0.94, y: 18 }}
-          animate={{ opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 24, mass: 0.9 } }}
-          exit={{ opacity: 0, scale: 1.02, y: -10, transition: { duration: 0.15, ease: 'easeIn' } }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, transition: { duration: 0.12 } }}
+          exit={{ opacity: 0, transition: { duration: 0.08 } }}
           className="relative z-10 min-h-screen"
         >
           {GAME_SCREENS.includes(id) && !['float-discovery','shadow-discovery'].includes(id) && !ADVENTURE_PATH.includes(id)

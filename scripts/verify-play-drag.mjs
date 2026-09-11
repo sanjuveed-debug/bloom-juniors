@@ -12,7 +12,7 @@ try{
  await expect(b("Remove plate from Pip's place")).toBeVisible()
  await mouseDrag(b("Remove plate from Pip's place"),b("Place plate at Wren's place"))
  await expect(b("Place plate at Pip's place")).toBeVisible();await expect(b("Remove plate from Wren's place")).toBeVisible()
- await b('Back to home').click()
+ await b('Back to adventures').click()
  await page.getByRole('navigation',{name:'Your picnic adventure path'}).getByRole('button',{name:/Pack the Basket/}).click()
  const apples=page.getByRole('region',{name:'apples in our basket'}),pears=page.getByRole('region',{name:'pears in our basket'})
  await mouseDrag(b('Take a pear'),apples.locator('.collection-answer'));await expect(apples.locator('.collection-controls>span')).toHaveText('0')
