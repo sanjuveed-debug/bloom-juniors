@@ -2,12 +2,14 @@ import React, { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import BloomLogo from '../components/BloomLogo'
 import SchoolEnquiryForm from '../components/SchoolEnquiryForm'
+import SchoolDiscoveryKit from '../components/SchoolDiscoveryKit'
+import ActivityArtwork from '../components/ActivityArtwork'
 import { trackEvent, trackEventOnce } from '../utils/analytics.js'
 
 const INK = '#193251'
 const MUTED = '#66758A'
-const PURPLE = '#6C4CF1'
-const PURPLE_DARK = '#5032CF'
+const PURPLE = '#376348'
+const PURPLE_DARK = '#294d38'
 const PINK = '#FF6FA8'
 const MINT = '#2F9F7F'
 const LINE = 'rgba(25,50,81,0.12)'
@@ -26,7 +28,7 @@ const CURRICULUM = [
   {
     stage: 'Reception & KS1',
     ages: 'Ages 4-6',
-    focus: 'RWI phonics, tricky words, early maths and stories',
+    focus: 'Phonics, tricky words, early maths and stories',
     color: MINT,
   },
   {
@@ -39,93 +41,23 @@ const CURRICULUM = [
 
 const SAFETY = [
   'No child email addresses or passwords',
-  'No advertising, messaging or external links',
+  'No advertising or child-to-child messaging',
   'Class codes only reveal the correct roster',
-  'GDPR-conscious data and school-scoped reporting',
+  'Read our privacy policy before adding pupil information',
   'Works in a browser on tablets, Chromebooks and PCs',
   'Teacher-controlled lesson and session length',
 ]
 
 function ClassroomPreview() {
-  const pupils = [
-    ['Amara', 'Complete', '#2F9F7F'],
-    ['Ben', 'Learning', '#6C4CF1'],
-    ['Chloe', 'Complete', '#2F9F7F'],
-    ['David', 'Not started', '#98A4B4'],
-  ]
-
-  return (
-    <div className="relative mx-auto w-full max-w-[540px]">
-      <div className="overflow-hidden rounded-lg border border-white/15 bg-[#12243D] shadow-2xl">
-        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-          <div>
-            <p className="font-round text-[9px] font-extrabold uppercase tracking-widest text-[#72E0B9]">Reception Blue</p>
-            <p className="font-bubble text-base text-white">Today's classroom</p>
-          </div>
-          <span className="rounded-md bg-white/10 px-2 py-1 font-round text-[10px] font-bold text-white/70">26 pupils</span>
-        </div>
-
-        <div className="grid gap-3 p-4 sm:grid-cols-[0.82fr_1.18fr]">
-          <div className="rounded-lg bg-white/7 p-3">
-            <p className="font-round text-[9px] font-extrabold uppercase tracking-widest text-white/45">Lesson set</p>
-            <div className="mt-3 space-y-2">
-              {[
-                ['Phonics', 'Set 2 sounds'],
-                ['Maths', 'Number bonds'],
-              ].map(([subject, detail]) => (
-                <div key={subject} className="rounded-md border border-white/10 bg-white/5 p-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-bubble text-xs text-white">{subject}</p>
-                    <span className="text-xs text-[#72E0B9]">OK</span>
-                  </div>
-                  <p className="mt-0.5 font-round text-[10px] text-white/45">{detail}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 rounded-md bg-[#6C4CF1] px-3 py-2 text-center font-bubble text-xs text-white">
-              Edit lesson
-            </div>
-          </div>
-
-          <div>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                ['21', 'Complete'],
-                ['3', 'Learning'],
-                ['2', 'Waiting'],
-              ].map(([value, label]) => (
-                <div key={label} className="rounded-md bg-white/7 p-2 text-center">
-                  <p className="font-bubble text-lg text-white">{value}</p>
-                  <p className="font-round text-[9px] text-white/45">{label}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-2 space-y-1.5">
-              {pupils.map(([name, status, color]) => (
-                <div key={name} className="flex items-center gap-2 rounded-md bg-white/5 px-2.5 py-2">
-                  <span className="grid h-6 w-6 place-items-center rounded-full font-round text-[10px] font-black text-white" style={{ background: color }}>
-                    {name[0]}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate font-round text-xs font-bold text-white">{name}</span>
-                  <span className="font-round text-[9px] font-bold" style={{ color }}>{status}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="absolute -bottom-5 right-3 rounded-lg border border-[#BFE9DA] bg-white px-4 py-3 shadow-xl sm:-right-5"
-      >
-        <p className="font-round text-[9px] font-extrabold uppercase tracking-widest text-[#2F9F7F]">Live progress</p>
-        <p className="mt-0.5 font-bubble text-sm" style={{ color: INK }}>Every pupil, one view</p>
-      </motion.div>
+  return <a href="#discovery-kit" className="block overflow-hidden rounded-3xl bg-[#f5f4eb] text-[#243e35] shadow-xl">
+    <ActivityArtwork id="shadow-discovery" />
+    <div className="p-7">
+      <p className="font-round text-sm font-bold">Try it now, without an account</p>
+      <h2 className="mt-2 font-bubble text-3xl">What changes a shadow?</h2>
+      <p className="mt-3 font-round leading-relaxed">A prediction, a torch, and a discovery to talk about together.</p>
+      <span className="mt-5 inline-flex min-h-12 items-center font-round font-extrabold underline">Open the teacher activity kit</span>
     </div>
-  )
+  </a>
 }
 
 function SectionHeading({ eyebrow, title, copy, align = 'left' }) {
@@ -142,7 +74,7 @@ function SectionHeading({ eyebrow, title, copy, align = 'left' }) {
 export default function SchoolsPage() {
   useEffect(() => {
     const previousTitle = document.title
-    const description = 'British curriculum classroom learning for nurseries and primary schools. No pupil login required, with teacher-set lessons and live class progress.'
+    const description = 'Explore free school activities with teacher notes and parent invitations. Try shadows, floating and fair sharing, then set up a classroom.'
     document.title = 'Bloom Juniors for Schools | EYFS, KS1 and Early KS2'
 
     let meta = document.querySelector('meta[name="description"]')
@@ -173,7 +105,7 @@ export default function SchoolsPage() {
         <nav className="mx-auto flex min-h-[72px] max-w-[1216px] items-center justify-between gap-3 px-4 sm:px-8" aria-label="School navigation">
           <a href="/" aria-label="Bloom Juniors home"><BloomLogo size="md" /></a>
           <div className="hidden items-center gap-6 font-round text-sm font-extrabold md:flex" style={{ color: MUTED }}>
-            <a href="#how">How it works</a>
+            <a href="#discovery-kit">Activity kit</a>
             <a href="#curriculum">Curriculum</a>
             <a href="#safety">Safeguarding</a>
             <a href="#pricing">Pricing</a>
@@ -193,10 +125,10 @@ export default function SchoolsPage() {
             <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
               <p className="font-round text-xs font-extrabold uppercase tracking-widest text-[#72E0B9]">Bloom Juniors for Schools</p>
               <h1 className="mt-3 max-w-xl font-bubble text-4xl leading-[1.05] sm:text-5xl md:text-6xl">
-                One clear learning path for every pupil.
+                Bring a little wonder into your classroom.
               </h1>
               <p className="mt-5 max-w-xl font-round text-base font-semibold leading-relaxed text-white/75 sm:text-lg">
-                Set phonics, maths or reading in seconds. Pupils tap their name and begin. You see the whole class moving forward.
+                Start with one discovery children can explore and explain. Try the activity, use the teacher notes, and invite families to continue the conversation at home.
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <a href="/?teacher=1" onClick={() => trackSchoolCta('start_free', 'hero')} className="inline-flex min-h-12 items-center justify-center rounded-lg px-6 font-bubble text-base text-white shadow-xl" style={{ background: `linear-gradient(135deg, ${PURPLE}, ${PURPLE_DARK})` }}>
@@ -232,6 +164,8 @@ export default function SchoolsPage() {
           </div>
         </section>
 
+        <SchoolDiscoveryKit />
+
         <section id="how" className="px-5 py-14 sm:px-8 md:py-16">
           <div className="mx-auto max-w-6xl">
             <SectionHeading
@@ -256,10 +190,6 @@ export default function SchoolsPage() {
                 </article>
               ))}
             </div>
-            <blockquote className="mt-10 border-l-4 py-2 pl-5 font-round text-base font-bold leading-relaxed sm:pl-7 sm:text-lg" style={{ borderColor: MINT, color: INK }}>
-              "The simplified experience is appealing, and I can see the thought that has gone into reducing friction for young learners."
-              <cite className="mt-2 block font-round text-xs not-italic" style={{ color: MUTED }}>Foundation Stage 2 teacher, current pilot</cite>
-            </blockquote>
           </div>
         </section>
 
@@ -353,7 +283,7 @@ export default function SchoolsPage() {
               <SectionHeading
                 eyebrow="Talk to us"
                 title="Plan a classroom pilot."
-                copy="Tell us about your school, age range or curriculum questions. We reply within one working day."
+                copy="Tell us about your school, age range or curriculum questions. We can discuss the activities and setup your school needs."
               />
               <p className="mt-5 font-round text-sm font-bold" style={{ color: INK }}>hello@bloomjuniors.com</p>
             </div>

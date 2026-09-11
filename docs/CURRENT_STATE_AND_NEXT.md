@@ -5,6 +5,33 @@ Last updated: 2026-09-11
 This is the canonical handoff for the next Bloom Juniors work session. Read this
 before planning or changing the product.
 
+## School discovery kit and email draft - 2026-09-11
+
+Founder requested an email instead of calls and refreshed school content.
+Updated /schools with a discovery-led hero and real activity preview, replacing
+the fictional dashboard and unattributed pilot quote. Added SchoolDiscoveryKit:
+three selectable plans (shadows, float/sink, fair sharing), prediction and
+explanation guidance, supervised offline extensions, matching public sample
+links and copyable parent invitations with clipboard-denied fallback.
+Suggested audience is ages 4-6 with an adult. Explicitly states open samples
+save in the browser and do not assign lessons or report to a classroom dashboard.
+This refresh is the public school page/resources, not a teacher dashboard rebuild.
+Existing classroom setup, enquiry form and free/whole-school terms retained.
+Removed overbroad external-link/privacy wording and unverified response-time
+promise from the school page. Existing enquiry form remains unchanged.
+
+Prepared marketing/nursery-follow-up.md: concise email with real kit link,
+one reply request, optional follow-up, and next step after interest. Nothing sent;
+no responses, pilots, sales or learning outcomes claimed. No backend changes.
+
+Production build and local/live verify-school-kit.mjs pass: three activity plans,
+matching links/invitations, clipboard success/failure, mobile/desktop overflow,
+and no runtime errors. Mobile screenshot reviewed. No enquiry was submitted.
+Deployed https://4ad6cdd3.bloom-juniors.pages.dev to production main.
+bloomjuniors.com main-CV32r1sM.js: main/guest/service-worker assets match 4/4,
+test fixtures excluded. Rollback: https://e3739afa.bloom-juniors.pages.dev.
+Authenticated cross-device and live school enquiry persistence remain unverified.
+
 ## Sample-to-account conversion - 2026-09-11
 
 Founder asked to implement work toward selling Bloom. Asked whether to focus on
