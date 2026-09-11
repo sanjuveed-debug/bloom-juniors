@@ -3,9 +3,10 @@ import YaagviCharacter from '../components/YaagviCharacter.jsx'
 import ActivityArtwork from '../components/ActivityArtwork.jsx'
 import AppUpdateNotice from '../components/AppUpdateNotice.jsx'
 import './public-landing.css'
+import { trackEvent } from '../utils/analytics.js'
 
 const adventures = [
-  { id: 'picnic', href: '/play', subject: 'COUNT & SHARE', title: 'A place for everyone.', copy: 'Help Bumi get the picnic ready. How many plates do we need?', action: 'Play the picnic' },
+  { id: 'picnic', href: '/play', subject: 'COUNT & SHARE', title: 'A place for everyone.', copy: 'Help Bumi share the picnic snacks. Can everyone get one?', action: 'Play the picnic' },
   { id: 'float-discovery', href: '/play/float', subject: 'PREDICT & DISCOVER', title: 'Will it float?', copy: 'Make a prediction, try the water lab and notice what happens.', action: 'Try the water lab' },
   { id: 'shadow-discovery', href: '/play/shadow', subject: 'LIGHT & SHADOW', title: 'Make a little shadow.', copy: 'Move the light. Watch the shadow. What could change next?', action: 'Explore shadows' },
 ]
@@ -36,7 +37,7 @@ export default function PublicLanding({ onGetStarted, onSignIn }) {
       </section>
       <section className="public-adventures" id="adventures" aria-labelledby="adventure-title">
         <div className="public-section-heading"><div><p className="public-eyebrow">START WITH A QUESTION</p><h2 id="adventure-title">Curiosity looks good on them.</h2></div><p>Real activities to try right here.<br/>A small beginning to a bigger idea.</p></div>
-        <div className="public-adventure-grid">{adventures.map(item => <a className="public-adventure" key={item.id} href={item.href}>
+        <div className="public-adventure-grid">{adventures.map(item => <a className="public-adventure" key={item.id} href={item.href} onClick={() => trackEvent('sample_cta_click', { sample: item.id === 'picnic' ? 'picnic' : item.id.replace('-discovery', ''), placement: 'homepage_card' })}>
           <div className="public-card-art"><ActivityArtwork id={item.id}/></div>
           <div className="public-card-copy"><p className="public-eyebrow">{item.subject}</p><h3>{item.title}</h3><p>{item.copy}</p><span className="public-card-action">{item.action} <span aria-hidden="true">↗</span></span></div>
         </a>)}</div>

@@ -114,7 +114,7 @@ function getGuardianDetails() {
 // ── UTM attribution ───────────────────────────────────────────────────────────
 // Captures UTM params on first landing and persists them for the session so
 // B2B campaign attribution (e.g. Arcadia school outreach) survives navigation.
-function captureAndGetUtm() {
+export function captureAndGetUtm() {
   try {
     const params = new URLSearchParams(globalThis.location?.search || '')
     const source   = params.get('utm_source')

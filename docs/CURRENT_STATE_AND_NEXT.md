@@ -5,6 +5,43 @@ Last updated: 2026-09-11
 This is the canonical handoff for the next Bloom Juniors work session. Read this
 before planning or changing the product.
 
+## Sample-to-account conversion - 2026-09-11
+
+Founder asked to implement work toward selling Bloom. Asked whether to focus on
+parents, nurseries, or both; no answer yet. Working assumption for the prepared
+test is parents of 4–6-year-olds, consistent with the prior growth focus.
+
+Added GuestParentNext after all three public sample completions. It explains
+age-specific activities, child profiles and the parent area, with a direct account
+CTA. Explicitly says sample progress stays browser-local and is not imported.
+Removed the duplicate older picnic account pitch. Corrected the homepage picnic
+card to describe sharing snacks, matching the actual guest activity.
+
+useSampleFunnel emits existing GA4 sample_view/start/complete and the parent CTA
+emits sample_account_click. Homepage cards emit sample_cta_click. Direct sample
+entry captures campaign attribution. View/start/complete deduplicate per sample
+per browser session; an already-completed sample does not emit a new completion.
+No child names, emails, predictions or answers added to event payloads. Existing
+sign_up still means actual account creation; clicks are not registrations/sales.
+
+Prepared marketing/parent-sales-test.md: one invitation, one tagged shadow sample,
+anonymous manual observation sheet and a seven-day funnel review. Not sent;
+no ad spend, payment collection, pricing change or revenue/traction claim.
+Paid positioning and outreach recipients still need founder direction; preserve
+existing free-access promises. Real authenticated cross-device check is still
+unverified as described below. No new database or duplicate analytics dashboard.
+
+395/395 unit tests and production build pass. verify-sample-conversion passes
+the interactive shadow funnel, campaign attribution, deduplication on reload,
+all three completed-sample CTAs and registration entry without submission.
+Mobile screenshot reviewed. Analytics network blocked during local testing:
+event emission is verified, GA4 receipt and conversion uplift are not.
+Deployed https://e3739afa.bloom-juniors.pages.dev to bloom-juniors/main.
+Live main-DbkaHVg2.js, main/guest/service-worker assets match 4/4; fixtures excluded.
+QA-tagged live shadow completion, reload, account CTA and registration entry pass
+without runtime errors. No account was created. Rollback:
+https://090387a5.bloom-juniors.pages.dev.
+
 ## Continue your discovery - 2026-09-11
 
 User approved checking sign-in, saved progress and the return journey and asked
