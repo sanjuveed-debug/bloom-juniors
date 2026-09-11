@@ -5,6 +5,29 @@ Last updated: 2026-09-11
 This is the canonical handoff for the next Bloom Juniors work session. Read this
 before planning or changing the product.
 
+## School UI/UX redesign - 2026-09-11
+
+Founder disliked the previous school page. Rebuilt the public /schools layout
+with a consistent cream/green palette and Nunito typography matching the family
+homepage, lighter hero with Bumi and a real shadow activity link, simplified
+navigation, and visible mobile sign-in. Asked optional direction preference;
+none received before proceeding with warm/professional homepage consistency.
+
+Replaced the long activity cards/always-open notes and invitation with a compact
+selector and native details disclosures for teaching notes and family sharing.
+Kept sample links, copy/fallback behavior, explicit browser-only sample scope,
+free classroom terms and whole-school enquiry. Simplified pricing and FAQs.
+Added linked enquiry labels with useId and restored the native role-select arrow;
+no submission/backend behavior changed. This is not a teacher dashboard redesign.
+
+Production build passes. Updated browser check passes locally and on production:
+notes expand/collapse, three plans and their links, clipboard success/failure,
+mobile sign-in, linked name field, widths 320/390/768/1280, no runtime errors.
+Desktop/mobile screenshots reviewed. No enquiry submitted or live DB verification.
+Published https://cf31c218.bloom-juniors.pages.dev to production main.
+Custom domain main-BGCIPBUW.js and guest/service-worker assets match 4/4;
+fixtures excluded. Rollback: https://4ad6cdd3.bloom-juniors.pages.dev.
+
 ## School discovery kit and email draft - 2026-09-11
 
 Founder requested an email instead of calls and refreshed school content.

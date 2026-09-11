@@ -24,36 +24,44 @@ export default function SchoolDiscoveryKit() {
   }
   return <section id="discovery-kit" className="school-kit" aria-labelledby="school-kit-title">
     <div className="school-kit-inner">
-      <p className="school-kit-eyebrow">Ready to explore · Suggested for ages 4–6 with an adult</p>
-      <h2 id="school-kit-title">One small question. A whole conversation.</h2>
-      <p>Try a real activity before setting up a classroom. Choose a discovery for a small group or an optional family activity, then use the notes below.</p>
+      <p className="school-kit-eyebrow">YOUR FIRST DISCOVERY</p>
+      <h2 id="school-kit-title">Pick a spark. See where it goes.</h2>
+      <p>Three activities to try together. No account needed. Suggested for ages 4–6 with an adult.</p>
+      <div className="school-kit-workspace">
       <div className="school-kit-options" aria-label="Choose a discovery">
         {ACTIVITIES.map(item => <button key={item.id} type="button" aria-pressed={selected === item.id} onClick={() => { setSelected(item.id); setCopyStatus('') }}>
-          <ActivityArtwork id={item.art} /><span>{item.title}</span><small>{item.subject}</small>
+          <ActivityArtwork id={item.art} /><span>{item.title}<small>{item.subject}</small></span><b aria-hidden="true">{selected === item.id ? '●' : '→'}</b>
         </button>)}
       </div>
       <article className="school-kit-plan" aria-labelledby="discovery-plan-title">
-        <div>
-          <p className="school-kit-eyebrow">Teacher notes · Adapt to your group</p>
+        <div className="school-kit-plan-intro">
+          <p className="school-kit-eyebrow">{activity.subject}</p>
           <h3 id="discovery-plan-title">{activity.title}</h3>
+          <p>{activity.question}</p>
+          <a className="school-kit-primary" href={activity.path}>Try this activity <span aria-hidden="true">↗</span></a>
+        </div>
+        <details className="school-kit-details">
+          <summary>Teaching notes <span>Predict, explore, explain</span></summary>
           <ol>
             <li><strong>Wonder and predict</strong><p>{activity.question}</p></li>
             <li><strong>Explore and notice</strong><p>{activity.explore}</p></li>
             <li><strong>Explain together</strong><p>{activity.explain}</p></li>
             <li><strong>Take it off screen</strong><p>{activity.offline}</p></li>
           </ol>
-          <a className="school-kit-primary" href={activity.path}>Try this activity</a>
-          <p className="school-kit-note">These open samples do not assign a lesson or report pupil completion. Use the classroom setup below for the existing teacher tools.</p>
-        </div>
-        <aside>
-          <h3>A message for families</h3>
+        </details>
+        <details className="school-kit-details">
+          <summary>Share with families <span>A ready-to-copy invitation</span></summary>
+          <div className="school-kit-share">
           <p>Edit this optional invitation before sharing through your usual school channel.</p>
           <label htmlFor="school-parent-invitation">Parent invitation</label>
-          <textarea id="school-parent-invitation" readOnly value={invitation} rows={12} />
+          <textarea id="school-parent-invitation" readOnly value={invitation} rows={8} />
           <button className="school-kit-primary" type="button" onClick={copyInvitation}>Copy parent invitation</button>
           <p role="status" className="school-kit-note">{copyStatus}</p>
-        </aside>
+          </div>
+        </details>
+        <p className="school-kit-note">Open samples save in this browser. They do not assign lessons or report pupil completion to your classroom.</p>
       </article>
+      </div>
     </div>
   </section>
 }

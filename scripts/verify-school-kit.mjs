@@ -9,8 +9,14 @@ try {
   const errors = []
   page.on('pageerror', e => errors.push(e.message))
   await page.goto(`${base}/schools`)
-  await expect(page.getByRole('heading', { name: 'Bring a little wonder into your classroom.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /A little wonder.*A world to learn/ })).toBeVisible()
+  await expect(page.getByLabel('Full name *', { exact: true })).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'School navigation' }).getByRole('link', { name: 'Sign in', exact: true })).toBeVisible()
   const kit = page.locator('#discovery-kit')
+  await expect(kit.getByText('Wonder and predict', { exact: true })).toBeHidden()
+  await kit.locator('summary').filter({ hasText: 'Teaching notes' }).click()
+  await expect(kit.getByText('Wonder and predict', { exact: true })).toBeVisible()
+  await kit.locator('summary').filter({ hasText: 'Teaching notes' }).click()
   for (const [title, path] of [['What changes a shadow?', '/play/shadow'], ['Will it float or sink?', '/play/float'], ['Can we share fairly?', '/play']]) {
     await kit.getByRole('button', { name: new RegExp(title.replace('?', '\\?')) }).click()
     await expect(kit.getByRole('heading', { name: title, exact: true })).toBeVisible()
@@ -18,6 +24,7 @@ try {
     assert((await kit.getByLabel('Parent invitation', { exact: true }).inputValue()).includes(`https://bloomjuniors.com${path}?`))
     assert((await kit.getByLabel('Parent invitation', { exact: true }).inputValue()).includes('not sent to our classroom dashboard'))
   }
+  await kit.locator('summary').filter({ hasText: 'Share with families' }).click()
   await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async text => { window.__copied = text } } }))
   await kit.getByRole('button', { name: 'Copy parent invitation', exact: true }).click()
   await expect(kit.getByRole('status')).toContainText('Invitation copied')
@@ -25,11 +32,15 @@ try {
   await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { throw new Error('denied') } } }))
   await kit.getByRole('button', { name: 'Copy parent invitation', exact: true }).click()
   await expect(kit.getByRole('status')).toContainText('Select and copy')
-  for (const width of [390, 1280]) {
+  for (const width of [320, 390, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 })
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Overflow at ${width}`)
   }
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await page.screenshot({ path: '.migration/schools-desktop.png', fullPage: true })
   await page.setViewportSize({ width: 390, height: 844 })
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await page.screenshot({ path: '.migration/schools-mobile.png', fullPage: true })
   await kit.scrollIntoViewIfNeeded()
   await page.screenshot({ path: '.migration/school-kit-mobile.png' })
   assert.deepEqual(errors, [])

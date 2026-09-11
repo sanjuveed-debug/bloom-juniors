@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useId, useState } from 'react'
 import { motion } from 'framer-motion'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { trackEvent } from '../utils/analytics.js'
@@ -14,6 +14,7 @@ const ROLES = [
 ]
 
 export default function SchoolEnquiryForm({ source = 'schools-page' }) {
+  const formId = useId()
   const [form, setForm] = useState({ name: '', school: '', role: '', email: '', message: '' })
   const [status, setStatus] = useState('idle')
 
@@ -99,11 +100,12 @@ export default function SchoolEnquiryForm({ source = 'schools-page' }) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="grid sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
-          <label className="font-round text-xs font-bold uppercase tracking-wide" style={{ color: 'rgba(66,32,6,0.55)' }}>
+          <label htmlFor={`${formId}-name`} className="font-round text-xs font-bold uppercase tracking-wide" style={{ color: 'rgba(66,32,6,0.55)' }}>
             Full name *
           </label>
           <input
             type="text"
+            id={`${formId}-name`}
             value={form.name}
             onChange={e => set('name', e.target.value)}
             placeholder="Your name"
@@ -113,11 +115,12 @@ export default function SchoolEnquiryForm({ source = 'schools-page' }) {
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="font-round text-xs font-bold uppercase tracking-wide" style={{ color: 'rgba(66,32,6,0.55)' }}>
+          <label htmlFor={`${formId}-school`} className="font-round text-xs font-bold uppercase tracking-wide" style={{ color: 'rgba(66,32,6,0.55)' }}>
             School / Organisation *
           </label>
           <input
             type="text"
+            id={`${formId}-school`}
             value={form.school}
             onChange={e => set('school', e.target.value)}
             placeholder="School name"
@@ -130,15 +133,16 @@ export default function SchoolEnquiryForm({ source = 'schools-page' }) {
 
       <div className="grid sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
-          <label className="font-round text-xs font-bold uppercase tracking-wide" style={{ color: 'rgba(66,32,6,0.55)' }}>
+          <label htmlFor={`${formId}-role`} className="font-round text-xs font-bold uppercase tracking-wide" style={{ color: 'rgba(66,32,6,0.55)' }}>
             Your role *
           </label>
           <select
+            id={`${formId}-role`}
             value={form.role}
             onChange={e => set('role', e.target.value)}
             required
             className="rounded-lg px-4 py-3 font-round text-sm outline-none focus:ring-2 focus:ring-violet-400/40"
-            style={{ ...inputStyle, appearance: 'none', WebkitAppearance: 'none' }}
+            style={inputStyle}
           >
             <option value="" disabled>Select role…</option>
             {ROLES.map(r => (
@@ -147,11 +151,12 @@ export default function SchoolEnquiryForm({ source = 'schools-page' }) {
           </select>
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="font-round text-xs font-bold uppercase tracking-wide" style={{ color: 'rgba(66,32,6,0.55)' }}>
+          <label htmlFor={`${formId}-email`} className="font-round text-xs font-bold uppercase tracking-wide" style={{ color: 'rgba(66,32,6,0.55)' }}>
             Email address *
           </label>
           <input
             type="email"
+            id={`${formId}-email`}
             value={form.email}
             onChange={e => set('email', e.target.value)}
             placeholder="you@school.ac.uk"
@@ -163,12 +168,13 @@ export default function SchoolEnquiryForm({ source = 'schools-page' }) {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="font-round text-xs font-bold uppercase tracking-wide" style={{ color: 'rgba(66,32,6,0.55)' }}>
+        <label htmlFor={`${formId}-message`} className="font-round text-xs font-bold uppercase tracking-wide" style={{ color: 'rgba(66,32,6,0.55)' }}>
           Message{' '}
           <span className="normal-case font-normal opacity-60">(optional)</span>
         </label>
         <textarea
-          value={form.message}
+          id={`${formId}-message`}
+            value={form.message}
           onChange={e => set('message', e.target.value)}
           placeholder="Tell us about your school, the age range you're interested in, or any questions…"
           rows={3}
