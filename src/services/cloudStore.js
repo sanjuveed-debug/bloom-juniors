@@ -697,8 +697,17 @@ export async function saveCloudProgress(profileId, progress) {
 }
 
 export async function loadCloudClassLesson(schoolId, className, dateKey, classId = null) {
+  const classSession = loadClassSession()
+  if (classSession && classSession.schoolId === schoolId && classSession.classId === classId) {
+    const response = await fetch(`/api/class-lesson-load?date=${encodeURIComponent(dateKey)}`, {
+      headers: { 'X-Class-Session': classSession.sessionToken },
+    })
+    if (!response.ok) throw new Error('Could not load class lesson')
+    const result = await response.json()
+    return Array.isArray(result.moduleIds) ? result.moduleIds : null
+  }
   const userId = await getCloudUserId()
-  if (!userId || !schoolId || !dateKey) return null
+  if (!userId || !schoolId || !dateKey) throw new Error('School session unavailable')
 
   let query = supabase
     .from('class_lessons')

@@ -1,0 +1,63 @@
+import { chromium, expect } from '@playwright/test'
+import assert from 'node:assert/strict'
+
+const browser = await chromium.launch({ headless: true })
+try {
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' })
+  await page.route('**/*', route => {
+    const url = new URL(route.request().url())
+    return url.hostname === '127.0.0.1' && !url.pathname.startsWith('/api/') ? route.continue() : route.abort()
+  })
+  const errors = []
+  page.on('pageerror', error => errors.push(error.message))
+  await page.goto('http://127.0.0.1:5173/test-school-lessons.html')
+  await page.getByRole('button', { name: 'Set lesson', exact: true }).click()
+  await page.getByRole('button', { name: /Changing shadows/ }).click()
+  await page.locator('button[aria-pressed]').filter({ hasText: 'Fair sharing' }).click()
+  await expect(page.getByRole('button', { name: /Float or sink/ })).toBeDisabled()
+  await page.locator('summary').filter({ hasText: 'Changing shadows' }).click()
+  await expect(page.getByText(/Ask: What changes when we move the torch/)).toBeVisible()
+  await page.getByRole('button', { name: 'Set on this browser', exact: true }).click()
+  await page.getByRole('button', { name: 'Review pupil', exact: true }).click()
+  const lesson = page.getByRole('region', { name: 'Your class lesson' })
+  await expect(lesson).toBeVisible()
+  await expect(lesson).toContainText('0 of 2 explored today')
+  await lesson.getByRole('button', { name: /Changing shadows/ }).click()
+  await expect(page.getByRole('heading', { name: 'How can we change a shadow?' })).toBeVisible()
+  const mute = page.getByRole('button', { name: 'Mute automatic voice', exact: true })
+  if (await mute.count()) await mute.click()
+  for (const [answer, action] of [['Bigger', 'Move closer'], ['Smaller', 'Move farther away'], ['It disappears', 'Switch off the torch']]) {
+    await page.getByRole('button', { name: answer, exact: true }).click()
+    await page.getByRole('button', { name: new RegExp(action) }).click()
+    const next = page.getByRole('button', { name: /Next experiment|See our discoveries/ })
+    await next.click()
+  }
+  await page.getByRole('button', { name: 'Back to adventures', exact: true }).click()
+  await expect(lesson).toContainText('1 of 2 explored today')
+  await lesson.screenshot({ path: '.migration/class-lesson-home.png' })
+  await page.getByRole('button', { name: 'Review teacher', exact: true }).click()
+  await expect(page.getByRole('button', { name: /QA Learner/ })).toContainText('In progress')
+  await page.screenshot({ path: '.migration/school-teacher-lessons.png', fullPage: true })
+  await page.goto('http://127.0.0.1:5173/test-school-lessons.html?cloud=1')
+  await page.getByRole('button', { name: 'Change', exact: true }).click()
+  await page.locator('button[aria-pressed]').filter({ hasText: 'Fair sharing' }).click()
+  await page.getByRole('button', { name: 'Set for class', exact: true }).click()
+  await expect(page.getByRole('alert')).toContainText('previous lesson is unchanged')
+  const saved = await page.evaluate(async () => (await import('/src/utils/classroomLesson.js')).getClassroomLesson('qa-school-teacher'))
+  assert.deepEqual(saved, ['shadow-discovery', 'snacks'])
+  await page.getByRole('button', { name: 'Clear lesson', exact: true }).click()
+  await expect(page.getByRole('alert')).toContainText('previous lesson is unchanged')
+  assert.deepEqual(await page.evaluate(async () => (await import('/src/utils/classroomLesson.js')).getClassroomLesson('qa-school-teacher')), saved)
+  await page.route('**/api/class-lesson-load?*', route => {
+    assert.equal(route.request().headers()['x-class-session'], 'synthetic-token')
+    return route.fulfill({ json: { moduleIds: ['float-discovery'] } })
+  })
+  const fetched = await page.evaluate(async () => {
+    const store = await import('/src/services/cloudStore.js')
+    localStorage.setItem(store.CLASS_SESSION_KEY, JSON.stringify({ profile: { id: 'qa-pupil' }, schoolId: 'qa-school', classId: 'qa-class', sessionToken: 'synthetic-token' }))
+    return store.loadCloudClassLesson('qa-school', 'Early Class', '2026-09-11', 'qa-class')
+  })
+  assert.deepEqual(fetched, ['float-discovery'])
+  assert.deepEqual(errors, [])
+  console.log('Local teacher assignment -> pupil router -> shadow completion -> teacher status, failed cloud save/clear preservation, and class-session fetch passed. Synthetic records and intercepted lesson response; no live school authentication.')
+} finally { await browser.close() }

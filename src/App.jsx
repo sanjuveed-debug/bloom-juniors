@@ -24,7 +24,7 @@ import PremiumLockModal from './components/PremiumLockModal'
 import RetentionSetup from './components/RetentionSetup'
 import { formatLocalDate, formatYesterdayLocalDate } from './utils/date.js'
 import { shouldSendAutoDigest, markDigestSent, buildDigestPayload, sendDigestEmail, sendNudgeEmail } from './utils/weeklyDigest.js'
-import { getClassroomLesson, setClassroomLesson } from './utils/classroomLesson.js'
+import { getClassroomLesson, setClassroomLesson, clearClassroomLesson } from './utils/classroomLesson.js'
 import { getTodayWorldEvent, isEventBonusCollected, markEventBonusCollected, WORLD_EVENT_BONUS } from './utils/worldEvent.js'
 import { recordAdaptiveSession } from './utils/adaptiveLearning.js'
 import { stopAllSpeech } from './lib/speechController.js'
@@ -328,7 +328,8 @@ export function AppWithProfile({ profileId, profileName, profileAgeGroup, parent
   const progressRef         = useRef(progress)
   const timersRef           = useRef(new Set())
   const screenRef           = useRef(screen)
-  const classroomLessonRef  = useRef(classroomMode && guardianId ? getClassroomLesson(guardianId) : null)
+  const [classroomLesson, setLessonState] = useState(() => classroomMode && guardianId ? getClassroomLesson(guardianId) : null)
+  const classroomLessonRef = useRef(classroomLesson)
 
   useEffect(() => { progressRef.current = progress }, [progress])
   useEffect(() => { screenRef.current = screen }, [screen])
@@ -341,17 +342,21 @@ export function AppWithProfile({ profileId, profileName, profileAgeGroup, parent
   }, [])
 
   useEffect(() => {
-    if (!classroomMode || !guardianId || !schoolId) return
+    if (!classroomMode || !guardianId || !schoolId || screen !== 'home') return
     let active = true
-    loadCloudClassLesson(schoolId, className || '', formatLocalDate(), classId || null)
+    const refreshLesson = () => loadCloudClassLesson(schoolId, className || '', formatLocalDate(), classId || null)
       .then(moduleIds => {
-        if (!active || !moduleIds) return
-        setClassroomLesson(guardianId, moduleIds)
+        if (!active) return
+        if (moduleIds) setClassroomLesson(guardianId, moduleIds)
+        else clearClassroomLesson(guardianId)
         classroomLessonRef.current = moduleIds
+        setLessonState(moduleIds)
       })
       .catch(() => {})
-    return () => { active = false }
-  }, [classroomMode, guardianId, schoolId, classId, className])
+    refreshLesson()
+    window.addEventListener('focus', refreshLesson)
+    return () => { active = false; window.removeEventListener('focus', refreshLesson) }
+  }, [classroomMode, guardianId, schoolId, classId, className, screen])
 
   // Clean up all pending timers on unmount
   useEffect(() => () => {
@@ -776,7 +781,7 @@ export function AppWithProfile({ profileId, profileName, profileAgeGroup, parent
         {classroomMode ? <Dashboard avatar={progress.avatar} progress={progress} profileName={profileName}
           onNavigate={navigate} onLongPress={() => navigate('parent')} onSwitchProfiles={onSwitchProfiles}
           onQuickSwitch={onQuickSwitch} onAddStars={handleAddStars} onUpdateProgress={handleUpdateProgress}
-          profiles={profiles} activeProfileId={profileId} /> :
+          profiles={profiles} activeProfileId={profileId} classroomLesson={classroomLesson} /> :
           <SimpleChildHome profileName={profileName} connected sessions={progress.sessions || []}
             progress={progress} nextId={nextAdventure(progress)} hasPicnic={Boolean(progress.picnic?.state?.report)}
             onLaunch={id => navigate(id)} onParents={() => navigate('parent')}

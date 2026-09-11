@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { hydrateProgressData } from '../hooks/useProgress'
 import { formatLocalDate } from '../utils/date'
-import { MODULES_BY_AGE, getClassroomLesson, setClassroomLesson, clearClassroomLesson } from '../utils/classroomLesson'
+import { MODULES_BY_AGE, CLASS_DISCOVERIES, getClassLessonSteps, getClassroomLesson, setClassroomLesson, clearClassroomLesson } from '../utils/classroomLesson'
 import { clearCloudClassLesson, loadCloudClassLesson, loadCloudProgress, regenerateCloudClassCode, saveCloudClassLesson } from '../services/cloudStore'
 import SchoolInviteModal from './SchoolInviteModal'
 import TermlyReport from './TermlyReport'
@@ -25,8 +25,10 @@ function getWeeklyStats(progress) {
   const moduleIds = [...new Set(sessions.map(s => s.module))]
   const stars = sessions.reduce((sum, s) => sum + (s.stars || 0), 0)
   const totals = sessions.reduce((acc, s) => {
-    acc.correct += Number(s.correct) || 0
-    acc.total += Number(s.total) || 0
+    if (Number.isFinite(s.correct) && Number.isFinite(s.total)) {
+      acc.correct += s.correct
+      acc.total += s.total
+    }
     return acc
   }, { correct: 0, total: 0 })
   const accuracy = totals.total > 0 ? Math.round((totals.correct / totals.total) * 100) : null
@@ -183,6 +185,8 @@ function BulkImportModal({ open, profiles, defaultAgeGroup, onClose, onImport })
 function LessonSetter({ guardianId, schoolId, classId, className, todayKey, profiles, onLessonChange }) {
   const [open, setOpen] = useState(false)
   const [selected, setSelected] = useState([])
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   const dominantAgeGroup = useMemo(() => {
     const counts = {}
@@ -201,28 +205,32 @@ function LessonSetter({ guardianId, schoolId, classId, className, todayKey, prof
   }
 
   const handleOpen = () => {
+    setSaveError('')
     setSelected(current || [])
     setOpen(true)
   }
 
-  const handleSet = async () => {
-    if (selected.length === 0) {
-      clearClassroomLesson(guardianId)
-      try { await clearCloudClassLesson(schoolId, className, todayKey, classId) } catch {}
-    } else {
-      setClassroomLesson(guardianId, selected)
-      try { await saveCloudClassLesson(schoolId, className, todayKey, selected, classId) } catch {}
-    }
-    onLessonChange(selected)
-    setOpen(false)
+  const persistLesson = async (ids) => {
+    if (saving) return
+    setSaving(true)
+    setSaveError('')
+    try {
+      if (schoolId) {
+        const result = ids.length
+          ? await saveCloudClassLesson(schoolId, className, todayKey, ids, classId)
+          : await clearCloudClassLesson(schoolId, className, todayKey, classId)
+        if (!result) throw new Error('No authenticated school session')
+      }
+      if (ids.length) setClassroomLesson(guardianId, ids)
+      else clearClassroomLesson(guardianId)
+      onLessonChange(ids.length ? ids : null)
+      setOpen(false)
+    } catch {
+      setSaveError('Could not save the class lesson. Your previous lesson is unchanged. Check your connection and try again.')
+    } finally { setSaving(false) }
   }
-
-  const handleClear = async () => {
-    clearClassroomLesson(guardianId)
-    try { await clearCloudClassLesson(schoolId, className, todayKey, classId) } catch {}
-    onLessonChange(null)
-    setOpen(false)
-  }
+  const handleSet = () => persistLesson(selected)
+  const handleClear = () => persistLesson([])
 
   const currentModules = current
     ? current.map(id => modules.find(m => m.id === id)).filter(Boolean)
@@ -246,7 +254,7 @@ function LessonSetter({ guardianId, schoolId, classId, className, todayKey, prof
               ))}
             </div>
           ) : (
-            <p className="font-round text-white/30 text-sm mt-0.5">No lesson set — students see random daily path</p>
+            <p className="font-round text-white/60 text-sm mt-0.5">No lesson set — pupils can explore their daily path</p>
           )}
         </div>
         <motion.button whileTap={{ scale: 0.92 }} onClick={handleOpen}
@@ -262,11 +270,11 @@ function LessonSetter({ guardianId, schoolId, classId, className, todayKey, prof
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-end justify-center"
             style={{ background: 'rgba(0,0,0,0.65)' }}
-            onClick={() => setOpen(false)}>
+            onClick={() => !saving && setOpen(false)}>
             <motion.div initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 320, damping: 28 }}
               onClick={e => e.stopPropagation()}
-              className="w-full max-w-lg rounded-t-3xl p-6 pb-10"
+              className="w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-t-3xl p-6 pb-10"
               style={{ background: 'linear-gradient(160deg, #1e1b4b 0%, #0f172a 100%)', border: '1px solid rgba(99,102,241,0.3)', borderBottom: 'none' }}>
 
               <div className="flex items-center justify-between mb-1">
@@ -274,7 +282,7 @@ function LessonSetter({ guardianId, schoolId, classId, className, todayKey, prof
                 <button onClick={() => setOpen(false)} className="font-round text-white/30 text-sm">✕</button>
               </div>
               <p className="font-round text-white/40 text-xs mb-4">
-                Pick up to {maxPicks} activities · all students in this class will see these today
+                Pick up to {maxPicks} activities for {AGE_LABEL[dominantAgeGroup]}. Use age-matched classes for the same lesson on every pupil device.
               </p>
 
               <div className="grid grid-cols-2 gap-2 mb-5">
@@ -283,7 +291,8 @@ function LessonSetter({ guardianId, schoolId, classId, className, todayKey, prof
                   const isDisabled = !isSelected && selected.length >= maxPicks
                   return (
                     <motion.button key={m.id} whileTap={{ scale: 0.93 }}
-                      onClick={() => !isDisabled && toggle(m.id)}
+                      disabled={isDisabled || saving} aria-pressed={isSelected}
+                      onClick={() => toggle(m.id)}
                       className="flex items-center gap-3 p-3 rounded-2xl text-left transition-all"
                       style={{
                         background: isSelected ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.05)',
@@ -298,23 +307,33 @@ function LessonSetter({ guardianId, schoolId, classId, className, todayKey, prof
                 })}
               </div>
 
+              {dominantAgeGroup === 'early' && <div className="mb-5 space-y-3">
+                <p className="font-bold text-white">Discovery teaching notes</p>
+                {CLASS_DISCOVERIES.filter(item => selected.includes(item.id)).map(item => <details key={item.id} className="rounded-xl border border-white/20 p-3 text-sm text-white/80">
+                  <summary className="cursor-pointer min-h-10 font-bold">{item.label}</summary>
+                  <p className="mt-2">Ask: {item.question}</p><p className="mt-2">{item.note}</p><p className="mt-2">Off screen: {item.offline}</p>
+                </details>)}
+                <p className="text-xs text-white/70">Discoveries record exploration, not a test score. Select one above to see its notes.</p>
+              </div>}
+              {!schoolId && <p className="mb-3 text-sm text-amber-200">This classroom is local to this browser. Sign in to a school classroom to share assignments across devices.</p>}
+              {saveError && <p role="alert" className="mb-3 text-sm text-red-200">{saveError}</p>}
               <div className="flex gap-2">
                 {current && (
-                  <motion.button whileTap={{ scale: 0.95 }} onClick={handleClear}
+                  <motion.button whileTap={{ scale: 0.95 }} onClick={handleClear} disabled={saving}
                     className="flex-1 py-3 rounded-2xl font-round text-sm text-white/40"
                     style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
                     Clear lesson
                   </motion.button>
                 )}
                 <motion.button whileTap={{ scale: 0.95 }} onClick={handleSet}
-                  disabled={selected.length === 0}
+                  disabled={saving || selected.length === 0}
                   className="flex-1 py-3 rounded-2xl font-bubble text-white text-base"
                   style={{
                     background: selected.length > 0 ? 'linear-gradient(135deg, #6366F1, #8B5CF6)' : 'rgba(255,255,255,0.08)',
                     opacity: selected.length === 0 ? 0.5 : 1,
                     boxShadow: selected.length > 0 ? '0 4px 20px rgba(99,102,241,0.4)' : 'none',
                   }}>
-                  Set for all students →
+                  {saving ? 'Saving...' : schoolId ? 'Set for class' : 'Set on this browser'}
                 </motion.button>
               </div>
             </motion.div>
@@ -348,7 +367,8 @@ const StudentCard = React.memo(function StudentCard({ student, lessonModules, on
       <div className="text-3xl">{student.emoji || '👤'}</div>
       <div>
         <p className="font-bubble text-white text-base leading-tight">{student.name}</p>
-        <p className="font-round text-white/30 text-xs">{ageLabel}</p>
+        <p className="font-round text-white/60 text-xs">{ageLabel}</p>
+        <p className="font-round text-sm font-bold" style={{ color: s.color }}>{s.label}</p>
       </div>
 
       {/* Per-module lesson progress */}
@@ -361,7 +381,7 @@ const StudentCard = React.memo(function StudentCard({ student, lessonModules, on
                 color: m.done ? '#86EFAC' : 'rgba(255,255,255,0.35)',
                 border: m.done ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.1)',
               }}>
-              {m.emoji} {m.done ? '✓' : '·'}
+              {m.emoji} {m.label}: {m.done ? 'Explored' : 'Not completed'}
             </span>
           ))}
         </div>
@@ -409,8 +429,9 @@ export default function ClassroomDashboard({ profiles, guardian, onSelectStudent
     let active = true
     loadCloudClassLesson(schoolId, className, todayKey, classId)
       .then(moduleIds => {
-        if (!active || !moduleIds) return
-        setClassroomLesson(guardianId, moduleIds)
+        if (!active) return
+        if (moduleIds) setClassroomLesson(guardianId, moduleIds)
+        else clearClassroomLesson(guardianId)
         setLessonVersion(v => v + 1)
       })
       .catch(() => {})
@@ -462,11 +483,13 @@ export default function ClassroomDashboard({ profiles, guardian, onSelectStudent
   const studentsWithStatus = useMemo(() => {
     return profiles.map(profile => {
       const progress = cloudProgressById[profile.id] || loadProfileProgress(profile.id)
-      const status = getTodayStatus(progress, todayKey)
+      const assigned = getClassLessonSteps(progress, currentLesson, profile.ageGroup || 'early', todayKey)
+      const status = assigned.length ? (assigned.every(s => s.done) ? 'done' : assigned.some(s => s.started) ? 'in-progress' : 'not-started') : getTodayStatus(progress, todayKey)
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       const todaySessions = (progress.sessions || []).filter(s => s.date >= today.getTime())
       const completedIds = new Set(todaySessions.map(s => s.module))
+      assigned.filter(s => s.done).forEach(s => completedIds.add(s.id))
       KS2_MODULE_IDS.forEach(id => {
         if (progress[id]?.lastPlayedDate === todayKey) completedIds.add(id)
       })
@@ -478,7 +501,7 @@ export default function ClassroomDashboard({ profiles, guardian, onSelectStudent
         weekly: getWeeklyStats(progress),
       }
     })
-  }, [profiles, todayKey, cloudProgressById])
+  }, [profiles, todayKey, cloudProgressById, currentLesson])
 
   const insights = useMemo(() =>
     buildCohortInsights(profiles.map(p => ({

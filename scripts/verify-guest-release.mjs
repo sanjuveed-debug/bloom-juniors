@@ -13,5 +13,5 @@ for(const file of [main,...guest,'/sw.js']){
  const sha=data=>createHash('sha256').update(data).digest('hex')
  assert.equal(sha(Buffer.from(await response.arrayBuffer())),sha(await readFile('dist'+file)))
 }
-for(const file of ['test-market-profile.html','test-tiny-profile.html','test-picnic-profile.html'])await assert.rejects(access('dist/'+file))
+for(const file of ['test-school-lessons.html','test-classroom-review.html','test-market-profile.html','test-tiny-profile.html','test-picnic-profile.html'])await assert.rejects(access('dist/'+file))
 console.log(JSON.stringify({origin,main,guest,matched:4,testFixturesExcluded:true}))

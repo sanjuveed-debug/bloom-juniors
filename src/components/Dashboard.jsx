@@ -1,3 +1,4 @@
+import ClassLessonHome from './ClassLessonHome'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { preservesGuidedDestination } from '../utils/guidedNavigation.js'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -1111,7 +1112,7 @@ function ForYouFeed({ theme, progress, challenges, arcadeStatus, dailyAdventure,
   )
 }
 
-export default function Dashboard({ avatar, progress, onNavigate, onLongPress, onSwitchProfiles, onQuickSwitch, onAddStars, onUpdateProgress, profiles, activeProfileId, profileName }) {
+export default function Dashboard({ avatar, progress, onNavigate, onLongPress, onSwitchProfiles, onQuickSwitch, onAddStars, onUpdateProgress, profiles, activeProfileId, profileName, classroomLesson }) {
   const { premium } = usePremium()
   const fullAccess = !PREMIUM_GATING_ENABLED || premium
   const theme    = THEMES[avatar] || THEMES.rumi
@@ -1339,7 +1340,9 @@ export default function Dashboard({ avatar, progress, onNavigate, onLongPress, o
         </div>
       </div>
 
-      <BloomAdventureHome ageGroup="early" profileName={profileName} progress={progress} dailyNext={(treasureClaimed && arcadeStatus.unlocked ? MODULE_MAP.arcade : dailyJourneyNext?.module)} dailySteps={dailyJourneySteps} dailyDone={dailyJourneyDoneCount} dailyRequired={2} dailyClaimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} libraryOpen={showJourneyExplore} onNavigate={handleGatedNavigate} onUpdateProgress={onUpdateProgress} onClaimTreasure={claimTreasure} onToggleLibrary={() => setShowJourneyExplore(value => !value)} onOpenWorld={() => onNavigate('wonderworld')} onOpenWonder={() => onNavigate('wonderwhy', 'wonder-of-day')} onOpenTreasureRoom={() => setShowTreasureShelf(true)}/>
+      {classroomLesson?.length > 0 && <ClassLessonHome progress={progress} moduleIds={classroomLesson} onNavigate={onNavigate} />}
+      {!classroomLesson?.length && <BloomAdventureHome ageGroup="early" profileName={profileName} progress={progress} dailyNext={(treasureClaimed && arcadeStatus.unlocked ? MODULE_MAP.arcade : dailyJourneyNext?.module)} dailySteps={dailyJourneySteps} dailyDone={dailyJourneyDoneCount} dailyRequired={2} dailyClaimed={treasureClaimed} treasureCount={treasureCollection.items?.length||0} libraryOpen={showJourneyExplore} onNavigate={handleGatedNavigate} onUpdateProgress={onUpdateProgress} onClaimTreasure={claimTreasure} onToggleLibrary={() => setShowJourneyExplore(value => !value)} onOpenWorld={() => onNavigate('wonderworld')} onOpenWonder={() => onNavigate('wonderwhy', 'wonder-of-day')} onOpenTreasureRoom={() => setShowTreasureShelf(true)}/>}
+      {classroomLesson?.length > 0 && <button className="mx-5 rounded-xl bg-white px-5 py-3 font-bold text-green-900" onClick={() => setShowJourneyExplore(value => !value)}>{showJourneyExplore ? 'Close activity library' : 'Explore other activities'}</button>}
       {showJourneyExplore && (
         <div className="mx-auto mt-4 flex max-w-6xl gap-2 overflow-x-auto px-4 md:px-6 xl:px-8">
           {[

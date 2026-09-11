@@ -5,6 +5,47 @@ Last updated: 2026-09-11
 This is the canonical handoff for the next Bloom Juniors work session. Read this
 before planning or changing the product.
 
+## In-app school discovery assignments - 2026-09-11
+
+Founder clarified school content was unchanged and requested actual app work.
+Added Changing shadows, Float or sink, and Fair sharing to the early (ages 4-6)
+teacher lesson picker, with prediction/teaching/offline notes. These integrate
+existing interactive discoveries into school assignments; they are not three
+newly authored simulations. Nursery and junior catalogues remain age-specific.
+Teachers can select up to two early activities. Mixed-age classes should be
+split by age band for the same assignments; picker explicitly explains this.
+
+Early pupil Dashboard now leads with ClassLessonHome when a teacher assignment
+exists, replacing its generic hero while retaining the activity library.
+AppWithProfile publishes fetched assignments into React state and refreshes on
+home entry and window focus. Existing local assignments remain available offline.
+Exact completion evidence drives pupil and teacher status; unrelated maths does
+not complete Fair sharing, and old completions are not today's completions.
+Normalized replay completion state counts today without duplicate reward sessions.
+Unscored discovery observations no longer lower the weekly scored accuracy.
+
+Found class-code pupils previously had no lesson-fetch route. Added read-only
+/api/class-lesson-load using the existing signed class session. Rechecks pupil
+membership, scopes school/class from the signed token, and returns only module
+IDs for the requested day. No schema/RLS change or extra credentials introduced.
+cloudStore uses this route for the matching stored class session. Teacher writes
+still use existing Supabase class_lessons flow. UI waits for confirmed cloud
+result before replacing local assignments; failed set/clear preserves the prior
+lesson and shows an error. Local-only classrooms are explicitly labelled.
+
+399/399 unit tests and production build pass. New security tests cover invalid/
+expired tokens, pupil membership, class isolation and upstream failure. Browser
+verify-school-lessons passes local teacher assignment -> real pupil router ->
+shadow completion -> teacher status, save/clear failure preservation and class
+session client fetch against an intercepted response. Synthetic records only.
+Pupil mobile screenshot reviewed. No real authenticated two-device school test;
+live assignment persistence and pupil completion sync still need verification.
+
+Deployed https://b1f97084.bloom-juniors.pages.dev to production main.
+Custom domain main-Cv7hL3oi.js, guest/service-worker assets match 4/4; new review
+fixtures excluded. Live lesson API rejects unauthenticated requests with 401.
+Rollback: https://cf31c218.bloom-juniors.pages.dev. No outreach sent.
+
 ## School UI/UX redesign - 2026-09-11
 
 Founder disliked the previous school page. Rebuilt the public /schools layout
