@@ -5,7 +5,7 @@ import { applyCollectionAction, COLLECTION_ADVENTURES } from '../src/utils/colle
 
 const browser = await chromium.launch({ headless: true })
 try {
-  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' })
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, reducedMotion: process.argv.includes('--motion') ? 'no-preference' : 'reduce' })
   const errors = []
   page.on('pageerror', error => errors.push(error.message))
   await page.route('**/*', route => {

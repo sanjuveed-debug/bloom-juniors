@@ -2,3 +2,8 @@
 @media(max-width:600px){.shadow-header{gap:6px}.shadow-header>span{display:none}.shadow-header button{font-size:12px;padding:9px 10px}.shadow-title{padding:22px 20px 0}.shadow-title h1{font-size:30px}.shadow-guide{padding:0 12px;gap:4px}.shadow-guide>div{width:78px!important;height:90px!important}.shadow-guide>p{font-size:14px;padding:14px;line-height:1.4}.shadow-board{padding:0 8px}.shadow-stage{min-height:170px}.shadow-actions{padding:20px 16px 26px}.shadow-predictions{gap:12px}.shadow-predictions button{min-width:0;flex:1;font-size:16px;padding:12px 10px}.shadow-journal{grid-template-columns:1fr;gap:8px}.shadow-journal>div{padding:12px;flex-direction:row;justify-content:space-between;text-align:left}.shadow-title>p{font-size:10px}.shadow-slider>span{font-size:11px}}
 @media(prefers-reduced-motion:reduce){.shadow-page *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 .shadow-page .shadow-guide>p{font-size:1rem}.shadow-page .shadow-title>p,.shadow-page .shadow-slider>span,.shadow-page .shadow-small{font-size:.875rem}.shadow-page .shadow-title h1{font-size:clamp(1.875rem,4vw,2.6875rem)}
+/* Brief acknowledgement; the scientific model continues to follow input directly. */
+.shadow-actions button{transition:transform 120ms cubic-bezier(.23,1,.32,1),background-color 120ms ease}
+.shadow-actions button:active{transform:scale(.97)}
+@media(hover:hover) and (pointer:fine){.shadow-actions .shadow-primary:hover{background:#1c493f}.shadow-predictions button:hover{background:#ded2ec}}
+@media(prefers-reduced-motion:reduce){.shadow-actions button{transition:none}.shadow-actions button:active{transform:none}}

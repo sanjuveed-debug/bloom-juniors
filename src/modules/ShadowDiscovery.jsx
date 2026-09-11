@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import BumiCharacter from '../components/BumiCharacter.jsx'
 import LessonHeader from '../components/LessonHeader.jsx'
 import AdventureFinishChoices from '../components/AdventureFinishChoices.jsx'
@@ -28,6 +29,8 @@ export default function ShadowDiscovery({ progress = {}, update, onBack, guest =
   const [freePosition,setFreePosition]=useState(0)
   const [freeOff,setFreeOff]=useState(false)
   const complete=state.phase==='complete'
+  const [openedComplete] = useState(complete)
+  const reducedMotion = useReducedMotion()
   const dispatch=action=>update(p=>applyShadowDiscovery(p,action))
   const cue=complete ? 'You changed a shadow! Light travels from the torch. The card blocks some of it. Move the torch and look again, or finish for now.' : state.phase==='predict' ? `${item.question} ${item.choices.join(', or ')}? Every guess is worth testing.` : state.phase==='test' ? item.id==='off' ? 'Tap the switch to turn off the torch. Watch the wall.' : `Slide the torch all the way ${item.id==='closer' ? 'towards the card' : 'away from the card'}. Or tap ${item.action}. The card stays still.` : item.explanation
   const voice=useActivityNarration({...speech,cue:`${state.round}-${state.phase}`,text:cue})
@@ -35,14 +38,16 @@ export default function ShadowDiscovery({ progress = {}, update, onBack, guest =
     <LessonHeader onBack={onBack} voice={voice}/>
     <section className="shadow-lab">
       <div className="shadow-title"><p>THE LITTLE LIGHT THEATRE · AGES 4–6</p><h1>{complete ? 'Small torch. Big discovery.' : 'How can we change a shadow?'}</h1><p>{complete ? 'Your shadow journal' : `Experiment ${state.round+1} of 3 · ${state.phase==='predict' ? 'Make a prediction' : state.phase==='test' ? 'Try it yourself' : 'Look what changed'}`}</p></div>
-      <div className="shadow-guide"><BumiCharacter size={110} state={state.phase==='observe'||complete ? 'nod' : 'think'} talking={speech.speaking}/><p role="status">{cue}</p></div>
+      <div className="shadow-guide"><BumiCharacter size={110} state={complete && !openedComplete ? 'celebrate' : state.phase==='observe'||complete ? 'nod' : 'think'} reactionKey={`${state.round}-${state.phase}`} autoIdle={1200} talking={speech.speaking}/><p role="status">{cue}</p></div>
       <div className="shadow-board"><ShadowStage position={complete ? freePosition : state.position} off={complete ? freeOff : item.id==='off'&&state.phase==='observe'}/></div>
-      <div className="shadow-actions">
+      <motion.div className="shadow-actions" key={`${state.round}-${state.phase}`}
+        initial={{ opacity: reducedMotion ? 1 : 0 }} animate={{ opacity: 1 }}
+        transition={{ duration: reducedMotion ? 0 : 0.18, ease: [0.23, 1, 0.32, 1] }}>
         {complete ? <><h2>Look again. You control the light.</h2><label className="shadow-slider">Move the torch<input type="range" min="0" max="100" value={freePosition} onChange={e=>setFreePosition(Number(e.target.value))} aria-label="Explore torch position" disabled={freeOff}/><span>Farther from card <b>Closer to card</b></span></label><button className="shadow-secondary" onClick={()=>setFreeOff(v=>!v)}>{freeOff ? 'Switch on the torch' : 'Switch off the torch'}</button><div className="shadow-journal">{SHADOW_ROUNDS.map(r=><div key={r.id}><strong>{r.action}</strong><span>{r.result}</span></div>)}</div><div className="shadow-home"><h3>Make a shadow show together</h3><p>{SHADOW_HOME_PROMPT}</p><button className="shadow-secondary" onClick={()=>speech.speak(SHADOW_HOME_PROMPT)}>Hear the home idea</button></div><p className="shadow-small">{guest ? 'Saved in this browser only.' : 'Your first completed discovery is saved with this child profile.'} Predictions are not scored.</p><AdventureFinishChoices onFinish={onBack} onReplay={()=>{setFreePosition(0);setFreeOff(false);dispatch({type:'REPLAY'})}}/><details><summary>For grown-ups: how this model works</summary><p>This side-view model uses one small light source, an opaque card and a fixed wall. It shows shadow size, not soft edges or other lights. The dashed lines show where light just passes the card. A real torch may make softer shadows.</p><a href="https://www.sciencebuddies.org/stem-activities/change-the-size-of-a-shadow" target="_blank" rel="noreferrer">Try the Science Buddies shadow activity</a></details></>
         : state.phase==='predict' ? <div className="shadow-predictions">{item.choices.map((choice,i)=><button key={choice} onClick={()=>dispatch({type:'PREDICT',prediction:choice})}><span aria-hidden="true">{item.id==='off' ? i===0 ? '●' : '○' : i===0 ? '⬤' : '•'}</span>{choice}</button>)}</div>
         : state.phase==='test' ? <>{item.id!=='off'&&<label className="shadow-slider">Slide the torch and watch<input type="range" min="0" max="100" value={state.position} onChange={e=>dispatch({type:'MOVE',position:Number(e.target.value)})} aria-label="Torch position"/><span>Farther from card <b>Closer to card</b></span></label>}<button className="shadow-primary" onClick={()=>dispatch(item.id==='off'?{type:'OFF'}:{type:'MOVE',position:item.target})}>{item.action} {item.id==='off' ? '◉' : item.id==='closer' ? '→' : '←'}</button></>
         : <><p className="shadow-observation">{item.result === 'It disappears' ? 'No torch light. No torch shadow.' : `The shadow became ${item.result.toLowerCase()}.`}</p><button className="shadow-primary" onClick={()=>dispatch({type:'NEXT'})}>{state.round===2 ? 'See our discoveries' : 'Next experiment'} →</button></>}
-      </div>
+      </motion.div>
     </section>
   </main>
 }

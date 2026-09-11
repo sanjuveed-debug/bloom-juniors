@@ -5,6 +5,25 @@ Last updated: 2026-09-11
 This is the canonical handoff for the next Bloom Juniors work session. Read this
 before planning or changing the product.
 
+## Shadow lesson motion polish - 2026-09-11
+
+Founder asked whether the reviewed animation skills were being applied. Applied
+Emil Kowalski's animate guidance directly from
+https://github.com/emilkowalski/skills/blob/main/skills/animate/SKILL.md.
+No skill package or dependency installed. ShadowDiscovery now uses a brief 180ms
+opacity entrance for changed step controls, a 120ms CSS press response, pointer-
+gated hover feedback, and a short existing Bumi celebration on fresh completion.
+Reaction key follows round/phase. Opening an already completed lesson does not
+trigger the celebration. Torch geometry remains direct and unanimated while
+dragging. Reduced motion removes these new fades/press transforms.
+
+Production build passed. verify-school-lessons passed with reduced motion;
+verify-sample-conversion --motion passed the full public shadow completion and
+account CTA flow with normal motion. No curriculum, scoring or save changes.
+Deployed https://015375aa.bloom-juniors.pages.dev. Live main-cvVRf4-J.js and
+guest/service-worker assets match 4/4; review fixtures excluded.
+Rollback: https://b1f97084.bloom-juniors.pages.dev.
+
 ## In-app school discovery assignments - 2026-09-11
 
 Founder clarified school content was unchanged and requested actual app work.
