@@ -9,6 +9,7 @@ import SkillHint, { getHint } from '../components/SkillHint'
 import InteractiveYaagvi, { useYaagviReactions } from '../components/InteractiveYaagvi'
 import MatchingActivity from '../components/MatchingActivity'
 import SubitisingFlash from '../components/SubitisingFlash'
+import MentalMath from '../components/MentalMath'
 import { buildNumberLineWindow } from '../utils/numberLine'
 import { questionSignature } from '../utils/adaptiveLearning'
 import { buildNumberWorldCompletion } from '../utils/numberWorldSession'
@@ -551,7 +552,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
     activityKey: `${selectedOp || 'menu'}-${round}-${question?.q || ''}`,
     active: Boolean(
       selectedOp &&
-      !['flash', 'match'].includes(selectedOp) &&
+      !['flash', 'match', 'mental'].includes(selectedOp) &&
       question &&
       !answered &&
       round <= totalRounds
@@ -563,6 +564,7 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
   const [flashResult, setFlashResult] = useState(null)
   const [flashKey,    setFlashKey]    = useState(0)
   const flashAwardedRef = useRef(false)
+  const mentalAwardedRef = useRef(false)
 
   const opPlayed = progress?.math?.opPlayed || {}
   const awardedRef = useRef(false)
@@ -689,6 +691,12 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
     setFlashResult({ correct, total })
   }, [onAddStars, profileName, speak, reactYaagvi])
 
+  const handleMentalComplete = useCallback((correct, total) => {
+    if (mentalAwardedRef.current) return
+    mentalAwardedRef.current = true
+    onAddStars('math', correct, { total, correct, struggles: [], op: 'mental' })
+  }, [onAddStars])
+
   const handleMatchComplete = useCallback((misses, total) => {
     if (matchAwardedRef.current) return
     matchAwardedRef.current = true
@@ -812,9 +820,21 @@ export default function NumberWorld({ avatar, progress, profileName, onAddStars,
             <p className="font-round text-white/80 text-xs">Quick! Count them before they vanish!</p>
           </div>
         </motion.button>
+        <button onClick={() => { mentalAwardedRef.current = false; setSelectedOp('mental') }}
+          className="rounded-3xl shadow-xl mx-4 mt-3 px-5 py-4 text-left text-white"
+          style={{ background: 'linear-gradient(135deg, #2563EB, #7C3AED)' }}>
+          <span className="font-bubble text-lg">Mental Maths</span>
+          <span className="block font-round text-xs text-white/80">See it, hide it, work it out</span>
+        </button>
       </div>
     )
   }
+
+  if (selectedOp === 'mental') return <div className="min-h-screen overflow-y-auto pb-10" style={{ background: `linear-gradient(160deg, ${theme.bg}, white)` }}>
+    <div className="px-4 pt-safe pb-5"><button className="w-11 h-11 rounded-full bg-white shadow" aria-label="Back to Number World" onClick={() => setSelectedOp(null)}>←</button></div>
+    <MentalMath onComplete={handleMentalComplete}/>
+    <div className="text-center mt-8"><button className="underline font-round text-slate-700" onClick={() => setSelectedOp(null)}>Choose another activity</button></div>
+  </div>
 
   // ── Flash Count (subitising) screen ─────────────────────────────────────────
   if (selectedOp === 'flash') {
